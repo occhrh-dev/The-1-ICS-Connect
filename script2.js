@@ -1,3 +1,21 @@
+// ============================================================
+// Optimistic UI Helper
+// ============================================================
+function _optimisticRun_(gasFn, args, successMsg, failMsg, onSuccess, onFail) {
+// แสดง success ทันที
+Swal.fire({ icon:'success', title: successMsg || 'ส่งแล้ว', timer:1200, showConfirmButton:false });
+// ส่ง GAS เบื้องหลัง
+var runner = google.script.run.withSuccessHandler(function(result) {
+if (typeof onSuccess === 'function') onSuccess(result);
+}).withFailureHandler(function(err) {
+// ถ้า error ค่อยแจ้ง
+Swal.fire('ส่งข้อมูลไม่สำเร็จ', (err && err.message ? err.message : String(err)) + '\n(กรุณาลองอีกครั้ง)', 'error');
+if (typeof onFail === 'function') onFail(err);
+});
+runner[gasFn].apply(runner, args || []);
+}
+
+
 var healthCurrentUser = '';
 var healthTimerInterval = null;
 var HEALTH_HOSPITAL_NAMES = ['รพ.ระยอง','รพ.เฉลิมพระเกียรติฯ ระยอง','รพ.นิคมพัฒนา','รพ.ปลวกแดง','รพ.บ้านฉาง','รพ.แกลง','รพ.บ้านค่าย','รพ.วังจันทร์','รพ.เขาชะเมา','รพ.กรุงเทพระยอง','รพ.ศรีระยอง','รพ.จุฬารัตน์'];
@@ -132,16 +150,10 @@ function submitHealthNote() {
 var noteEl = document.getElementById('health_note_text');
 var note = noteEl ? noteEl.value.trim() : '';
 if (!note) return Swal.fire('กรุณาพิมพ์ Note ก่อนส่ง', '', 'warning');
-Swal.fire({ title:'กำลังส่ง Note...', text:'กำลังส่งข้อมูลเข้า Dashboard IC', allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:function(){ Swal.showLoading(); } });
-google.script.run
-.withSuccessHandler(function() {
 if (noteEl) noteEl.value = '';
-Swal.fire({ icon:'success', title:'ส่ง Note เข้า IC แล้ว', timer:1400, showConfirmButton:false });
-})
-.withFailureHandler(function(err) {
-Swal.fire('ส่ง Note ไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
-})
-.addRoleNote('MED', 'สาธารณสุข/1669', healthCurrentUser || USER_NAME || 'MED', window.currentUserPhone || '', note);
+_optimisticRun_('addRoleNote',
+['MED', 'สาธารณสุข/1669', healthCurrentUser || USER_NAME || 'MED', window.currentUserPhone || '', note],
+'ส่ง Note เข้า IC แล้ว ✓', 'ส่ง Note ไม่สำเร็จ');
 }
 function submitHealthRequest() {
 var type = document.getElementById('health_req_type').value;
@@ -641,12 +653,13 @@ function submitEvacNote() {
 var noteEl = document.getElementById('evac_note');
 var note = noteEl ? noteEl.value.trim() : '';
 if (!note) return Swal.fire('กรุณาพิมพ์ Note ก่อนส่ง', '', 'warning');
-Swal.fire({ title:'กำลังส่ง Note...', text:'กำลังส่งข้อมูลเข้า Dashboard IC', allowOutsideClick:false, allowEscapeKey:false, showConfirmButton:false, didOpen:function(){ Swal.showLoading(); } });
-google.script.run
-.withSuccessHandler(function() {
 if (noteEl) noteEl.value = '';
-Swal.fire({ icon:'success', title:'ส่ง Note เข้า IC แล้ว', timer:1400, showConfirmButton:false });
-})
+_optimisticRun_('addRoleNote',
+['EVAC', 'จุดอพยพ', evacCurrentUser || USER_NAME || 'EVAC', window.currentUserPhone || '', note],
+'ส่ง Note เข้า IC แล้ว ✓', 'ส่ง Note ไม่สำเร็จ');
+}
+function _evac_note_legacy_unused_() {
+var noteEl_unused = null; 
 .withFailureHandler(function(err) {
 Swal.fire('ส่ง Note ไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
 })
@@ -1236,7 +1249,7 @@ var total = document.getElementById('oc_field_total').value;
 var still = document.getElementById('oc_field_still').value;
 var evacuated = document.getElementById('oc_field_evacuated').value;
 var note = document.getElementById('oc_field_note').value.trim();
-showOCSending('กำลังส่งยอดผู้บาดเจ็บ...', 'กำลังส่งยอดประมาณการไปยัง EOC');
+Swal.fire({ icon:'success', title:'บันทึกยอดแล้ว ✓', text:'ระบบกำลังส่งขึ้น IC', timer:1200, showConfirmButton:false });
 google.script.run
 .withSuccessHandler(function() {
 refreshOCData();
@@ -1251,7 +1264,7 @@ function submitOCRequest() {
 var type = document.getElementById('oc_req_type').value;
 var detail = document.getElementById('oc_req_detail').value.trim();
 if (!type) { Swal.fire('กรุณาเลือกประเภท', '', 'warning'); return; }
-showOCSending('กำลังส่งคำขอ...', 'กำลังส่งคำขอสนับสนุนไปยัง EOC');
+Swal.fire({ icon:'success', title:'ส่งคำขอแล้ว ✓', text:'ระบบกำลังบันทึกเข้า EOC', timer:1200, showConfirmButton:false });
 google.script.run
 .withSuccessHandler(function() {
 document.getElementById('oc_req_detail').value = '';
@@ -1330,7 +1343,7 @@ return { tag: tag, detail: detail };
 }
 }).then(function(r) {
 if (!r.isConfirmed) return;
-showOCSending('กำลังส่งรายงานสถานการณ์...', 'กำลังส่ง SITREP ไปยัง EOC');
+Swal.fire({ icon:'success', title:'ส่ง SITREP แล้ว ✓', text:'ระบบกำลังบันทึกเข้า EOC', timer:1200, showConfirmButton:false });
 google.script.run
 .withSuccessHandler(function() {
 refreshOCData();
@@ -1370,7 +1383,7 @@ note: document.getElementById('oc_pop_note').value.trim()
 }
 }).then(function(r) {
 if (!r.isConfirmed) return;
-showOCSending('กำลังส่งยอดผู้บาดเจ็บ...', 'กำลังส่งยอดประมาณการไปยัง EOC');
+Swal.fire({ icon:'success', title:'บันทึกยอดแล้ว ✓', text:'ระบบกำลังส่งขึ้น IC', timer:1200, showConfirmButton:false });
 google.script.run
 .withSuccessHandler(function() {
 refreshOCData();
@@ -2504,12 +2517,11 @@ confirmButtonColor: '#34495e'
 });
 }
 var FIELD_MEDIA_LIMITS = {
-image: 5 * 1024 * 1024,
-video: 150 * 1024 * 1024,
-audio: 15 * 1024 * 1024,
-other: 15 * 1024 * 1024
+image: 8 * 1024 * 1024,
+video: 25 * 1024 * 1024,
+audio: 12 * 1024 * 1024,
+other: 8 * 1024 * 1024
 };
-var IMAGE_COMPRESS_THRESHOLD = 2 * 1024 * 1024;
 function formatFileSize(bytes) {
 var mb = (bytes || 0) / (1024 * 1024);
 return mb.toFixed(mb >= 10 ? 0 : 1) + ' MB';
@@ -2528,44 +2540,10 @@ if (file.size > limit) {
 return {
 ok:false,
 message:'ไฟล์ใหญ่เกินไป (' + formatFileSize(file.size) + ')',
-detail:'แนะนำ: รูปไม่เกิน 5 MB | วิดีโอไม่เกิน 150 MB | เสียง/เอกสารไม่เกิน 15 MB ต่อไฟล์'
+detail:'เพื่อให้ใช้ได้ไวบนมือถือ แนะนำรูปไม่เกิน 8 MB และวิดีโอไม่เกิน 25 MB ต่อไฟล์'
 };
 }
 return { ok:true };
-}
-function compressImageIfNeeded(file, callback) {
-if (file.type.indexOf('image/') !== 0 || file.size <= IMAGE_COMPRESS_THRESHOLD) {
-var r = new FileReader();
-r.onload = function(e) { callback(String(e.target.result || '').split(',')[1] || '', file.name, file.type); };
-r.onerror = function() { callback(null); };
-r.readAsDataURL(file);
-return;
-}
-var img = new Image();
-var url = URL.createObjectURL(file);
-img.onload = function() {
-URL.revokeObjectURL(url);
-var canvas = document.createElement('canvas');
-var MAX = 2048;
-var w = img.width, h = img.height;
-if (w > MAX || h > MAX) {
-if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-else { w = Math.round(w * MAX / h); h = MAX; }
-}
-canvas.width = w; canvas.height = h;
-var ctx = canvas.getContext('2d');
-ctx.drawImage(img, 0, 0, w, h);
-var quality = file.size > 4 * 1024 * 1024 ? 0.7 : 0.82;
-var dataUrl = canvas.toDataURL('image/jpeg', quality);
-callback(dataUrl.split(',')[1] || '', file.name.replace(/\.[^.]+$/, '') + '.jpg', 'image/jpeg');
-};
-img.onerror = function() {
-URL.revokeObjectURL(url);
-var r = new FileReader();
-r.onload = function(e) { callback(String(e.target.result || '').split(',')[1] || '', file.name, file.type); };
-r.readAsDataURL(file);
-};
-img.src = url;
 }
 function uploadSelectedFieldMedia(input, source, reporter, done, statusCallback) {
 var file = input && input.files ? input.files[0] : null;
@@ -2575,10 +2553,11 @@ if (!validation.ok) {
 if (typeof done === 'function') done(new Error(validation.message + (validation.detail ? ' - ' + validation.detail : '')));
 return;
 }
-if (typeof statusCallback === 'function') statusCallback('กำลังเตรียมไฟล์: ' + file.name);
-compressImageIfNeeded(file, function(base64, fileName, fileType) {
-if (!base64) { if (typeof done === 'function') done(new Error('อ่านไฟล์ไม่ได้')); return; }
-if (typeof statusCallback === 'function') statusCallback('กำลังส่งเข้า Google Drive: ' + fileName + ' (' + formatFileSize(file.size) + ')');
+var reader = new FileReader();
+if (typeof statusCallback === 'function') statusCallback('กำลังอ่านไฟล์ในเครื่อง: ' + file.name);
+reader.onload = function(e) {
+var base64 = String(e.target.result || '').split(',')[1] || '';
+if (typeof statusCallback === 'function') statusCallback('กำลังส่งเข้า Google Drive: ' + file.name + ' (' + formatFileSize(file.size) + ')');
 google.script.run
 .withSuccessHandler(function(media) {
 window._lastUploadedFieldMedia = media;
@@ -2588,12 +2567,9 @@ if (typeof done === 'function') done(null, media);
 .withFailureHandler(function(err) {
 if (typeof done === 'function') done(err);
 })
-.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', fileName, fileType, base64, '');
-});
-}
-function _uploadFieldMediaLegacy_unused(input, source, reporter, done, statusCallback) {
-var reader_unused = new FileReader();
-reader_unused.onerror = function() {
+.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', file.name, file.type, base64, '');
+};
+reader.onerror = function() {
 if (typeof done === 'function') done(new Error('อ่านไฟล์จากเครื่องไม่สำเร็จ'));
 };
 reader.readAsDataURL(file);
@@ -2637,12 +2613,9 @@ if (typeof done === 'function') done(null, media);
 .withFailureHandler(function(err) {
 if (typeof done === 'function') done(err);
 })
-.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', fileName, fileType, base64, '');
-});
-}
-function _uploadFieldMediaLegacy_unused(input, source, reporter, done, statusCallback) {
-var reader_unused = new FileReader();
-reader_unused.onerror = function() {
+.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', file.name, file.type, base64, '');
+};
+reader.onerror = function() {
 if (typeof done === 'function') done(new Error('อ่านไฟล์จากเครื่องไม่สำเร็จ'));
 };
 reader.readAsDataURL(file);
