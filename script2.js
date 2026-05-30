@@ -3001,13 +3001,8 @@ var html = [
 '</div>',
 '<div id="show-coords" class="declare-note">ยังไม่ระบุพิกัด</div>',
 '<input type="hidden" id="hidden-lat"><input type="hidden" id="hidden-lng">',
-'<div class="declare-grid">',
-'<div><div class="declare-label">ที่ตั้ง EOC</div><input id="swal-eoc" class="declare-input" placeholder="เช่น ศูนย์บัญชาการ / ห้องประชุม"></div>',
-'<div><div class="declare-label">ผู้บัญชาการเหตุการณ์</div><input id="swal-commander" class="declare-input" placeholder="ชื่อ-นามสกุล"></div>',
-'</div>',
-'<div class="declare-grid">',
-'<div><div class="declare-label">ตำแหน่งผู้บัญชาการ</div><select id="swal-commander-position" class="declare-input"><option value="">เลือกตำแหน่ง</option><option>ผู้ว่าราชการจังหวัด</option><option>นายอำเภอ</option><option>นายกเทศมนตรี</option><option>นายก อบต.</option></select></div>',
-'<div><div class="declare-label">ตำแหน่งอื่นๆ</div><input id="swal-commander-position-other" class="declare-input" placeholder="กรอกเพิ่มถ้าไม่มีในตัวเลือก"></div>',
+'<div>',
+'<div class="declare-label">ที่ตั้ง EOC</div><input id="swal-eoc" class="declare-input" placeholder="เช่น ศูนย์บัญชาการ / ห้องประชุม">',
 '</div>',
 '<div class="declare-grid">',
 '<div><div class="declare-label">ประเภทแผน</div><select id="emerPlanType" class="declare-input"><option>เตรียมรองรับสถานการณ์</option><option>แผนป้องกันและบรรเทาสาธารณภัย</option><option>แผนพิทักษ์ระยอง</option><option>แผนอัคคีภัย</option><option>แผนรับอุบัติภัยหมู่ (RESCUE-C)</option></select></div>',
@@ -3040,9 +3035,8 @@ var lng = document.getElementById('hidden-lng').value;
 var evt = document.getElementById('swal-evt').value.trim();
 var loc = document.getElementById('swal-loc').value.trim();
 var eoc = document.getElementById('swal-eoc').value.trim();
-var commander = document.getElementById('swal-commander').value.trim();
-var posOther = document.getElementById('swal-commander-position-other').value.trim();
-var pos = posOther || document.getElementById('swal-commander-position').value;
+var commander = '';
+var pos = '';
 var windModeEl = document.querySelector('input[name="swal-wind-mode"]:checked');
 var windMode = windModeEl ? windModeEl.value : 'manual';
 var windDir = document.getElementById('swal-wind-dir').value;
