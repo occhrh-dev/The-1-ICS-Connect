@@ -658,13 +658,7 @@ _optimisticRun_('addRoleNote',
 ['EVAC', 'จุดอพยพ', evacCurrentUser || USER_NAME || 'EVAC', window.currentUserPhone || '', note],
 'ส่ง Note เข้า IC แล้ว ✓', 'ส่ง Note ไม่สำเร็จ');
 }
-function _evac_note_legacy_unused_() {
-var noteEl_unused = null; 
-.withFailureHandler(function(err) {
-Swal.fire('ส่ง Note ไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
-})
-.addRoleNote('EVAC_POINT', 'หน่วยปฏิบัติการ ณ จุดอพยพ', evacCurrentUser || USER_NAME || 'EVAC', window.currentUserPhone || '', note);
-}
+
 function refreshOCData() {
 if (window._ocStateLoading) return;
 window._ocStateLoading = true;
