@@ -2504,11 +2504,12 @@ confirmButtonColor: '#34495e'
 });
 }
 var FIELD_MEDIA_LIMITS = {
-image: 8 * 1024 * 1024,
-video: 25 * 1024 * 1024,
-audio: 12 * 1024 * 1024,
-other: 8 * 1024 * 1024
+image: 5 * 1024 * 1024,
+video: 150 * 1024 * 1024,
+audio: 15 * 1024 * 1024,
+other: 15 * 1024 * 1024
 };
+var IMAGE_COMPRESS_THRESHOLD = 2 * 1024 * 1024;
 function formatFileSize(bytes) {
 var mb = (bytes || 0) / (1024 * 1024);
 return mb.toFixed(mb >= 10 ? 0 : 1) + ' MB';
@@ -2527,10 +2528,44 @@ if (file.size > limit) {
 return {
 ok:false,
 message:'ไฟล์ใหญ่เกินไป (' + formatFileSize(file.size) + ')',
-detail:'เพื่อให้ใช้ได้ไวบนมือถือ แนะนำรูปไม่เกิน 8 MB และวิดีโอไม่เกิน 25 MB ต่อไฟล์'
+detail:'แนะนำ: รูปไม่เกิน 5 MB | วิดีโอไม่เกิน 150 MB | เสียง/เอกสารไม่เกิน 15 MB ต่อไฟล์'
 };
 }
 return { ok:true };
+}
+function compressImageIfNeeded(file, callback) {
+if (file.type.indexOf('image/') !== 0 || file.size <= IMAGE_COMPRESS_THRESHOLD) {
+var r = new FileReader();
+r.onload = function(e) { callback(String(e.target.result || '').split(',')[1] || '', file.name, file.type); };
+r.onerror = function() { callback(null); };
+r.readAsDataURL(file);
+return;
+}
+var img = new Image();
+var url = URL.createObjectURL(file);
+img.onload = function() {
+URL.revokeObjectURL(url);
+var canvas = document.createElement('canvas');
+var MAX = 2048;
+var w = img.width, h = img.height;
+if (w > MAX || h > MAX) {
+if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+else { w = Math.round(w * MAX / h); h = MAX; }
+}
+canvas.width = w; canvas.height = h;
+var ctx = canvas.getContext('2d');
+ctx.drawImage(img, 0, 0, w, h);
+var quality = file.size > 4 * 1024 * 1024 ? 0.7 : 0.82;
+var dataUrl = canvas.toDataURL('image/jpeg', quality);
+callback(dataUrl.split(',')[1] || '', file.name.replace(/\.[^.]+$/, '') + '.jpg', 'image/jpeg');
+};
+img.onerror = function() {
+URL.revokeObjectURL(url);
+var r = new FileReader();
+r.onload = function(e) { callback(String(e.target.result || '').split(',')[1] || '', file.name, file.type); };
+r.readAsDataURL(file);
+};
+img.src = url;
 }
 function uploadSelectedFieldMedia(input, source, reporter, done, statusCallback) {
 var file = input && input.files ? input.files[0] : null;
@@ -2540,11 +2575,10 @@ if (!validation.ok) {
 if (typeof done === 'function') done(new Error(validation.message + (validation.detail ? ' - ' + validation.detail : '')));
 return;
 }
-var reader = new FileReader();
-if (typeof statusCallback === 'function') statusCallback('กำลังอ่านไฟล์ในเครื่อง: ' + file.name);
-reader.onload = function(e) {
-var base64 = String(e.target.result || '').split(',')[1] || '';
-if (typeof statusCallback === 'function') statusCallback('กำลังส่งเข้า Google Drive: ' + file.name + ' (' + formatFileSize(file.size) + ')');
+if (typeof statusCallback === 'function') statusCallback('กำลังเตรียมไฟล์: ' + file.name);
+compressImageIfNeeded(file, function(base64, fileName, fileType) {
+if (!base64) { if (typeof done === 'function') done(new Error('อ่านไฟล์ไม่ได้')); return; }
+if (typeof statusCallback === 'function') statusCallback('กำลังส่งเข้า Google Drive: ' + fileName + ' (' + formatFileSize(file.size) + ')');
 google.script.run
 .withSuccessHandler(function(media) {
 window._lastUploadedFieldMedia = media;
@@ -2554,9 +2588,12 @@ if (typeof done === 'function') done(null, media);
 .withFailureHandler(function(err) {
 if (typeof done === 'function') done(err);
 })
-.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', file.name, file.type, base64, '');
-};
-reader.onerror = function() {
+.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', fileName, fileType, base64, '');
+});
+}
+function _uploadFieldMediaLegacy_unused(input, source, reporter, done, statusCallback) {
+var reader_unused = new FileReader();
+reader_unused.onerror = function() {
 if (typeof done === 'function') done(new Error('อ่านไฟล์จากเครื่องไม่สำเร็จ'));
 };
 reader.readAsDataURL(file);
@@ -2600,9 +2637,12 @@ if (typeof done === 'function') done(null, media);
 .withFailureHandler(function(err) {
 if (typeof done === 'function') done(err);
 })
-.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', file.name, file.type, base64, '');
-};
-reader.onerror = function() {
+.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', fileName, fileType, base64, '');
+});
+}
+function _uploadFieldMediaLegacy_unused(input, source, reporter, done, statusCallback) {
+var reader_unused = new FileReader();
+reader_unused.onerror = function() {
 if (typeof done === 'function') done(new Error('อ่านไฟล์จากเครื่องไม่สำเร็จ'));
 };
 reader.readAsDataURL(file);
@@ -2993,10 +3033,14 @@ var html = [
 '</div>',
 '<div id="show-coords" class="declare-note">ยังไม่ระบุพิกัด</div>',
 '<input type="hidden" id="hidden-lat"><input type="hidden" id="hidden-lng">',
-'<div>',
-'<div class="declare-label">ที่ตั้ง EOC</div><input id="swal-eoc" class="declare-input" placeholder="เช่น ศูนย์บัญชาการ / ห้องประชุม">',
+'<div class="declare-grid">',
+'<div><div class="declare-label">ที่ตั้ง EOC</div><input id="swal-eoc" class="declare-input" placeholder="เช่น ศูนย์บัญชาการ / ห้องประชุม"></div>',
+'<div><div class="declare-label">ผู้บัญชาการเหตุการณ์</div><input id="swal-commander" class="declare-input" placeholder="ชื่อ-นามสกุล"></div>',
 '</div>',
-
+'<div class="declare-grid">',
+'<div><div class="declare-label">ตำแหน่งผู้บัญชาการ</div><select id="swal-commander-position" class="declare-input"><option value="">เลือกตำแหน่ง</option><option>ผู้ว่าราชการจังหวัด</option><option>นายอำเภอ</option><option>นายกเทศมนตรี</option><option>นายก อบต.</option></select></div>',
+'<div><div class="declare-label">ตำแหน่งอื่นๆ</div><input id="swal-commander-position-other" class="declare-input" placeholder="กรอกเพิ่มถ้าไม่มีในตัวเลือก"></div>',
+'</div>',
 '<div class="declare-grid">',
 '<div><div class="declare-label">ประเภทแผน</div><select id="emerPlanType" class="declare-input"><option>เตรียมรองรับสถานการณ์</option><option>แผนป้องกันและบรรเทาสาธารณภัย</option><option>แผนพิทักษ์ระยอง</option><option>แผนอัคคีภัย</option><option>แผนรับอุบัติภัยหมู่ (RESCUE-C)</option></select></div>',
 '<div><div class="declare-label">ระดับ</div><select id="emerLevel" class="declare-input"><option value="-">-</option><option>ระดับ 1</option><option>ระดับ 2</option><option>ระดับ 3</option><option>ระดับ 4</option></select></div>',
@@ -3028,8 +3072,9 @@ var lng = document.getElementById('hidden-lng').value;
 var evt = document.getElementById('swal-evt').value.trim();
 var loc = document.getElementById('swal-loc').value.trim();
 var eoc = document.getElementById('swal-eoc').value.trim();
-var commander = '';
-var pos = '';
+var commander = document.getElementById('swal-commander').value.trim();
+var posOther = document.getElementById('swal-commander-position-other').value.trim();
+var pos = posOther || document.getElementById('swal-commander-position').value;
 var windModeEl = document.querySelector('input[name="swal-wind-mode"]:checked');
 var windMode = windModeEl ? windModeEl.value : 'manual';
 var windDir = document.getElementById('swal-wind-dir').value;
