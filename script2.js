@@ -2511,11 +2511,12 @@ confirmButtonColor: '#34495e'
 });
 }
 var FIELD_MEDIA_LIMITS = {
-image: 8 * 1024 * 1024,
-video: 25 * 1024 * 1024,
-audio: 12 * 1024 * 1024,
-other: 8 * 1024 * 1024
+image: 5 * 1024 * 1024,
+video: 150 * 1024 * 1024,
+audio: 15 * 1024 * 1024,
+other: 15 * 1024 * 1024
 };
+var IMAGE_COMPRESS_THRESHOLD = 2 * 1024 * 1024;
 function formatFileSize(bytes) {
 var mb = (bytes || 0) / (1024 * 1024);
 return mb.toFixed(mb >= 10 ? 0 : 1) + ' MB';
