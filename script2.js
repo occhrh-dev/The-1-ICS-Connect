@@ -1243,34 +1243,22 @@ var total = document.getElementById('oc_field_total').value;
 var still = document.getElementById('oc_field_still').value;
 var evacuated = document.getElementById('oc_field_evacuated').value;
 var note = document.getElementById('oc_field_note').value.trim();
-Swal.fire({ icon:'success', title:'บันทึกยอดแล้ว ✓', text:'ระบบกำลังส่งขึ้น IC', timer:1200, showConfirmButton:false });
-google.script.run
-.withSuccessHandler(function() {
-refreshOCData();
-Swal.fire({ icon:'success', title:'ส่งยอดประมาณการแล้ว', timer:1400, showConfirmButton:false });
-})
-.withFailureHandler(function(err) {
-Swal.fire('บันทึกไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
-})
-.submitFieldCasualtyReport(total, still, evacuated, note, ocCurrentUser || 'OC');
+_optimisticRun_('submitFieldCasualtyReport',
+[total, still, evacuated, note, ocCurrentUser || 'OC'],
+'บันทึกยอดและส่งขึ้น IC แล้ว ✓', 'บันทึกไม่สำเร็จ',
+function() { refreshOCData(); });
 }
 function submitOCRequest() {
 var type = document.getElementById('oc_req_type').value;
 var detail = document.getElementById('oc_req_detail').value.trim();
 if (!type) { Swal.fire('กรุณาเลือกประเภท', '', 'warning'); return; }
-Swal.fire({ icon:'success', title:'ส่งคำขอแล้ว ✓', text:'ระบบกำลังบันทึกเข้า EOC', timer:1200, showConfirmButton:false });
-google.script.run
-.withSuccessHandler(function() {
 document.getElementById('oc_req_detail').value = '';
 document.getElementById('oc_req_type').selectedIndex = 0;
 document.querySelectorAll('#oc_req_presets .oc-preset-btn').forEach(function(b) { b.classList.remove('active'); });
-refreshOCData();
-Swal.fire({ icon:'success', title:'ส่งคำขอแล้ว', timer:1500, showConfirmButton:false });
-})
-.withFailureHandler(function(err) {
-Swal.fire('ส่งคำขอไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
-})
-.submitSupportRequest(type, detail || '-', ocCurrentUser);
+_optimisticRun_('submitSupportRequest',
+[type, detail || '-', ocCurrentUser],
+'ส่งคำขอเข้า EOC แล้ว ✓', 'ส่งคำขอไม่สำเร็จ',
+function() { refreshOCData(); });
 }
 function openOCZoneActionPopup() {
 Swal.fire({
@@ -2521,6 +2509,39 @@ function formatFileSize(bytes) {
 var mb = (bytes || 0) / (1024 * 1024);
 return mb.toFixed(mb >= 10 ? 0 : 1) + ' MB';
 }
+function compressImageIfNeeded(file, callback) {
+  if (!file || !/^image\//.test(file.type) || file.size <= IMAGE_COMPRESS_THRESHOLD) {
+    callback(null, file);
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var maxDim = 1920;
+      var w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        if (w >= h) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else { w = Math.round(w * maxDim / h); h = maxDim; }
+      }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      canvas.toBlob(function(blob) {
+        if (!blob) { callback(null, file); return; }
+        var compressed = new File([blob],
+          file.name.replace(/\.[^.]+$/, '') + '.jpg',
+          { type: 'image/jpeg', lastModified: Date.now() });
+        callback(null, compressed);
+      }, 'image/jpeg', 0.82);
+    };
+    img.onerror = function() { callback(null, file); };
+    img.src = e.target.result;
+  };
+  reader.onerror = function() { callback(null, file); };
+  reader.readAsDataURL(file);
+}
 function getFieldMediaLimit(file) {
 var type = String(file && file.type || '');
 if (type.indexOf('video/') === 0) return FIELD_MEDIA_LIMITS.video;
@@ -2541,8 +2562,12 @@ detail:'เพื่อให้ใช้ได้ไวบนมือถือ
 return { ok:true };
 }
 function uploadSelectedFieldMedia(input, source, reporter, done, statusCallback) {
-var file = input && input.files ? input.files[0] : null;
-if (!file) return;
+var originalFile = input && input.files ? input.files[0] : null;
+if (!originalFile) return;
+if (typeof statusCallback === 'function' && /^image\//.test(originalFile.type) && originalFile.size > IMAGE_COMPRESS_THRESHOLD) {
+  statusCallback('กำลังบีบอัดรูปก่อนส่ง: ' + originalFile.name);
+}
+compressImageIfNeeded(originalFile, function(_err, file) {
 var validation = validateFieldMediaFile(file);
 if (!validation.ok) {
 if (typeof done === 'function') done(new Error(validation.message + (validation.detail ? ' - ' + validation.detail : '')));
@@ -2568,28 +2593,29 @@ reader.onerror = function() {
 if (typeof done === 'function') done(new Error('อ่านไฟล์จากเครื่องไม่สำเร็จ'));
 };
 reader.readAsDataURL(file);
+});
 }
 function submitSitReport() {
 var detail = document.getElementById('oc_sit_detail').value.trim();
 if (!_ocSelectedSitTag) { Swal.fire('กรุณาเลือกสถานะสถานการณ์', '', 'warning'); return; }
 if (window._ocUploadInProgress) { Swal.fire('กำลังอัปโหลดไฟล์อยู่', 'รอให้อัปโหลดเสร็จก่อน แล้วค่อยกดรายงานสถานการณ์', 'info'); return; }
-showOCSending('กำลังส่งรายงานสถานการณ์...', 'กำลังส่ง SITREP ไปยัง EOC');
-google.script.run
-.withSuccessHandler(function() {
+var attach = window._ocAttachURL || window._ocAttachName || '';
+var tag = _ocSelectedSitTag;
 document.getElementById('oc_sit_detail').value = '';
 window._ocAttachName = '';
 window._ocAttachURL = '';
 var preview = document.getElementById('oc_attach_preview');
 if (preview) preview.textContent = '';
-refreshOCData();
-Swal.fire({ icon:'success', title:'รายงานแล้ว', timer:1500, showConfirmButton:false });
-})
-.withFailureHandler(function(err) {
-Swal.fire('ส่งรายงานไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
-})
-.submitSitReport(_ocSelectedSitTag, detail || '-', window._ocAttachURL || window._ocAttachName || '', ocCurrentUser);
+_optimisticRun_('submitSitReport',
+[tag, detail || '-', attach, ocCurrentUser],
+'ส่ง SITREP เข้า EOC แล้ว ✓', 'ส่งรายงานไม่สำเร็จ',
+function() { refreshOCData(); });
 }
-function uploadFieldMediaFile(file, source, reporter, done, statusCallback) {
+function uploadFieldMediaFile(originalFile, source, reporter, done, statusCallback) {
+if (typeof statusCallback === 'function' && originalFile && /^image\//.test(originalFile.type) && originalFile.size > IMAGE_COMPRESS_THRESHOLD) {
+  statusCallback('Compressing: ' + originalFile.name);
+}
+compressImageIfNeeded(originalFile, function(_err, file) {
 var validation = validateFieldMediaFile(file);
 if (!validation.ok) {
 if (typeof done === 'function') done(new Error(validation.message + (validation.detail ? ' - ' + validation.detail : '')));
@@ -2614,6 +2640,7 @@ reader.onerror = function() {
 if (typeof done === 'function') done(new Error('อ่านไฟล์จากเครื่องไม่สำเร็จ'));
 };
 reader.readAsDataURL(file);
+});
 }
 function validateFieldMediaFiles(files) {
 files = Array.prototype.slice.call(files || []);
