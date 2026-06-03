@@ -3099,23 +3099,42 @@ Swal.close();
 document.getElementById('scene_Declare').style.display = 'none';
 document.getElementById('scene_Loading').style.display = 'flex';
 checkSystemStatus();
-if (res && res.videoRoomName) {
+// ---- แสดง Join Link popup ก่อนเสมอ (ไม่ขึ้นกับ video room) ----
 setTimeout(function() {
+var joinUrl = (res && res.joinUrl) ? res.joinUrl : '';
+var joinHtml = joinUrl
+? '<div style="text-align:left;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:12px;margin-bottom:10px;">' +
+  '<div style="font-weight:900;color:#1e3a8a;margin-bottom:6px;">🔗 Join Link สำหรับเจ้าหน้าที่</div>' +
+  '<div style="font-size:0.8rem;color:#475569;margin-bottom:8px;">ส่ง link นี้ให้ จนท. ทุกคน — กดลิงก์เข้าได้เลยไม่ต้อง login</div>' +
+  '<div style="background:white;border-radius:7px;padding:8px;font-size:0.78rem;word-break:break-all;color:#334155;border:1px solid #e2e8f0;margin-bottom:8px;">' + joinUrl + '</div>' +
+  '<button type="button" onclick="' +
+    'navigator.clipboard && navigator.clipboard.writeText(' + JSON.stringify(joinUrl) + ')' +
+    '.then(function(){ this.innerText=\'คัดลอกแล้ว ✓\'; }.bind(this)).catch(function(){});' +
+  '" style="background:#2563eb;color:white;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-weight:900;font-size:0.85rem;">📋 คัดลอก Join Link</button>' +
+  '</div>'
+: '<div style="background:#fef3c7;border-radius:8px;padding:10px;color:#92400e;font-size:0.85rem;">ยังไม่สามารถสร้าง Join Link ได้ — ตรวจสอบว่า PUBLIC_APP_URL ตั้งค่าแล้ว</div>';
 Swal.fire({
-icon: 'info',
-title: 'เปิดห้องวิดีโอ EOC ไว้เลยไหม?',
-html: 'ระบบสร้างห้องประจำเหตุการณ์แล้ว<br><b>' + res.videoRoomName + '</b><br><br>ถ้าใช้ meet.jit.si แนะนำให้ Admin/IC เปิดห้องและ login เป็น moderator ค้างไว้',
-showCancelButton: true,
-confirmButtonText: 'เปิดห้องวิดีโอ',
-cancelButtonText: 'ไว้ก่อน',
-confirmButtonColor: '#2563eb'
+icon: 'success',
+title: '🚨 เปิด EOC สำเร็จ',
+html: joinHtml + (res && res.videoRoomName
+  ? '<div style="margin-top:8px;font-size:0.85rem;color:#475569;">ห้องวิดีโอ: <b>' + res.videoRoomName + '</b></div>'
+  : ''),
+confirmButtonText: res && res.videoRoomName ? 'เปิดห้องวิดีโอด้วย' : 'ตกลง',
+showCancelButton: !!(res && res.videoRoomName),
+cancelButtonText: 'ปิด',
+confirmButtonColor: '#16a34a'
 }).then(function(r) {
-if (r.isConfirmed && typeof openJitsiModal === 'function') {
+if (r.isConfirmed && res && res.videoRoomName && typeof openJitsiModal === 'function') {
 openJitsiModal(res.videoRoomName, 'ห้องวิดีโอ EOC');
+}
+// เก็บ join link ไว้แสดงใน dashboard ด้วย
+if (joinUrl) {
+try { sessionStorage.setItem('EOC_JOIN_URL', joinUrl); } catch(e) {}
+window._currentJoinUrl = joinUrl;
+setTimeout(function() { showJoinLinkInDashboard(joinUrl); }, 500);
 }
 });
 }, 800);
-}
 })
 .withFailureHandler(function(err) {
 Swal.close();
