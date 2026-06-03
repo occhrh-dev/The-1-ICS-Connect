@@ -1986,7 +1986,11 @@ if (!state.zoneMarkers.length) {
 setICOCDebugStatus(IC_OC_HARD_VERSION + ' zone=0 from webapp, check code.gs deploy', '#fee2e2');
 }
 })
-.getICDashboardOCData();
+.getICDashboardOCData(
+typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : '',
+typeof APP_AGENCY_SHEET_ID !== 'undefined' ? APP_AGENCY_SHEET_ID : '',
+typeof getActiveJoinToken === 'function' ? getActiveJoinToken() : ''
+);
 }
 function forceRefreshICOCData() {
 refreshICOCFeedsDirect();
