@@ -794,6 +794,7 @@ rows +
 box.style.display = 'block';
 }
 function ergLookup() {
+if (typeof requireFeature === 'function' && !requireFeature('erg', 'ERG ค้นหาสารเคมี (ระดับ 2+)')) return;
 const q = document.getElementById('erg_query').value.trim();
 if (!q) return;
 const box = document.getElementById('erg_result_box');
@@ -964,6 +965,7 @@ protRow.style.display = 'none';
 prev.style.display = 'block';
 }
 async function drawHazmatZones() {
+if (typeof requireFeature === 'function' && !requireFeature('erg', 'ERG วาด Zone สารเคมี (ระดับ 2+)')) return;
 if (!dashMap || incidentCenter.lat === 0) {
 Swal.fire('แจ้งเตือน', 'ยังไม่มีแผนที่/พิกัดเหตุ กรุณาเปิดแผนที่ก่อน', 'warning');
 return;
@@ -1135,6 +1137,7 @@ if (startHistoryLog.length === 0) { el.innerHTML = ''; return; }
 el.innerHTML = startHistoryLog.map((x, i) => `<span style="color:#bbb;">${i+1}. ${x.q}</span> → <b>${x.a}</b>`).join('<br>');
 }
 function addTriageCount(type) {
+if (typeof requireFeature === 'function' && !requireFeature('triage', 'Triage 4 สี (ระดับ 2+)')) return;
 const valEl = document.getElementById('val_' + type);
 const currentVal = parseInt((valEl && valEl.innerText) || '0', 10);
 const newVal = currentVal + 1;
@@ -1384,6 +1387,7 @@ var html = '<div style="text-align:left;font-size:13px;">' +
 Swal.fire({ title: 'ทรัพยากรจุดอพยพ', html: html, confirmButtonText: 'ปิด' });
 }
 function openICTriageColorDetails(color) {
+if (typeof requireFeature === 'function' && !requireFeature('triage', 'Triage 4 สี (ระดับ 2+)')) return;
 var labelMap = { red:'แดง', yellow:'เหลือง', green:'เขียว', black:'ดำ' };
 var rows = (window._icPatientTransfers || []).filter(function(t) {
 return String(t.triage || '').toLowerCase() === color;
