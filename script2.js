@@ -84,7 +84,7 @@ if (typeof google === 'undefined' || !google.script || !google.script.run) retur
 google.script.run
 .withSuccessHandler(function(es) { applyHealthEmergencyState(es || {}, []); })
 .withFailureHandler(function(err) { })
-.getEmergencyState();
+.getEmergencyStateForAgency(typeof APP_AGENCY_ID !== "undefined" ? APP_AGENCY_ID : "", typeof APP_AGENCY_SHEET_ID !== "undefined" ? APP_AGENCY_SHEET_ID : "", typeof getActiveJoinToken === "function" ? getActiveJoinToken() : "");
 }
 function applyHealthEmergencyState(es, detailFallback) {
 es = es || {};
@@ -537,14 +537,14 @@ if (es && typeof es === 'object') applyEvacEmergencyState(es);
 else refreshEvacEmergencyLite();
 })
 .withFailureHandler(function(err) { refreshEvacEmergencyLite(); })
-.getEmergencyState();
+.getEmergencyStateForAgency(typeof APP_AGENCY_ID !== "undefined" ? APP_AGENCY_ID : "", typeof APP_AGENCY_SHEET_ID !== "undefined" ? APP_AGENCY_SHEET_ID : "", typeof getActiveJoinToken === "function" ? getActiveJoinToken() : "");
 }
 function refreshEvacEmergencyLite() {
 if (typeof google === 'undefined' || !google.script || !google.script.run) return;
 google.script.run
 .withSuccessHandler(function(es) { applyEvacEmergencyState(es || {}); })
 .withFailureHandler(function(err) { })
-.getEmergencyStateLite();
+.getEmergencyStateLiteForAgency(typeof APP_AGENCY_ID !== "undefined" ? APP_AGENCY_ID : "", typeof APP_AGENCY_SHEET_ID !== "undefined" ? APP_AGENCY_SHEET_ID : "", typeof getActiveJoinToken === "function" ? getActiveJoinToken() : "");
 }
 function applyEvacEmergencyState(es) {
 es = es || {};
@@ -798,7 +798,7 @@ renderOCFieldCasualty(es.fieldCasualty ? [es.fieldCasualty] : [], es);
 .withFailureHandler(function(err) {
 window._ocFieldCasualtyLoading = false;
 })
-.getEmergencyState();
+.getEmergencyStateForAgency(typeof APP_AGENCY_ID !== "undefined" ? APP_AGENCY_ID : "", typeof APP_AGENCY_SHEET_ID !== "undefined" ? APP_AGENCY_SHEET_ID : "", typeof getActiveJoinToken === "function" ? getActiveJoinToken() : "");
 }
 function refreshOCResourcesDirect() {
 if (typeof google === 'undefined' || !google.script || !google.script.run) return;
@@ -849,7 +849,7 @@ function refreshOCBannerOnly() {
 google.script.run
 .withFailureHandler(function(err) { })
 .withSuccessHandler(function(es) { renderOCBanner(es || {}); })
-.getEmergencyState();
+.getEmergencyStateForAgency(typeof APP_AGENCY_ID !== "undefined" ? APP_AGENCY_ID : "", typeof APP_AGENCY_SHEET_ID !== "undefined" ? APP_AGENCY_SHEET_ID : "", typeof getActiveJoinToken === "function" ? getActiveJoinToken() : "");
 }
 var OC_RESOURCE_TYPES = [
 { key:'ambulance', label:'รถพยาบาล', icon:'fa-ambulance', color:'#185FA5', bg:'#E6F1FB', match:['รถพยาบาล','ALS','BLS','Ambulance'] },
