@@ -1479,7 +1479,7 @@ google.script.run
 refreshOCData();
 Swal.fire({ icon:'success', title:'บันทึกจุดแล้ว', timer:1500, showConfirmButton:false });
 })
-.saveZoneMarker(zType, zLabel, lat, lng, '', ocCurrentUser, window.currentUserPhone || '');
+.saveZoneMarker(zType, zLabel, lat, lng, '', ocCurrentUser, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 };
 openMap();
 }
@@ -1499,7 +1499,7 @@ google.script.run
 refreshOCData();
 Swal.fire({ icon:'success', title:'บันทึก Command Post แล้ว', timer:1500, showConfirmButton:false });
 })
-.saveZoneMarker('ICP', label, lat, lng, 'Manual map', ocCurrentUser, window.currentUserPhone || '');
+.saveZoneMarker('ICP', label, lat, lng, 'Manual map', ocCurrentUser, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 };
 openMap();
 }
@@ -1526,7 +1526,7 @@ google.script.run
 refreshOCData();
 Swal.fire({ icon:'success', title:'บันทึก ICP แล้ว', text:'ใช้ตำแหน่งปัจจุบันเป็นจุดบัญชาการ', timer:1800, showConfirmButton:false });
 })
-.saveZoneMarker('ICP', label, saveLat, saveLng, 'Current GPS', ocCurrentUser, window.currentUserPhone || '');
+.saveZoneMarker('ICP', label, saveLat, saveLng, 'Current GPS', ocCurrentUser, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 };
 openMap();
 setTimeout(function() {
