@@ -3037,7 +3037,13 @@ var html = [
 '<div id="show-coords" class="declare-note">ยังไม่ระบุพิกัด</div>',
 '<input type="hidden" id="hidden-lat"><input type="hidden" id="hidden-lng">',
 '<div>',
-'<div class="declare-label">ที่ตั้ง EOC</div><input id="swal-eoc" class="declare-input" placeholder="เช่น ศูนย์บัญชาการ / ห้องประชุม">',
+'<div class="declare-label">ที่ตั้ง EOC</div>' +
+'<input id="swal-eoc" class="declare-input" placeholder="เช่น ศูนย์บัญชาการ / ห้องประชุม">' +
+((typeof hasFeature === 'function' && !hasFeature('share_link'))
+  ? '<div style="margin-top:4px;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:5px 8px;font-size:0.75rem;color:#92400e;"><i class="fas fa-lock"></i> การตั้งพิกัดที่ตั้ง EOC บนแผนที่ใช้ได้ใน Tier 2 ขึ้นไป</div>'
+  : '<button type="button" onclick="window._eocFormPickerMode=true;document.querySelector(\'[data-swal-id=eoc-map-btn]\')" id="swal-eoc-map-btn" style="margin-top:4px;background:#1565c0;color:white;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:0.8rem;font-weight:900;width:100%;"><i class="fas fa-map-marker-alt"></i> ปักหมุดที่ตั้ง EOC บนแผนที่ (ไม่บังคับ)</button>' +
+  '<div id="swal-eoc-coords-show" style="font-size:0.72rem;color:#16a34a;min-height:16px;margin-top:2px;"></div>' +
+  '<input type="hidden" id="swal-eoc-lat"><input type="hidden" id="swal-eoc-lng">'),
 '</div>',
 '<div class="declare-grid">',
 '<div><div class="declare-label">ประเภทแผน</div><select id="emerPlanType" class="declare-input"><option>เตรียมรองรับสถานการณ์</option><option>แผนป้องกันและบรรเทาสาธารณภัย</option><option>แผนพิทักษ์ระยอง</option><option>แผนอัคคีภัย</option><option>แผนรับอุบัติภัยหมู่ (RESCUE-C)</option></select></div>',
@@ -3129,6 +3135,10 @@ cancelButtonText: 'ปิด',
 confirmButtonColor: '#16a34a'
 }).then(function(r) {
 if (r.isConfirmed && res && res.videoRoomName && typeof openJitsiModal === 'function') {
+if (typeof hasFeature === 'function' && !hasFeature('eoc_video_call')) {
+Swal.fire({ icon:'info', title:'🔒 ห้องวิดีโอใช้ได้ Tier 2 ขึ้นไป', text:'กรุณาติดต่อผู้ดูแลระบบเพื่ออัปเกรดแพ็กเกจ', confirmButtonText:'รับทราบ' });
+return;
+}
 openJitsiModal(res.videoRoomName, 'ห้องวิดีโอ EOC');
 }
 // เก็บ join link ไว้แสดงใน dashboard ด้วย
