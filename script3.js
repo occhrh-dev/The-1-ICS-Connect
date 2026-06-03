@@ -499,6 +499,7 @@ Swal.fire('อัปเดตไม่สำเร็จ', err && err.message ? 
 }
 }
 function handleCheckIn() {
+if (typeof requireFeature === 'function' && !requireFeature('live_location', 'รายงานตำแหน่งสด (ระดับ 2+)')) return;
 Swal.fire({
 title: '📍 ระบุจุดปฏิบัติการ',
 html: `
