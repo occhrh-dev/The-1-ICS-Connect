@@ -2587,7 +2587,7 @@ if (typeof done === 'function') done(null, media);
 .withFailureHandler(function(err) {
 if (typeof done === 'function') done(err);
 })
-.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', file.name, file.type, base64, '');
+.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', file.name, file.type, base64, '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 };
 reader.onerror = function() {
 if (typeof done === 'function') done(new Error('อ่านไฟล์จากเครื่องไม่สำเร็จ'));
@@ -2634,7 +2634,7 @@ if (typeof done === 'function') done(null, media);
 .withFailureHandler(function(err) {
 if (typeof done === 'function') done(err);
 })
-.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', file.name, file.type, base64, '');
+.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', file.name, file.type, base64, '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 };
 reader.onerror = function() {
 if (typeof done === 'function') done(new Error('อ่านไฟล์จากเครื่องไม่สำเร็จ'));
@@ -2685,6 +2685,10 @@ if (typeof statusCallback === 'function') statusCallback('ไฟล์ ' + (inde
 next(0);
 }
 function handleGenericFieldMedia(input, source, reporter) {
+if (typeof requireFeature === 'function' && !requireFeature('media_upload', 'อัปโหลดรูป/วิดีโอ')) {
+if (input) input.value = '';
+return;
+}
 var files = input && input.files ? Array.prototype.slice.call(input.files) : [];
 if (!files.length) return;
 var validation = validateFieldMediaFiles(files);
