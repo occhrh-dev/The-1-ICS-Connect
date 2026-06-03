@@ -174,6 +174,7 @@ Swal.fire('ส่งคำขอไม่สำเร็จ', err && err.message
 .submitSupportRequest(type, detail, healthCurrentUser || 'MED');
 }
 function openUpdateMedicalTriage() {
+if (typeof requireFeature === 'function' && !requireFeature('triage', 'Triage 4 สี (ระดับ 2+)')) return;
 var state = window._lastHealthState || {};
 var triage = (state.emergState && state.emergState.triage) ? state.emergState.triage : {};
 Swal.fire({
@@ -1239,6 +1240,7 @@ box.style.display = 'none';
 box.innerHTML = '';
 }
 function submitFieldCasualty() {
+if (typeof requireFeature === 'function' && !requireFeature('casualty_report', 'รายงานผู้บาดเจ็บ (ระดับ 2+)')) return;
 var total = document.getElementById('oc_field_total').value;
 var still = document.getElementById('oc_field_still').value;
 var evacuated = document.getElementById('oc_field_evacuated').value;
@@ -1338,6 +1340,7 @@ Swal.fire('ส่งรายงานไม่สำเร็จ', err && err.m
 });
 }
 function openOCCasualtyPopup() {
+if (typeof requireFeature === 'function' && !requireFeature('casualty_report', 'รายงานผู้บาดเจ็บ (ระดับ 2+)')) return;
 var total = document.getElementById('oc_field_total');
 var still = document.getElementById('oc_field_still');
 var evacuated = document.getElementById('oc_field_evacuated');
@@ -1378,6 +1381,7 @@ Swal.fire('ส่งยอดไม่สำเร็จ', err && err.message ? 
 });
 }
 function openOCSupportPopup() {
+if (typeof requireFeature === 'function' && !requireFeature('support_request', 'ระบบขอสนับสนุน (ระดับ 2+)')) return;
 Swal.fire({
 title: 'ขอสนับสนุน',
 html:
