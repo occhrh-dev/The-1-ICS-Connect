@@ -36,8 +36,36 @@ document.getElementById('scene_Health').style.display = 'flex';
 if (typeof startRoleBroadcastPolling === 'function') startRoleBroadcastPolling('MED');
 startHealthTimer();
 applyOpsSceneLock('MED', IS_LEAD);
+// 🎚️ ซ่อน/แสดง tabs ตาม Tier
+(function() {
+var tier = typeof getCurrentTier === 'function' ? parseInt(getCurrentTier(), 10) : 2;
+var tabPatient = document.getElementById('health_tab_patient_btn');
+var tabField = document.getElementById('health_tab_field_btn');
+if (tier < 2) {
+if (tabPatient) tabPatient.style.display = 'none';
+if (tabField) tabField.style.display = 'none';
+} else {
+if (tabPatient) tabPatient.style.display = '';
+if (tabField) tabField.style.display = '';
+}
+// reset to Tab 1 เสมอตอนเข้า scene
+var btn1 = document.querySelector('.health-tab.active');
+if (btn1) btn1.classList.remove('active');
+var overviewBtn = document.querySelector('button[onclick*="overview"]');
+if (overviewBtn) overviewBtn.classList.add('active');
+document.querySelectorAll('.health-tab-content').forEach(function(el) { el.style.display = 'none'; });
+var overview = document.getElementById('healthtab_overview');
+if (overview) overview.style.display = 'block';
+})();
 // 🎚️ Tier guards สำหรับ MED scene buttons
 if (typeof applyTierUIRestrictions === 'function') applyTierUIRestrictions();
+// Tag ปุ่ม editHospitalCapacity → Tier 2+
+document.querySelectorAll('button[onclick*="editHospitalCapacity"]').forEach(function(btn) {
+if (!btn.getAttribute('data-min-tier')) {
+btn.setAttribute('data-require-feature', 'hospital_capacity');
+btn.setAttribute('data-min-tier', '2');
+}
+});
 // Tag ปุ่ม "รายละเอียด" triage → Tier 2+
 document.querySelectorAll('button[onclick*="openHealthTriageDetails"]').forEach(function(btn) {
 if (!btn.getAttribute('data-min-tier')) {
@@ -58,12 +86,12 @@ btn.setAttribute('data-min-tier', '3');
 });
 // Tag ปุ่ม Tier 2
 // Tag ปุ่ม Tier 2
-['button[onclick="openUpdateMedicalTriage()"]',
-'button[onclick="submitHealthRequest()"]',
-'button[onclick="sendHealthReport()"]'].forEach(function(sel) {
-var btn = document.querySelector('#scene_Health ' + sel) || document.querySelector(sel);
+[{sel:'button[onclick="openUpdateMedicalTriage()"]', feat:'triage'},
+{sel:'button[onclick="submitHealthRequest()"]', feat:'support_request'},
+{sel:'button[onclick="sendHealthReport()"]', feat:'triage'}].forEach(function(item) {
+var btn = document.querySelector(item.sel);
 if (btn && !btn.getAttribute('data-min-tier')) {
-btn.setAttribute('data-require-feature', btn.onclick && btn.getAttribute('onclick').indexOf('Triage') !== -1 ? 'triage' : 'support_request');
+btn.setAttribute('data-require-feature', item.feat);
 btn.setAttribute('data-min-tier', '2');
 }
 });
@@ -136,10 +164,13 @@ healthCommanderEl.textContent = (es.commanderPosition ? es.commanderPosition + '
 }
 var triage = es.triage || {};
 window._healthTriageDetails = es.triageDetails || detailFallback || [];
-document.getElementById('health_red').textContent = triage.red || 0;
-document.getElementById('health_yellow').textContent = triage.yellow || 0;
-document.getElementById('health_green').textContent = triage.green || 0;
-document.getElementById('health_black').textContent = triage.black || 0;
+['red','yellow','green','black'].forEach(function(c) {
+var v = triage[c] || 0;
+var el1 = document.getElementById('health_' + c);
+var el2 = document.getElementById('health_' + c + '2');
+if (el1) el1.textContent = v;
+if (el2) el2.textContent = v;
+});
 var field = es.fieldCasualty || {};
 var fieldBox = document.getElementById('health_field_estimate_box');
 if (fieldBox) {
@@ -242,6 +273,7 @@ healthCurrentUser || 'MED'
 });
 }
 function editHospitalCapacity(rowIndex) {
+if (typeof requireFeature === 'function' && !requireFeature('hospital_capacity', 'แก้ไข Capacity โรงพยาบาล (ระดับ 2+)')) return;
 var state = window._lastHealthState || {};
 var hosp = (state.hospitals || []).find(function(h) { return h.rowIndex === rowIndex; });
 if (!hosp) return Swal.fire('ไม่พบข้อมูล รพ.', '', 'error');
