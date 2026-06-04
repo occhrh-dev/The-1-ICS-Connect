@@ -1415,19 +1415,28 @@ Swal.fire({ title: 'ผู้บาดเจ็บสี' + (labelMap[color] || 
 }
 async function updateIncidentMarker(coords) {
 if (!coords || !coords.includes(',')) return;
+if (!dashMap) return;
 const [lat, lng] = coords.split(',').map(c => parseFloat(c.trim()));
+if (isNaN(lat) || isNaN(lng)) return;
 const pos = { lon: lng, lat: lat };
 incidentCenter.lat = lat;
 incidentCenter.lng = lng;
-if (!dashMarker) return;
-removeLongdoOverlay(dashMap, dashMarker);
-dashMarker = makeLongdoHtmlMarker(pos, '<div class="incident-sonar-wrapper"><div class="sonar-ring-1"></div><div class="sonar-ring-2"></div><div class="sonar-ring-3"></div><div class="sonar-core"><i class="fas fa-radiation-alt"></i></div></div>', {
+// ลบ marker เดิมถ้ามี
+if (dashMarker) {
+try { removeLongdoOverlay(dashMap, dashMarker); } catch(e) {}
+dashMarker = null;
+}
+// สร้าง marker ใหม่เสมอ (ไม่ว่า dashMarker จะเป็น null หรือไม่)
+var incidentIconHtml = '<div class="incident-sonar-wrapper"><div class="sonar-ring-1"></div><div class="sonar-ring-2"></div><div class="sonar-ring-3"></div><div class="sonar-core"><i class="fas fa-radiation-alt"></i></div></div>';
+try {
+dashMarker = makeLongdoHtmlMarker(pos, incidentIconHtml, {
 offset: { x: 0, y: 0 },
 weight: longdo.OverlayWeight.Top,
 title: 'จุดเกิดเหตุ',
 scaleMode: 'none'
 });
 dashMap.Overlays.add(dashMarker);
+} catch(e) {}
 }
 var ocCurrentUser = '';
 var ocSelectedSitTag = '';
