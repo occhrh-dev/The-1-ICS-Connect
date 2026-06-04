@@ -1137,7 +1137,14 @@ if (startHistoryLog.length === 0) { el.innerHTML = ''; return; }
 el.innerHTML = startHistoryLog.map((x, i) => `<span style="color:#bbb;">${i+1}. ${x.q}</span> → <b>${x.a}</b>`).join('<br>');
 }
 function addTriageCount(type) {
+// ถ้าเรียกจาก START tab → ต้องการ Tier 3 / ถ้าจาก MED tab ปกติ → Tier 2+
+var calledFromStart = document.getElementById('healthtab_start') &&
+document.getElementById('healthtab_start').style.display !== 'none';
+if (calledFromStart) {
+if (typeof requireFeature === 'function' && !requireFeature('mci', 'START Triage Protocol (ระดับ 3+)')) return;
+} else {
 if (typeof requireFeature === 'function' && !requireFeature('triage', 'Triage 4 สี (ระดับ 2+)')) return;
+}
 const valEl = document.getElementById('val_' + type);
 const currentVal = parseInt((valEl && valEl.innerText) || '0', 10);
 const newVal = currentVal + 1;
@@ -1193,6 +1200,10 @@ status.innerText = '❌ Error: ' + e.message;
 }
 }
 function submitExposure() {
+if (typeof getCurrentTier === 'function' && getCurrentTier() !== '3') {
+Swal.fire({ icon:'info', title:'🔒 ใช้ได้ Tier 3 เท่านั้น', text:'ระบบบันทึก Exposure สำหรับศูนย์บัญชาการระดับสูง', confirmButtonText:'รับทราบ' });
+return;
+}
 const name = document.getElementById('exp_name').value.trim();
 const role = document.getElementById('exp_role').value.trim();
 const chem = document.getElementById('exp_chem').value.trim();
