@@ -1138,8 +1138,8 @@ el.innerHTML = startHistoryLog.map((x, i) => `<span style="color:#bbb;">${i+1}. 
 }
 function addTriageCount(type) {
 // ถ้าเรียกจาก START tab → ต้องการ Tier 3 / ถ้าจาก MED tab ปกติ → Tier 2+
-var calledFromStart = document.getElementById('healthtab_start') &&
-document.getElementById('healthtab_start').style.display !== 'none';
+var calledFromStart = document.getElementById('healthtab_field') &&
+document.getElementById('healthtab_field').style.display !== 'none';
 if (calledFromStart) {
 if (typeof requireFeature === 'function' && !requireFeature('mci', 'START Triage Protocol (ระดับ 3+)')) return;
 } else {
