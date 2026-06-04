@@ -36,6 +36,38 @@ document.getElementById('scene_Health').style.display = 'flex';
 if (typeof startRoleBroadcastPolling === 'function') startRoleBroadcastPolling('MED');
 startHealthTimer();
 applyOpsSceneLock('MED', IS_LEAD);
+// 🎚️ Tier guards สำหรับ MED scene buttons
+if (typeof applyTierUIRestrictions === 'function') applyTierUIRestrictions();
+// Tag ปุ่ม "รายละเอียด" triage → Tier 2+
+document.querySelectorAll('button[onclick*="openHealthTriageDetails"]').forEach(function(btn) {
+if (!btn.getAttribute('data-min-tier')) {
+btn.setAttribute('data-require-feature', 'triage');
+btn.setAttribute('data-min-tier', '2');
+}
+});
+// Tag ปุ่ม Tier 3 ให้ ribbon
+['button[onclick="openAddPatientTransfer()"]',
+'button[onclick="openAddHealthUnit()"]',
+'button[onclick="submitHealthRequest()"]'].forEach(function(sel) {
+var btn = document.querySelector('#scene_Health ' + sel) ||
+document.querySelector(sel);
+if (btn && !btn.getAttribute('data-min-tier')) {
+btn.setAttribute('data-require-feature', 'mci');
+btn.setAttribute('data-min-tier', '3');
+}
+});
+// Tag ปุ่ม Tier 2
+// Tag ปุ่ม Tier 2
+['button[onclick="openUpdateMedicalTriage()"]',
+'button[onclick="submitHealthRequest()"]',
+'button[onclick="sendHealthReport()"]'].forEach(function(sel) {
+var btn = document.querySelector('#scene_Health ' + sel) || document.querySelector(sel);
+if (btn && !btn.getAttribute('data-min-tier')) {
+btn.setAttribute('data-require-feature', btn.onclick && btn.getAttribute('onclick').indexOf('Triage') !== -1 ? 'triage' : 'support_request');
+btn.setAttribute('data-min-tier', '2');
+}
+});
+if (typeof applyTierUIRestrictions === 'function') applyTierUIRestrictions();
 refreshHealthData();
 }
 function exitHealthScene() {
@@ -156,6 +188,7 @@ _optimisticRun_('addRoleNote',
 'ส่ง Note เข้า IC แล้ว ✓', 'ส่ง Note ไม่สำเร็จ');
 }
 function submitHealthRequest() {
+if (typeof requireFeature === 'function' && !requireFeature('support_request', 'ขอสนับสนุน/รายงานสาธารณสุข (ระดับ 2+)')) return;
 var type = document.getElementById('health_req_type').value;
 var detail = document.getElementById('health_req_detail').value.trim();
 if (!type) { Swal.fire('กรุณาเลือกประเภท', '', 'warning'); return; }
@@ -244,6 +277,7 @@ healthCurrentUser || 'MED'
 });
 }
 function openAddPatientTransfer() {
+if (typeof requireFeature === 'function' && !requireFeature('mci', 'บันทึกส่งต่อผู้ป่วย (ระดับ 3+)')) return;
 var hospitals = ((window._lastHealthState || {}).hospitals || []).map(function(h) { return h.name; });
 if (!hospitals.length) hospitals = HEALTH_HOSPITAL_NAMES.slice();
 var hospitalOptions = hospitals.map(function(h) { return '<option>' + h + '</option>'; }).join('');
@@ -279,6 +313,7 @@ healthCurrentUser || 'MED'
 });
 }
 function openAddHealthUnit() {
+if (typeof requireFeature === 'function' && !requireFeature('mci', 'เพิ่มหน่วยสาธารณสุข (ระดับ 3+)')) return;
 Swal.fire({
 title: 'เพิ่มหน่วยสาธารณสุข',
 html:
@@ -1018,6 +1053,7 @@ row.innerHTML =
 wrap.appendChild(row);
 }
 function openHealthTriageDetails(color) {
+if (typeof requireFeature === 'function' && !requireFeature('triage', 'รายละเอียดผู้บาดเจ็บ (ระดับ 2+)')) return;
 var labelMap = { red:'แดง', yellow:'เหลือง', green:'เขียว', black:'ดำ' };
 var rows = (window._healthTriageDetails || []).filter(function(r) {
 return String(r.triage || r.color || '').toLowerCase() === color;
