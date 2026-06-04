@@ -364,7 +364,7 @@ const iconHtml = `
 `;
 dashMarker = makeLongdoHtmlMarker(pos, '<div class="incident-sonar-wrapper">' + iconHtml + '</div>', {
 offset: { x: 0, y: 0 },
-weight: longdo.OverlayWeight.Top,
+weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0,
 title: 'จุดเกิดเหตุ',
 scaleMode: 'none'
 });
@@ -406,7 +406,7 @@ var labelText = r >= 1000 ? (r / 1000) + " กม." : r + " เมตร";
 removeLongdoOverlay(dashMap, dynamicLabelMarker);
 dynamicLabelMarker = makeLongdoHtmlMarker(edgePos,
 '<div style="background:rgba(255,255,255,0.9);color:#3498db;font-weight:bold;font-size:12px;padding:4px 8px;border-radius:12px;border:2px solid #3498db;box-shadow:0 2px 4px rgba(0,0,0,0.3);white-space:nowrap;">' + labelText + '</div>',
-{ offset: { x: 0, y: 0 }, weight: longdo.OverlayWeight.Top, scaleMode: 'label' }
+{ offset: { x: 0, y: 0 }, weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0, scaleMode: 'label' }
 );
 dashMap.Overlays.add(dynamicLabelMarker);
 fitLongdoMeters(dashMap, lat, lng, r);
@@ -1031,7 +1031,7 @@ hazmatZoneOverlays.push(overlay);
 const labelPoint = smartCircleLabelPoint(lat, lng, z.r * 1.02, idx);
 const lMarker = makeLongdoHtmlMarker({ lon: labelPoint.lng, lat: labelPoint.lat },
 `<div style="background:rgba(255,255,255,0.92);color:${z.labelColor};font-weight:bold;font-size:10px;padding:2px 8px;border-radius:10px;border:2px solid ${z.stroke};white-space:nowrap;">${z.label}</div>`,
-{ offset: { x: 0, y: 0 }, weight: longdo.OverlayWeight.Top, scaleMode: 'label' }
+{ offset: { x: 0, y: 0 }, weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0, scaleMode: 'label' }
 );
 dashMap.Overlays.add(lMarker);
 hazmatZoneLabels.push(lMarker);
@@ -1431,7 +1431,7 @@ var incidentIconHtml = '<div class="incident-sonar-wrapper"><div class="sonar-ri
 try {
 dashMarker = makeLongdoHtmlMarker(pos, incidentIconHtml, {
 offset: { x: 0, y: 0 },
-weight: longdo.OverlayWeight.Top,
+weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0,
 title: 'จุดเกิดเหตุ',
 scaleMode: 'none'
 });
