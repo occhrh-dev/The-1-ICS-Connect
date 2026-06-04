@@ -1,4 +1,3 @@
-
 var dynamicOverlay = null;
 var dynamicLabelMarker = null;
 var incidentCenter = { lat: 0, lng: 0 };
