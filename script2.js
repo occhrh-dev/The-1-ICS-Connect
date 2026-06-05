@@ -3113,7 +3113,7 @@ var html = [
 '<input id="swal-eoc" class="declare-input" placeholder="เช่น ศูนย์บัญชาการ / ห้องประชุม">' +
 ((typeof hasFeature === 'function' && !hasFeature('share_link'))
   ? '<div style="margin-top:4px;background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:5px 8px;font-size:0.75rem;color:#92400e;"><i class="fas fa-lock"></i> การตั้งพิกัดที่ตั้ง EOC บนแผนที่ใช้ได้ใน Tier 2 ขึ้นไป</div>'
-  : '<button type="button" onclick="window._eocFormPickerMode=true;document.querySelector(\'[data-swal-id=eoc-map-btn]\')" id="swal-eoc-map-btn" style="margin-top:4px;background:#1565c0;color:white;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:0.8rem;font-weight:900;width:100%;"><i class="fas fa-map-marker-alt"></i> ปักหมุดที่ตั้ง EOC บนแผนที่ (ไม่บังคับ)</button>' +
+  : '<button type="button" onclick="window._eocFormPickerMode=true;openDeclareMapPicker();"(\'[data-swal-id=eoc-map-btn]\')" id="swal-eoc-map-btn" style="margin-top:4px;background:#1565c0;color:white;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:0.8rem;font-weight:900;width:100%;"><i class="fas fa-map-marker-alt"></i> ปักหมุดที่ตั้ง EOC บนแผนที่ (ไม่บังคับ)</button>' +
   '<div id="swal-eoc-coords-show" style="font-size:0.72rem;color:#16a34a;min-height:16px;margin-top:2px;"></div>' +
   '<input type="hidden" id="swal-eoc-lat"><input type="hidden" id="swal-eoc-lng">'),
 '</div>',
