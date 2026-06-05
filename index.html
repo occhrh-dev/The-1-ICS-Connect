@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>The 1 ICS Connect</title>
 <base target="_top">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,8 +26,8 @@
 <script src="https://cdn.maptiler.com/maptiler-sdk-js/v4.0.2/maptiler-sdk.umd.min.js" defer></script>
 <link href="https://cdn.maptiler.com/maptiler-sdk-js/v4.0.2/maptiler-sdk.css" rel="stylesheet" media="print" onload="this.media='all'">
 <!-- Longdo map loaded on demand -->
-<link rel="stylesheet" href="https://occhrh-dev.github.io/The-1-ICS-script/stylesheet.css">
 <style>
+<?!= HtmlService.createHtmlOutputFromFile('stylesheet').getContent(); ?>
 /* IC Login Mode */
 body.ic-login-mode #staffLeadBox,
 body.ic-login-mode #staffCoordBox { display:none !important; }
@@ -1117,114 +1116,65 @@ if (detected) {
 <span style="margin-left:auto;color:#f1c40f;"><i class="fas fa-clock"></i> <span id="health_timer">00:00:00</span></span>
 </div>
 <div style="display:flex;background:white;border-bottom:1px solid #e0e0e0;flex-shrink:0;overflow-x:auto;">
-<!-- Tab 1: ภาพรวม (ทุก Tier) -->
-<button class=”health-tab active” onclick=”switchHealthTab('overview',this)”><i class=”fas fa-chart-pie”></i> ภาพรวม</button>
-<!-- Tab 2: ข้อมูลผู้บาดเจ็บ (Tier 2+) — ผู้ประสาน/รพ. -->
-<button id=”health_tab_patient_btn” class=”health-tab” onclick=”switchHealthTab('patient',this)”><i class=”fas fa-user-injured”></i> ข้อมูลผู้บาดเจ็บ</button>
-<!-- Tab 3: การแพทย์ ณ จุดเกิดเหตุ (Tier 2+) — หน้างาน -->
-<button id=”health_tab_field_btn” class=”health-tab” onclick=”switchHealthTab('field',this)”><i class=”fas fa-ambulance”></i> การแพทย์ ณ จุดเกิดเหตุ</button>
+<button class="health-tab active" onclick="switchHealthTab('triage',this)"><i class="fas fa-user-injured"></i> ข้อมูลผู้บาดเจ็บ</button>
+<button class="health-tab" data-require-feature="triage" data-min-tier="2" onclick="switchHealthTab('start',this)"><i class="fas fa-running"></i> START Triage</button>
 </div>
-<div style=”flex:1;overflow-y:auto;padding:12px 16px;background:#f5f6fa;”>
-
-<!-- ==================== TAB 1: ภาพรวม ==================== -->
-<div id=”healthtab_overview” class=”health-tab-content”>
-<div class=”health-card”>
-<div style=”font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;”><i class=”fas fa-chart-bar” style=”color:#e74c3c;”></i> ยอดผู้บาดเจ็บ</div>
-<div id=”health_field_estimate_box” style=”background:#FFF8EF;border:1px solid #F3D2A8;border-radius:6px;padding:7px 10px;font-size:12px;color:#7f4a00;margin-bottom:10px;”>
+<div style="flex:1;overflow-y:auto;padding:12px 16px;background:#f5f6fa;">
+<div id="healthtab_start" class="health-tab-content" style="display:none;">
+<div class="health-card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+<b style="font-size:0.95rem;color:#c0392b;">🚑 START Triage Protocol</b>
+<button class="mod-btn gray" style="padding:4px 10px;font-size:0.78rem;" onclick="startReset()">↺ รีเซ็ต</button>
+</div>
+<div class="start-progress" id="start_progress">ขั้นตอนที่ 1/4 — เดินได้?</div>
+<div id="start_question_area"></div>
+<div class="start-history" id="start_history"></div>
+<div style="margin-top:10px;border-top:1px solid #e0e0e0;padding-top:10px;">
+<div style="font-size:0.82rem;font-weight:bold;color:#27ae60;margin-bottom:4px;">📊 บันทึกผล Triage ลงระบบ</div>
+<div style="font-size:0.72rem;color:#555;margin-bottom:6px;">กดเมื่อทำ Triage เสร็จแต่ละราย — ระบบจะบวกยอดเข้า Dashboard</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+<button class="mod-btn red" onclick="addTriageCount('red')">+ 1 RED</button>
+<button class="mod-btn" style="background:#d4ac0d;" onclick="addTriageCount('yellow')">+ 1 YELLOW</button>
+<button class="mod-btn green" onclick="addTriageCount('green')">+ 1 GREEN</button>
+<button class="mod-btn" style="background:#34495e;" onclick="addTriageCount('black')">+ 1 BLACK</button>
+</div>
+</div>
+</div>
+</div>
+<div id="healthtab_triage" class="health-tab-content">
+<div class="health-card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;">
+<div style="font-size:13px;font-weight:bold;color:#2c3e50;"><i class="fas fa-user-heart"></i> ยอดผู้บาดเจ็บยืนยัน/แยกสี</div>
+</div>
+<div id="health_field_estimate_box" style="background:#FFF8EF;border:1px solid #F3D2A8;border-radius:6px;padding:7px 10px;font-size:12px;color:#7f4a00;margin-bottom:10px;">
 ยอดประมาณการจาก ICP: รวม 0 ราย
 </div>
-<div class=”health-triage-grid”>
-<div class=”health-tri-box” style=”background:#FCEBEB;”><div id=”health_red” class=”health-tri-num” style=”color:#A32D2D;”>0</div><div class=”health-tri-lbl” style=”color:#A32D2D;”>RED วิกฤต</div></div>
-<div class=”health-tri-box” style=”background:#FAEEDA;”><div id=”health_yellow” class=”health-tri-num” style=”color:#854F0B;”>0</div><div class=”health-tri-lbl” style=”color:#854F0B;”>YELLOW เร่งด่วน</div></div>
-<div class=”health-tri-box” style=”background:#EAF3DE;”><div id=”health_green” class=”health-tri-num” style=”color:#3B6D11;”>0</div><div class=”health-tri-lbl” style=”color:#3B6D11;”>GREEN ฉุกเฉินน้อย</div></div>
-<div class=”health-tri-box” style=”background:#f1f0ee;”><div id=”health_black” class=”health-tri-num” style=”color:#5F5E5A;”>0</div><div class=”health-tri-lbl” style=”color:#5F5E5A;”>BLACK เสียชีวิต</div></div>
+<div class="health-triage-grid">
+<div class="health-tri-box" onclick="openMedicalTriageColorPopup('red')" style="background:#FCEBEB;cursor:pointer;"><div id="health_red" class="health-tri-num" style="color:#A32D2D;">0</div><div class="health-tri-lbl" style="color:#A32D2D;">RED วิกฤต</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('red')" style="margin-top:6px;border:1px solid #f3b8b8;background:white;color:#A32D2D;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
+<div class="health-tri-box" onclick="openMedicalTriageColorPopup('yellow')" style="background:#FAEEDA;cursor:pointer;"><div id="health_yellow" class="health-tri-num" style="color:#854F0B;">0</div><div class="health-tri-lbl" style="color:#854F0B;">YELLOW เร่งด่วน</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('yellow')" style="margin-top:6px;border:1px solid #efd7a6;background:white;color:#854F0B;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
+<div class="health-tri-box" onclick="openMedicalTriageColorPopup('green')" style="background:#EAF3DE;cursor:pointer;"><div id="health_green" class="health-tri-num" style="color:#3B6D11;">0</div><div class="health-tri-lbl" style="color:#3B6D11;">GREEN ฉุกเฉินน้อย</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('green')" style="margin-top:6px;border:1px solid #cfe5b9;background:white;color:#3B6D11;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
+<div class="health-tri-box" onclick="openMedicalTriageColorPopup('black')" style="background:#f1f0ee;cursor:pointer;"><div id="health_black" class="health-tri-num" style="color:#5F5E5A;">0</div><div class="health-tri-lbl" style="color:#5F5E5A;">BLACK เสียชีวิต</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('black')" style="margin-top:6px;border:1px solid #d7d4cf;background:white;color:#5F5E5A;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
+</div>
+<div style="margin-top:10px;">
+<div class="contaminated-flag"><i class="fas fa-biohazard"></i> ตรวจผู้ป่วยปนเปื้อนก่อนส่งต่อ รพ. และระบุ “ผ่าน Decon แล้ว/ยังไม่ผ่าน” ทุกครั้ง</div>
 </div>
 </div>
-<div class=”health-card” id=”health_sitrep_box”>
-<div style=”font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;”><i class=”fas fa-bullhorn” style=”color:#e67e22;”></i> SITREP / สถานการณ์ล่าสุด</div>
-<div id=”health_sitrep_content” style=”text-align:center;color:#aaa;padding:12px;font-size:13px;”>ยังไม่มีรายงาน</div>
+<div class="health-card" id="health_sitrep_box">
+<div style="font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;"><i class="fas fa-bullhorn" style="color:#e67e22;"></i> SITREP / สถานการณ์ล่าสุด</div>
+<div id="health_sitrep_content" style="text-align:center;color:#aaa;padding:12px;font-size:13px;">ยังไม่มีรายงาน</div>
 </div>
-<div class=”health-card”>
-<div style=”font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;”><i class=”fas fa-sticky-note” style=”color:#16a34a;”></i> Note ถึง IC / EOC</div>
-<textarea id=”health_note_text” rows=”4” placeholder=”พิมพ์ note เช่น ข้อสังเกต ข้อเสนอ สิ่งที่ต้องประสาน...” style=”width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:10px;font-family:'Prompt',sans-serif;font-size:13px;resize:vertical;”></textarea>
-<button onclick=”submitHealthNote()” style=”margin-top:8px;background:#16a34a;color:white;border:none;border-radius:8px;padding:10px 14px;font-weight:900;width:100%;cursor:pointer;”><i class=”fas fa-paper-plane”></i> ส่ง Note เข้า IC</button>
-<div style=”font-size:11px;color:#64748b;margin-top:6px;”>Note จะไปรวมในรายการอัปเดตจากการ์ดงานบน Dashboard</div>
-</div>
-</div>
-
-<!-- ==================== TAB 2: ข้อมูลผู้บาดเจ็บ (Tier 2+) ==================== -->
-<div id=”healthtab_patient” class=”health-tab-content” style=”display:none;”>
-<div class=”health-card”>
-<div style=”display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;”>
-<div style=”font-size:13px;font-weight:bold;color:#2c3e50;”><i class=”fas fa-user-heart”></i> ยอดผู้บาดเจ็บยืนยัน/แยกสี</div>
-<button onclick=”openUpdateMedicalTriage()” style=”background:#185fa5;color:white;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:900;cursor:pointer;”><i class=”fas fa-edit”></i> อัพเดตยอด</button>
-</div>
-<div class=”health-triage-grid”>
-<div class=”health-tri-box” onclick=”openMedicalTriageColorPopup('red')” style=”background:#FCEBEB;cursor:pointer;”><div class=”health-tri-num” style=”color:#A32D2D;” id=”health_red2”>0</div><div class=”health-tri-lbl” style=”color:#A32D2D;”>RED วิกฤต</div><button type=”button” onclick=”event.stopPropagation();openHealthTriageDetails('red')” style=”margin-top:6px;border:1px solid #f3b8b8;background:white;color:#A32D2D;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;”>รายละเอียด รพ.</button></div>
-<div class=”health-tri-box” onclick=”openMedicalTriageColorPopup('yellow')” style=”background:#FAEEDA;cursor:pointer;”><div class=”health-tri-num” style=”color:#854F0B;” id=”health_yellow2”>0</div><div class=”health-tri-lbl” style=”color:#854F0B;”>YELLOW เร่งด่วน</div><button type=”button” onclick=”event.stopPropagation();openHealthTriageDetails('yellow')” style=”margin-top:6px;border:1px solid #efd7a6;background:white;color:#854F0B;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;”>รายละเอียด รพ.</button></div>
-<div class=”health-tri-box” onclick=”openMedicalTriageColorPopup('green')” style=”background:#EAF3DE;cursor:pointer;”><div class=”health-tri-num” style=”color:#3B6D11;” id=”health_green2”>0</div><div class=”health-tri-lbl” style=”color:#3B6D11;”>GREEN ฉุกเฉินน้อย</div><button type=”button” onclick=”event.stopPropagation();openHealthTriageDetails('green')” style=”margin-top:6px;border:1px solid #cfe5b9;background:white;color:#3B6D11;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;”>รายละเอียด รพ.</button></div>
-<div class=”health-tri-box” onclick=”openMedicalTriageColorPopup('black')” style=”background:#f1f0ee;cursor:pointer;”><div class=”health-tri-num” style=”color:#5F5E5A;” id=”health_black2”>0</div><div class=”health-tri-lbl” style=”color:#5F5E5A;”>BLACK เสียชีวิต</div><button type=”button” onclick=”event.stopPropagation();openHealthTriageDetails('black')” style=”margin-top:6px;border:1px solid #d7d4cf;background:white;color:#5F5E5A;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;”>รายละเอียด รพ.</button></div>
-</div>
-<div style=”margin-top:10px;”>
-<div class=”contaminated-flag”><i class=”fas fa-biohazard”></i> ตรวจผู้ป่วยปนเปื้อนก่อนส่งต่อ รพ. และระบุ “ผ่าน Decon แล้ว/ยังไม่ผ่าน” ทุกครั้ง</div>
-</div>
-</div>
-<div class=”health-card”>
-<div style=”font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:10px;”><i class=”fas fa-hospital” style=”color:#2980b9;”></i> ส่งต่อผู้ป่วย / รพ.ที่รับ <span style=”font-size:10px;background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:8px;font-weight:900;margin-left:4px;”>Tier 3+</span></div>
-<button onclick=”openAddPatientTransfer()” style=”background:#2980b9;color:white;border:none;border-radius:8px;padding:10px;font-weight:900;width:100%;cursor:pointer;font-size:13px;”><i class=”fas fa-plus”></i> บันทึกส่งต่อผู้ป่วย</button>
-</div>
-<div class=”health-card”>
-<div style=”font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;”><i class=”fas fa-file-medical” style=”color:#8e44ad;”></i> ส่งรายงาน สสอ./สสจ.</div>
-<button onclick=”sendHealthReport()” style=”background:#8e44ad;color:white;border:none;border-radius:8px;padding:10px;font-weight:900;width:100%;cursor:pointer;font-size:13px;”><i class=”fas fa-paper-plane”></i> ส่งรายงานยอดผู้บาดเจ็บ</button>
-</div>
-<div class=”health-card”>
-<div style=”font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;”><i class=”fas fa-building-columns” style=”color:#16a34a;”></i> หน่วยสาธารณสุขที่มาช่วย <span style=”font-size:10px;background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:8px;font-weight:900;margin-left:4px;”>Tier 3+</span></div>
-<button onclick=”openAddHealthUnit()” style=”background:#16a34a;color:white;border:none;border-radius:8px;padding:10px;font-weight:900;width:100%;cursor:pointer;font-size:13px;”><i class=”fas fa-plus”></i> เพิ่มหน่วยสาธารณสุข</button>
-</div>
-</div>
-
-<!-- ==================== TAB 3: การแพทย์ ณ จุดเกิดเหตุ (Tier 2+) ==================== -->
-<div id=”healthtab_field” class=”health-tab-content” style=”display:none;”>
-<div class=”health-card”>
-<div style=”display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;”>
-<b style=”font-size:0.95rem;color:#c0392b;”>🚑 START Triage Protocol</b>
-<button class=”mod-btn gray” style=”padding:4px 10px;font-size:0.78rem;” onclick=”startReset()”>↺ รีเซ็ต</button>
-</div>
-<div class=”start-progress” id=”start_progress”>ขั้นตอนที่ 1/4 — เดินได้?</div>
-<div id=”start_question_area”></div>
-<div class=”start-history” id=”start_history”></div>
-<div style=”margin-top:10px;border-top:1px solid #e0e0e0;padding-top:10px;”>
-<div style=”font-size:0.82rem;font-weight:bold;color:#27ae60;margin-bottom:4px;”>📊 บันทึกผล Triage ลงระบบ</div>
-<div style=”font-size:0.72rem;color:#555;margin-bottom:6px;”>กดเมื่อทำ Triage เสร็จแต่ละราย — ระบบจะบวกยอดเข้า Dashboard</div>
-<div style=”display:grid;grid-template-columns:1fr 1fr;gap:6px;”>
-<button class=”mod-btn red” onclick=”addTriageCount('red')”>+ 1 RED</button>
-<button class=”mod-btn” style=”background:#d4ac0d;” onclick=”addTriageCount('yellow')”>+ 1 YELLOW</button>
-<button class=”mod-btn green” onclick=”addTriageCount('green')”>+ 1 GREEN</button>
-<button class=”mod-btn” style=”background:#34495e;” onclick=”addTriageCount('black')”>+ 1 BLACK</button>
+<div class="health-card">
+<div style="font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;"><i class="fas fa-sticky-note" style="color:#16a34a;"></i> Note ถึง IC / EOC</div>
+<textarea id="health_note_text" rows="4" placeholder="พิมพ์ note เช่น ข้อสังเกต ข้อเสนอ สิ่งที่ต้องประสาน..." style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:10px;font-family:'Prompt',sans-serif;font-size:13px;resize:vertical;"></textarea>
+<button onclick="submitHealthNote()" style="margin-top:8px;background:#16a34a;color:white;border:none;border-radius:8px;padding:10px 14px;font-weight:900;width:100%;cursor:pointer;"><i class="fas fa-paper-plane"></i> ส่ง Note เข้า IC</button>
+<div style="font-size:11px;color:#64748b;margin-top:6px;">Note จะไปรวมในรายการอัปเดตจากการ์ดงานบน Dashboard</div>
 </div>
 </div>
 </div>
-<div class=”health-card”>
-<div style=”font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;”><i class=”fas fa-hand-holding-medical” style=”color:#e74c3c;”></i> ขอสนับสนุนจาก IC</div>
-<select id=”health_req_type” style=”width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:8px;”>
-<option value=””>— เลือกประเภทที่ขอ —</option>
-<option>ขอรถพยาบาลเพิ่ม</option>
-<option>ขอทีม Decon</option>
-<option>ขอผู้เชี่ยวชาญ</option>
-<option>ขอ Antidote / ยา</option>
-<option>ขอยกระดับแผน</option>
-<option>อื่นๆ</option>
-</select>
-<textarea id=”health_req_detail” rows=”3” placeholder=”รายละเอียดสั้นๆ เช่น ขอรถ ALS 2 คัน สถานที่ปฏิบัติการ ก.ม. 3” style=”width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;padding:9px;font-family:'Prompt',sans-serif;font-size:13px;resize:vertical;margin-bottom:8px;”></textarea>
-<button onclick=”submitHealthRequest()” style=”background:#e74c3c;color:white;border:none;border-radius:8px;padding:10px;font-weight:900;width:100%;cursor:pointer;font-size:13px;”><i class=”fas fa-hand-holding-medical”></i> ส่งคำขอสนับสนุน</button>
-</div>
-</div>
-
-</div>
-<div style=”padding:10px 16px;border-top:1px solid #e0e0e0;background:white;flex-shrink:0;”>
-<input type=”file” id=”health_media_input” accept=”image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt” multiple style=”display:none;” onchange=”handleGenericFieldMedia(this,'สาธารณสุข/1669',healthCurrentUser || USER_NAME || 'MED')”>
-<button onclick=”document.getElementById('health_media_input').click()” style=”border:1px solid #1a252f;background:#1a252f;border-radius:8px;padding:10px 16px;font-size:13px;cursor:pointer;color:white;font-weight:bold;width:100%;min-height:44px;”>
-<i class=”fas fa-paperclip”></i> แนบรูป / ไฟล์
+<div style="padding:10px 16px;border-top:1px solid #e0e0e0;background:white;flex-shrink:0;">
+<input type="file" id="health_media_input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" multiple style="display:none;" onchange="handleGenericFieldMedia(this,'สาธารณสุข/1669',healthCurrentUser || USER_NAME || 'MED')">
+<button onclick="document.getElementById('health_media_input').click()" style="border:1px solid #1a252f;background:#1a252f;border-radius:8px;padding:10px 16px;font-size:13px;cursor:pointer;color:white;font-weight:bold;width:100%;min-height:44px;">
+<i class="fas fa-paperclip"></i> แนบรูป / ไฟล์
 </button>
 </div>
 </div>
@@ -1271,6 +1221,7 @@ if (detected) {
 <div style="padding:10px 16px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px;">
 <button onclick="document.getElementById('modal_AddResource').style.display='none'" style="border:1px solid #ddd;background:none;border-radius:6px;padding:8px 16px;font-size:13px;cursor:pointer;">ยกเลิก</button>
 <button onclick="document.getElementById('modal_AddResource').style.display='none'; Swal.fire('ใช้หน้าหน่วยสนับสนุนรายงานทรัพยากร', 'OC/ICP ใช้หน้านี้สำหรับติดตามยอดทรัพยากรเท่านั้น', 'info');" style="background:#e67e22;color:white;border:none;border-radius:6px;padding:8px 16px;font-size:13px;cursor:pointer;font-weight:bold;">รับทราบ</button>
+</div>
 </div>
 </div>
 </div>
@@ -1321,12 +1272,8 @@ if (detected) {
 <div style="font-size:16px;font-weight:900;color:#0f172a;margin-bottom:10px;"><i class="fas fa-clock-rotate-left" style="color:#ea580c;"></i> สิ่งที่คุณส่งล่าสุด</div>
 <div id="role_work_history" style="display:grid;gap:8px;color:#64748b;">ยังไม่มีข้อมูลที่ส่ง</div>
 </div>
-<div id="role_exposure_card" class="role-mobile-card" style="background:#fdf4ff;border:1px solid #d8b4fe;border-radius:10px;padding:14px;box-shadow:0 2px 8px rgba(15,23,42,.08);">
-<div style="display:flex;justify-content:space-between;align-items:center;">
-<div style="font-size:15px;font-weight:900;color:#6b21a8;"><i class="fas fa-biohazard"></i> Exposure (สัมผัสสาร)</div>
-<button onclick="toggleExposureForm()" id="exposure_toggle_btn" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:6px 14px;font-weight:900;cursor:pointer;font-family:'Prompt',sans-serif;font-size:0.82rem;"><i class="fas fa-plus"></i> บันทึก</button>
-</div>
-<div id="exposure_form_body" style="display:none;margin-top:12px;">
+<div class="role-mobile-card" style="background:#fdf4ff;border:1px solid #d8b4fe;border-radius:10px;padding:14px;box-shadow:0 2px 8px rgba(15,23,42,.08);">
+<div style="font-size:15px;font-weight:900;color:#6b21a8;margin-bottom:10px;"><i class="fas fa-biohazard"></i> บันทึก Exposure (สัมผัสสาร)</div>
 <div style="display:flex;gap:6px;margin-bottom:6px;">
 <input id="exp_name" class="mod-input" placeholder="ชื่อผู้สัมผัส" style="flex:1;font-size:13px;padding:8px;border:1px solid #d8b4fe;border-radius:6px;">
 <input id="exp_role" class="mod-input" placeholder="ตำแหน่ง" style="flex:1;font-size:13px;padding:8px;border:1px solid #d8b4fe;border-radius:6px;">
@@ -1346,10 +1293,7 @@ if (detected) {
 </select>
 </div>
 <input id="exp_note" class="mod-input" placeholder="หมายเหตุ (อาการ, สถานที่ ฯลฯ)" style="width:100%;box-sizing:border-box;font-size:13px;padding:8px;border:1px solid #d8b4fe;border-radius:6px;margin-bottom:6px;">
-<div style="display:flex;gap:6px;">
-<button onclick="submitExposure()" style="flex:1;background:#7c3aed;color:white;border:none;border-radius:8px;padding:10px;font-weight:900;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-save"></i> บันทึก</button>
-<button onclick="toggleExposureForm()" style="background:#e9d5ff;color:#6b21a8;border:none;border-radius:8px;padding:10px 14px;font-weight:900;cursor:pointer;font-family:'Prompt',sans-serif;">ยกเลิก</button>
-</div>
+<button onclick="submitExposure()" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:10px;font-weight:900;width:100%;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-save"></i> บันทึก Exposure</button>
 <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
 <span style="font-size:0.78rem;color:#6b21a8;font-weight:bold;">📋 บันทึกล่าสุด</span>
 <button onclick="loadExposureLog()" style="background:#e9d5ff;color:#6b21a8;border:none;border-radius:6px;padding:4px 10px;font-size:0.72rem;cursor:pointer;font-family:'Prompt',sans-serif;">↻ โหลด</button>
@@ -1359,7 +1303,6 @@ if (detected) {
 <thead><tr style="background:#f3e8ff;"><th style="padding:4px;">เวลา</th><th>ชื่อ</th><th>สาร</th><th>นาที</th><th>PPE</th></tr></thead>
 <tbody id="exp_tbody"><tr><td colspan="5" style="text-align:center;color:#aaa;padding:8px;">กด โหลด เพื่อดูข้อมูล</td></tr></tbody>
 </table>
-</div>
 </div>
 </div>
 </div>
@@ -1593,14 +1536,6 @@ function _updateEOCNavBadge_(eocCoords) {
 var badge = document.getElementById('ban_eoc_nav');
 if (!badge) return;
 badge.style.display = (eocCoords && hasFeature('share_link')) ? 'inline' : 'none';
-}
-function toggleExposureForm() {
-var body = document.getElementById('exposure_form_body');
-var btn = document.getElementById('exposure_toggle_btn');
-if (!body) return;
-var isOpen = body.style.display !== 'none';
-body.style.display = isOpen ? 'none' : 'block';
-if (btn) btn.innerHTML = isOpen ? '<i class="fas fa-plus"></i> บันทึก' : '<i class="fas fa-times"></i> ปิด';
 }
 function openEOCLocationModal() {
 var state = window._lastEmergState || {};
@@ -4130,22 +4065,6 @@ if (document.getElementById('role_work_title')) document.getElementById('role_wo
 if (document.getElementById('role_work_user')) document.getElementById('role_work_user').textContent = USER_NAME || '-';
 if (document.getElementById('role_work_role_label')) document.getElementById('role_work_role_label').textContent = TEMP_ROLE_LABEL || '-';
 applyRoleWorkHeader(window._lastEmergState || {}, {});
-// 📍 Exposure card — Tier 3 เท่านั้น, collapse by default
-(function() {
-var card = document.getElementById('role_exposure_card');
-var body = document.getElementById('exposure_form_body');
-if (card) card.style.display = 'none'; // ซ่อนก่อน ค่อย show ตาม tier+role
-if (body) body.style.display = 'none';
-})();
-// 📍 Exposure card — Tier 3 + เฉพาะ role hazmat
-(function() {
-var card = document.getElementById('role_exposure_card');
-if (!card) return;
-var hazmatRoles = ['Logistics', 'Specialist'];
-var isTier3 = typeof getCurrentTier === 'function' && getCurrentTier() === '3';
-var isHazmatRole = hazmatRoles.indexOf(roleCode) !== -1;
-card.style.display = (isTier3 && isHazmatRole) ? 'block' : 'none';
-})();
 // 🎚️ แสดง note Tier 1 สำหรับ media upload
 (function() {
 var note = document.getElementById('role_media_tier1_note');
@@ -4922,8 +4841,8 @@ return { name: window.currentUserName || USER_NAME || 'ไม่ระบุ', r
 }
 function startCallEOC() {
 if (typeof google === 'undefined' || !google.script) return;
-// 🎚️ Tier 1 — ไม่มีระบบโทร (ต้องมี ic_dashboard=true แต่ eoc_video_call ต้องไม่ใช่ tier 1)
-if (typeof hasFeature === 'function' && !hasFeature('eoc_video_call')) {
+// 🎚️ Tier 1 — ไม่มีระบบโทร
+if (typeof hasFeature === 'function' && !hasFeature('eoc_video_call') && !hasFeature('ic_dashboard')) {
 Swal.fire({ icon:'info', title:'🔒 ระบบโทร EOC ใช้ได้ Tier 2 ขึ้นไป', text:'กรุณาติดต่อผู้ดูแลระบบเพื่ออัปเกรดแพ็กเกจ', confirmButtonText:'รับทราบ' });
 return;
 }

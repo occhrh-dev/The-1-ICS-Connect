@@ -24,7 +24,7 @@ function _configCacheKey_() {
   return 'eoc_config_' + String(SSID || '').replace(/[^\w-]/g, '_');
 }
 
-var PUBLIC_APP_URL = "https://script.google.com/macros/s/AKfycby744ojH0mOoBNaVlc2wwdXerZQY6sbODFA3UQDzhJVVLutPt3SVl60hTE2BywHo7jQ/exec"; // TODO: เปลี่ยนเป็น cloudflare เมื่อ setup redirect ?join= แล้ว
+var PUBLIC_APP_URL = "https://script.google.com/macros/s/AKfycby744ojH0mOoBNaVlc2wwdXerZQY6sbODFA3UQDzhJVVLutPt3SVl60hTE2BywHo7jQ/exec"; // TODO: เปลี่ยนกลับเป็น cloudflare เมื่อ setup redirect ?join= แล้ว
 
 // ==========================================
 // 🌐 Zone: WEB APP & HTML TEMPLATE
@@ -36,7 +36,9 @@ function doGet(e) {
   template.joinToken = e && e.parameter ? (e.parameter.join || '') : '';
   return template
     .evaluate()
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    .setTitle('The 1 ICS Connect')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
 function include(filename) {
@@ -557,8 +559,7 @@ var TIER_CONFIG = {
       eoc_video_call: false, multi_agency_zones: false,
       multi_hospital: false, decon_tracking: false, ambulance_tracking: false,
       mci: false, agency_master_sheet: false, line_multi_groups: false,
-      device_binding: false, custom_expiry: false, api_integration: false,
-      exposure_log: false
+      device_binding: false, custom_expiry: false, api_integration: false
     }
   },
   '2': {
@@ -581,8 +582,7 @@ var TIER_CONFIG = {
       eoc_video_call: false, multi_agency_zones: false,
       multi_hospital: false, decon_tracking: false, ambulance_tracking: false,
       mci: false, agency_master_sheet: false, line_multi_groups: false,
-      device_binding: false, custom_expiry: false, api_integration: false,
-      exposure_log: false
+      device_binding: false, custom_expiry: false, api_integration: false
     }
   },
   '3': {
@@ -605,8 +605,7 @@ var TIER_CONFIG = {
       eoc_video_call: true, multi_agency_zones: true,
       multi_hospital: true, decon_tracking: true, ambulance_tracking: true,
       mci: true, agency_master_sheet: true, line_multi_groups: true,
-      device_binding: true, custom_expiry: true, api_integration: true,
-      exposure_log: true
+      device_binding: true, custom_expiry: true, api_integration: true
     }
   }
 };
