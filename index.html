@@ -27,7 +27,7 @@
 <link href="https://cdn.maptiler.com/maptiler-sdk-js/v4.0.2/maptiler-sdk.css" rel="stylesheet" media="print" onload="this.media='all'">
 <!-- Longdo map loaded on demand -->
 <style>
-<?!= include('stylesheet'); ?>
+<link rel="stylesheet" href="https://occhrh-dev.github.io/The-1-ICS-script/stylesheet.css">
 /* IC Login Mode */
 body.ic-login-mode #staffLeadBox,
 body.ic-login-mode #staffCoordBox { display:none !important; }
@@ -1442,8 +1442,8 @@ const eocPositions = {
 "สมาชิกสภาเทศบาล"
 ]
 };
-window.EOC_INITIAL_VIEW_MODE = '<?= viewMode ?>';
-window.EOC_JOIN_TOKEN = '<?= joinToken ?>';
+window.EOC_INITIAL_VIEW_MODE = new URLSearchParams(location.search).get('view') || new URLSearchParams(location.search).get('mode') || '';
+window.EOC_JOIN_TOKEN = new URLSearchParams(location.search).get('join') || '';
 var map, marker;
 var MAPTILER_API_KEY = 'XOw46Ht6gxyHhSCkLXPf';
 var LONGDO_API_KEY = 'a9974f7cfd12005a30da1344408d8c01';

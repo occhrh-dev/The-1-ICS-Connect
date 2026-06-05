@@ -42,7 +42,7 @@ function doGet(e) {
 }
 
 function include(filename) {
-  return HtmlService.createTemplateFromFile(filename).getRawContent();
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
 function getDashboardViewUrl() {
