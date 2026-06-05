@@ -24,21 +24,18 @@ function _configCacheKey_() {
   return 'eoc_config_' + String(SSID || '').replace(/[^\w-]/g, '_');
 }
 
-var PUBLIC_APP_URL = "https://script.google.com/macros/s/AKfycby744ojH0mOoBNaVlc2wwdXerZQY6sbODFA3UQDzhJVVLutPt3SVl60hTE2BywHo7jQ/exec"; // TODO: เปลี่ยนกลับเป็น cloudflare เมื่อ setup redirect ?join= แล้ว
+var PUBLIC_APP_URL = "https://script.google.com/macros/s/AKfycbxFDrdyisOv_0a_8yQAdbQ71Pxc7d3d4M0xR1a0XTTKrrLfO1lmK1FAjW40TUBwhtFb/exec"; // TODO: เปลี่ยนเป็น cloudflare เมื่อ setup redirect ?join= แล้ว
 
 // ==========================================
 // 🌐 Zone: WEB APP & HTML TEMPLATE
 // ==========================================
 
 function doGet(e) {
-  var template = HtmlService.createTemplateFromFile('index');
-  template.viewMode = e && e.parameter ? (e.parameter.view || e.parameter.mode || '') : '';
-  template.joinToken = e && e.parameter ? (e.parameter.join || '') : '';
-  return template
-    .evaluate()
-    .setTitle('The 1 ICS Connect')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  var t = HtmlService.createTemplateFromFile('index');
+  t.viewMode = e && e.parameter ? (e.parameter.view || e.parameter.mode || '') : '';
+  t.joinToken = e && e.parameter ? (e.parameter.join || '') : '';
+  return t.evaluate()
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function include(filename) {
@@ -559,7 +556,8 @@ var TIER_CONFIG = {
       eoc_video_call: false, multi_agency_zones: false,
       multi_hospital: false, decon_tracking: false, ambulance_tracking: false,
       mci: false, agency_master_sheet: false, line_multi_groups: false,
-      device_binding: false, custom_expiry: false, api_integration: false
+      device_binding: false, custom_expiry: false, api_integration: false,
+      exposure_log: false
     }
   },
   '2': {
@@ -582,7 +580,8 @@ var TIER_CONFIG = {
       eoc_video_call: false, multi_agency_zones: false,
       multi_hospital: false, decon_tracking: false, ambulance_tracking: false,
       mci: false, agency_master_sheet: false, line_multi_groups: false,
-      device_binding: false, custom_expiry: false, api_integration: false
+      device_binding: false, custom_expiry: false, api_integration: false,
+      exposure_log: false
     }
   },
   '3': {
@@ -605,7 +604,8 @@ var TIER_CONFIG = {
       eoc_video_call: true, multi_agency_zones: true,
       multi_hospital: true, decon_tracking: true, ambulance_tracking: true,
       mci: true, agency_master_sheet: true, line_multi_groups: true,
-      device_binding: true, custom_expiry: true, api_integration: true
+      device_binding: true, custom_expiry: true, api_integration: true,
+      exposure_log: true
     }
   }
 };
@@ -1658,7 +1658,7 @@ function _getAutoWindForCoords_(evtCoords) {
 }
 
 
-function activateEmergency(evtName, evtLoc, evtCoords, evtPlan, evtLevel, evtEOC, commanderName, accessRole, commanderPosition, windDirectionDeg, windSpeedMs, windMode, agencyId) {
+function activateEmergency(evtName, evtLoc, evtCoords, evtPlan, evtLevel, evtEOC, commanderName, accessRole, commanderPosition, windDirectionDeg, windSpeedMs, windMode, agencyId, eocCoords) {
   _cacheRemoveAll_();
   _requireAdmin(accessRole);
   _useAgencySpreadsheetForRequest_(agencyId, '');
@@ -1776,8 +1776,9 @@ function updateIncidentLevel(newLevel, accessRole, agencyId) {
 function deactivateEmergency(commanderName, accessRole, agencyId) {
   _cacheRemoveAll_();
   _requireAdmin(accessRole);
+  var mainSSID = SSID;
   _useAgencySpreadsheetForRequest_(agencyId, '');
-  var ss    = SpreadsheetApp.openById(SSID);
+  var ss    = SpreadsheetApp.openById(mainSSID);
   var sheet = ss.getSheetByName("Config");
   var data  = sheet.getDataRange().getValues();
   var config = {};
