@@ -36,9 +36,7 @@ function doGet(e) {
   template.joinToken = e && e.parameter ? (e.parameter.join || '') : '';
   return template
     .evaluate()
-    .setTitle('The 1 ICS Connect')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function include(filename) {
