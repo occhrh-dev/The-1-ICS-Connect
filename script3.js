@@ -1,5 +1,6 @@
 var dynamicOverlay = null;
 var dynamicLabelMarker = null;
+var dashEOCMarker = null;
 var incidentCenter = { lat: 0, lng: 0 };
 var GlobalMarkerClass = null;
 function removeLongdoOverlay(targetMap, overlay) {
@@ -211,6 +212,27 @@ var scale = zoom >= 15 ? 1 : zoom >= 13 ? 0.82 : zoom >= 11 ? 0.62 : zoom >= 8 ?
 var root = document.getElementById('scene_Dashboard');
 if (root) root.style.setProperty('--dash-marker-scale', scale.toFixed(2));
 }
+function renderDashboardEOCMarker(eocCoords) {
+if (!dashMap) return;
+removeLongdoOverlay(dashMap, dashEOCMarker);
+dashEOCMarker = null;
+if (!eocCoords || String(eocCoords).indexOf(',') === -1) return;
+var parts = String(eocCoords).split(',');
+var lat = parseFloat(parts[0]);
+var lng = parseFloat(parts[1]);
+if (isNaN(lat) || isNaN(lng)) return;
+var html = '<div style="display:flex;flex-direction:column;align-items:center;pointer-events:auto;">' +
+'<div style="width:30px;height:30px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 2px 10px rgba(15,23,42,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;"><i class="fas fa-house-flag"></i></div>' +
+'<div style="margin-top:3px;background:#1d4ed8;color:#fff;font-weight:900;font-size:10px;padding:2px 7px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(15,23,42,.25);">EOC</div>' +
+'</div>';
+dashEOCMarker = makeLongdoHtmlMarker({ lon: lng, lat: lat }, html, {
+offset: { x: 0, y: -6 },
+weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0,
+title: 'ที่ตั้ง EOC',
+scaleMode: 'none'
+});
+dashMap.Overlays.add(dashEOCMarker);
+}
 function setDashboardMapStyle(mode) {
 window._dashboardMapStyle = mode === 'satellite' ? 'satellite' : 'streets';
 var streetBtn = document.getElementById('dashStyleStreet');
@@ -368,6 +390,7 @@ title: 'จุดเกิดเหตุ',
 scaleMode: 'none'
 });
 dashMap.Overlays.add(dashMarker);
+renderDashboardEOCMarker(window._lastEmergState && window._lastEmergState.evtEOCCoords);
 dashMap.location(pos, true);
 if (window._lastEmergState && window._lastEmergState.wind && window._lastEmergState.wind.directionDeg != null) {
 drawWindArrowOnDashMap(window._lastEmergState.wind.directionDeg, window._lastEmergState.wind.speed || 0);
@@ -1446,6 +1469,7 @@ title: 'จุดเกิดเหตุ',
 scaleMode: 'none'
 });
 dashMap.Overlays.add(dashMarker);
+renderDashboardEOCMarker(window._lastEmergState && window._lastEmergState.evtEOCCoords);
 } catch(e) {}
 }
 var ocCurrentUser = '';
