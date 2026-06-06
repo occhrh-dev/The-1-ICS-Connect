@@ -3645,7 +3645,7 @@ var action = openUrl ? ' onclick="window.open(&quot;' + openUrl + '&quot;,&quot;
 var mime = String(m.mimeType || '').toLowerCase();
 var icon = mime.indexOf('video') === 0 ? 'fa-video' : (mime.indexOf('audio') === 0 ? 'fa-volume-high' : 'fa-image');
 return '<div' + action + ' title="' + (m.fileName || '-') + '" style="position:relative;min-width:118px;max-width:132px;border:1px solid ' + (isUnread ? '#fca5a5':'#cbd5e1') + ';background:' + (isUnread ? '#fff7f7':'#f8fafc') + ';border-radius:10px;padding:8px;cursor:' + (openUrl ? 'pointer':'default') + ';box-shadow:' + (isUnread ? '0 0 0 2px rgba(239,68,68,.08)':'none') + ';">' +
-(isUnread ? '<span style="position:absolute;right:5px;top:5px;background:#ef4444;color:#fff;border-radius:999px;padding:1px 6px;font-size:10px;font-weight:900;">\\u0e43\\u0e2b\\u0e21\\u0e48</span>' : '') +
+(isUnread ? '<span style="position:absolute;right:5px;top:5px;background:#ef4444;color:#fff;border-radius:999px;padding:1px 6px;font-size:10px;font-weight:900;">ใหม่</span>' : '') +
 '<div style="display:flex;align-items:center;gap:7px;">' +
 '<div style="width:34px;height:34px;border-radius:9px;background:' + (isUnread ? '#fee2e2':'#e2e8f0') + ';display:flex;align-items:center;justify-content:center;color:' + (isUnread ? '#dc2626':'#334155') + ';font-size:16px;flex-shrink:0;"><i class="fas ' + icon + '"></i></div>' +
 '<div style="min-width:0;flex:1;">' +
