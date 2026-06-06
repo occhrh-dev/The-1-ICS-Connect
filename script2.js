@@ -2690,6 +2690,7 @@ _optimisticRun_('submitSitReport',
 function() { refreshOCData(); });
 }
 function uploadFieldMediaFile(originalFile, source, reporter, done, statusCallback) {
+var LARGE_FILE_THRESHOLD = 8 * 1024 * 1024; // 8 MB — above this, use direct Drive resumable upload
 if (typeof statusCallback === 'function' && originalFile && /^image\//.test(originalFile.type) && originalFile.size > IMAGE_COMPRESS_THRESHOLD) {
   statusCallback('Compressing: ' + originalFile.name);
 }
@@ -2699,11 +2700,28 @@ if (!validation.ok) {
 if (typeof done === 'function') done(new Error(validation.message + (validation.detail ? ' - ' + validation.detail : '')));
 return;
 }
+var agencyId = (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : '');
+// --- Large file: upload directly to Drive (bypasses google.script.run payload limit) ---
+if (file.size > LARGE_FILE_THRESHOLD) {
+if (typeof statusCallback === 'function') statusCallback('เตรียมอัปโหลด: ' + file.name + ' (' + (typeof formatFileSize === 'function' ? formatFileSize(file.size) : Math.round(file.size/1048576)+'MB') + ')');
+google.script.run
+.withSuccessHandler(function(tok) {
+if (!tok || !tok.token || !tok.folderId) {
+if (typeof done === 'function') done(new Error('ไม่สามารถขอสิทธิ์อัปโหลดได้'));
+return;
+}
+_uploadToDriveResumable_(file, tok.token, tok.folderId, source, reporter, agencyId, done, statusCallback);
+})
+.withFailureHandler(function(err) { if (typeof done === 'function') done(err); })
+.getFieldMediaUploadToken(agencyId);
+return;
+}
+// --- Small file: use base64 via google.script.run ---
 var reader = new FileReader();
 if (typeof statusCallback === 'function') statusCallback('Reading: ' + file.name);
 reader.onload = function(e) {
 var base64 = String(e.target.result || '').split(',')[1] || '';
-if (typeof statusCallback === 'function') statusCallback('Uploading to Drive: ' + file.name + ' (' + formatFileSize(file.size) + ')');
+if (typeof statusCallback === 'function') statusCallback('Uploading to Drive: ' + file.name + ' (' + (typeof formatFileSize === 'function' ? formatFileSize(file.size) : Math.round(file.size/1048576)+'MB') + ')');
 google.script.run
 .withSuccessHandler(function(media) {
 window._lastUploadedFieldMedia = media;
@@ -2712,12 +2730,52 @@ if (typeof done === 'function') done(null, media);
 .withFailureHandler(function(err) {
 if (typeof done === 'function') done(err);
 })
-.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', file.name, file.type, base64, '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
+.uploadFieldMedia(source || 'Field', reporter || USER_NAME || '-', file.name, file.type, base64, '', agencyId);
 };
 reader.onerror = function() {
 if (typeof done === 'function') done(new Error('อ่านไฟล์จากเครื่องไม่สำเร็จ'));
 };
 reader.readAsDataURL(file);
+});
+}
+function _uploadToDriveResumable_(file, token, folderId, source, reporter, agencyId, done, statusCallback) {
+if (typeof statusCallback === 'function') statusCallback('กำลังสร้าง session อัปโหลด...');
+var mimeType = file.type || 'application/octet-stream';
+var metadata = JSON.stringify({ name: file.name, mimeType: mimeType, parents: [folderId] });
+fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
+method: 'POST',
+headers: {
+'Authorization': 'Bearer ' + token,
+'Content-Type': 'application/json; charset=UTF-8',
+'X-Upload-Content-Type': mimeType,
+'X-Upload-Content-Length': String(file.size)
+},
+body: metadata
+}).then(function(res) {
+if (!res.ok) return Promise.reject(new Error('เริ่ม upload session ไม่ได้ (HTTP ' + res.status + ')'));
+var uploadUrl = res.headers.get('Location');
+if (!uploadUrl) return Promise.reject(new Error('ไม่ได้รับ upload URL จาก Drive'));
+if (typeof statusCallback === 'function') statusCallback('กำลังอัปโหลด: ' + file.name + ' (' + (typeof formatFileSize === 'function' ? formatFileSize(file.size) : Math.round(file.size/1048576)+'MB') + ')');
+return fetch(uploadUrl, {
+method: 'PUT',
+headers: { 'Content-Type': mimeType },
+body: file
+});
+}).then(function(res) {
+if (!res.ok) return Promise.reject(new Error('อัปโหลดไฟล์ไม่สำเร็จ (HTTP ' + res.status + ')'));
+return res.json();
+}).then(function(driveFile) {
+if (!driveFile || !driveFile.id) return Promise.reject(new Error('ไม่ได้รับ file ID จาก Drive'));
+if (typeof statusCallback === 'function') statusCallback('บันทึกข้อมูลไฟล์...');
+google.script.run
+.withSuccessHandler(function(media) {
+window._lastUploadedFieldMedia = media;
+if (typeof done === 'function') done(null, media);
+})
+.withFailureHandler(function(err) { if (typeof done === 'function') done(err); })
+.registerFieldMediaFile(driveFile.id, source || 'Field', reporter || USER_NAME || '-', file.name, mimeType, '');
+}).catch(function(err) {
+if (typeof done === 'function') done(err instanceof Error ? err : new Error(String(err)));
 });
 }
 function validateFieldMediaFiles(files) {
