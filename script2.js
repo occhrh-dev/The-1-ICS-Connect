@@ -29,10 +29,12 @@ var healthUnits = [
 { type:'กรม', cls:'ub-dpm', name:'กรมควบคุมโรค — CDCU', status:'ETA 30 นาที', detail:'' }
 ];
 function enterHealthScene(userName) {
+if (typeof clearDashboardSceneLocks === 'function') clearDashboardSceneLocks();
 healthCurrentUser = userName || currentUserName || 'MED';
 document.getElementById('health_username').textContent = healthCurrentUser;
 document.getElementById('scene_OrgChart').style.display = 'none';
 document.getElementById('scene_Health').style.display = 'flex';
+if (typeof setHealthMediaFooterVisible === 'function') setHealthMediaFooterVisible(true);
 if (typeof startRoleBroadcastPolling === 'function') startRoleBroadcastPolling('MED');
 startHealthTimer();
 applyOpsSceneLock('MED', IS_LEAD);
