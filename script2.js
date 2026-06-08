@@ -3134,7 +3134,7 @@ if (!result.isConfirmed) return;
 Swal.fire({ title:'กำลังปิดระบบ...', didOpen:function(){ Swal.showLoading(); } });
 google.script.run
 .withSuccessHandler(function(closeResult) {
-google.script.run.withSuccessHandler(function() {
+// 🔧 ไม่ต้องเรียก clearLiveLocations() ซ้ำ — deactivateEmergency ล้าง Live_Locations ให้แล้ว
 Swal.close();
 APP_ACCESS_ROLE = '';
 try { sessionStorage.removeItem('EOC_ACCESS_ROLE'); } catch (e) {}
@@ -3148,7 +3148,6 @@ Swal.fire(
 );
 }, 700);
 }
-}).clearLiveLocations();
 })
 .withFailureHandler(function(err) {
 Swal.close();
