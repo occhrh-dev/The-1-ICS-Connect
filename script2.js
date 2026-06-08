@@ -1024,6 +1024,24 @@ Swal.fire({ title: cfg.label + ' ภายในพื้นที่', html: ht
 function renderOCZones(list) {
 var el = document.getElementById('oc_zone_list');
 var icpHint = document.getElementById('oc_icp_hint');
+var quotaEl = document.getElementById('oc_zone_quota');
+if (quotaEl) {
+var totalCount = (list || []).length;
+var maxZones = (typeof APP_TIER_CONFIG !== 'undefined' && APP_TIER_CONFIG && APP_TIER_CONFIG.maxZones > 0) ? APP_TIER_CONFIG.maxZones : null;
+if (maxZones) {
+var isFull = totalCount >= maxZones;
+var isNear = !isFull && totalCount >= maxZones - 1;
+var bg = isFull ? '#fee2e2' : (isNear ? '#fef3c7' : '#e0f2fe');
+var fg = isFull ? '#991b1b' : (isNear ? '#92400e' : '#075985');
+var msg = isFull ? '⚠️ ปักครบโควตาแล้ว — เพิ่มไม่ได้ (อัปเกรดแพ็กเกจเพื่อปักได้มากขึ้น)' : (isNear ? '🔶 ใกล้เต็มโควตาแล้ว' : '✅ ยังปักเพิ่มได้');
+quotaEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:' + bg + ';color:' + fg + ';border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;">' +
+'<span>📍 ปักไปแล้ว ' + totalCount + ' / ' + maxZones + ' จุด (รวม Command Post)</span>' +
+'<span style="font-weight:600;">' + msg + '</span>' +
+'</div>';
+} else {
+quotaEl.innerHTML = '<div style="font-size:12px;color:#64748b;background:#f1f5f9;border-radius:8px;padding:8px 12px;">📍 ปักไปแล้ว ' + totalCount + ' จุด (ไม่จำกัดจำนวนสำหรับ Tier นี้)</div>';
+}
+}
 var zoneColor = {
 'ICP':'#e74c3c', 'Decon':'#3498db', 'Treatment':'#e74c3c',
 'Staging':'#f1c40f', 'Parking':'#27ae60', 'Loading':'#9b59b6'
@@ -2317,8 +2335,11 @@ removeLongdoOverlay(dashMap, existing.marker);
 removeLongdoOverlay(dashMap, existing.circle);
 }
 var marker = makeLongdoHtmlMarker({ lon: lng, lat: lat }, html, {
-offset: { x: isICP ? 21 : 18, y: isICP ? 54 : 46 },
-weight: longdo.OverlayWeight.Top,
+// 🔧 ใช้ offset {0,0} เหมือนหมุดจุดเกิดเหตุ/EOC — ทำให้ anchor เป็น 'center' ปักกึ่งกลาง element พอดีกับพิกัดจริง ไม่เลื่อน/ไม่ดริฟต์เวลาซูม
+// เดิม offset {21,54}/{18,46} ทำให้ anchor กลายเป็น 'bottom' (ปักที่ขอบล่างของป้ายชื่อแทนที่จะเป็นกึ่งกลางไอคอน) จึงดูเหมือนหมุดเลื่อนตอนซูม
+offset: { x: 0, y: 0 },
+// 🔧 dashMap ปัจจุบันใช้ MapTiler ไม่ใช่ Longdo — ถ้าอ้าง longdo.OverlayWeight ตรงๆ จะ ReferenceError แล้วทำให้ลูปวาดหมุดทั้งหมดพังเงียบๆ (หมุดจุดปฏิบัติการเลยไม่โผล่หลังรีเฟรช)
+weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0,
 title: displayType,
 markerOptions: { detail: detailHtml }
 });
