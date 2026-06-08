@@ -59,6 +59,14 @@ document.querySelectorAll('.health-tab-content').forEach(function(el) { el.style
 var overview = document.getElementById('healthtab_overview');
 if (overview) overview.style.display = 'block';
 })();
+// 🏥 ทำเนียบโรงพยาบาลในพื้นที่ — Tier 3+
+(function() {
+var card = document.getElementById('health_hospital_directory_card');
+if (!card) return;
+var show = (typeof hasFeature === 'function') ? hasFeature('hospital_directory') : false;
+card.style.display = show ? 'block' : 'none';
+if (show) loadHospitalDirectoryForHealthCard();
+})();
 // 🎚️ Tier guards สำหรับ MED scene buttons
 if (typeof applyTierUIRestrictions === 'function') applyTierUIRestrictions();
 // Tag ปุ่ม editHospitalCapacity → Tier 2+
@@ -118,6 +126,26 @@ document.querySelectorAll('.health-tab-content').forEach(function(el) { el.style
 document.querySelectorAll('.health-tab').forEach(function(el) { el.classList.remove('active'); });
 document.getElementById('healthtab_' + tabId).style.display = 'block';
 btn.classList.add('active');
+}
+function renderHospitalDirectoryForHealthCard(list) {
+var box = document.getElementById('health_hospital_directory_list');
+if (!box) return;
+list = list || [];
+if (!list.length) { box.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:8px;">ยังไม่มีข้อมูลทำเนียบโรงพยาบาล — ติดต่อแอดมินเพื่อเพิ่มรายการ</div>'; return; }
+box.innerHTML = list.map(function(h) {
+return '<div style="background:white;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;">' +
+'<div style="font-weight:900;color:#0f172a;font-size:13px;">' + roleSafeText(h.name) + '</div>' +
+'<div style="color:#2563eb;font-size:12px;margin-top:2px;"><i class="fas fa-notes-medical"></i> รับผู้ป่วยประเภท: ' + roleSafeText(h.acceptTypes || '-') + '</div>' +
+(h.phone ? '<a href="tel:' + roleSafeText(h.phone) + '" style="color:#16a34a;font-size:12px;font-weight:900;text-decoration:none;"><i class="fas fa-phone"></i> ' + roleSafeText(h.phone) + '</a>' : '') +
+'</div>';
+}).join('');
+}
+function loadHospitalDirectoryForHealthCard() {
+if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+google.script.run
+.withSuccessHandler(function(list) { renderHospitalDirectoryForHealthCard(list || []); })
+.withFailureHandler(function() { renderHospitalDirectoryForHealthCard([]); })
+.getHospitalDirectory(APP_AGENCY_ID || '');
 }
 function refreshHealthData() {
 google.script.run
@@ -380,6 +408,7 @@ healthCurrentUser || 'MED'
 });
 }
 function sendHealthReport() {
+if (!requireFeature('triage', 'ส่งรายงาน สสอ./สสจ. (ระดับ 2+)')) return;
 var red = document.getElementById('health_red').textContent;
 var yellow = document.getElementById('health_yellow').textContent;
 var green = document.getElementById('health_green').textContent;
@@ -740,7 +769,6 @@ renderOCZones([]);
 renderOCSitHistory([]);
 renderOCReqHistory([]);
 refreshOCSupportRequestsDirect('oc');
-renderOCSafety([]);
 })
 .withSuccessHandler(function(state) {
 window._ocStateLoading = false;
@@ -775,7 +803,6 @@ renderOCReqHistory(state.supportReqs || []);
 if (!state.supportReqs || !state.supportReqs.length) {
 refreshOCSupportRequestsDirect('oc');
 }
-renderOCSafety(state.liveLocations || []);
 })
 .getOCState();
 }
@@ -1087,7 +1114,7 @@ row.innerHTML =
 wrap.appendChild(row);
 }
 function openHealthTriageDetails(color) {
-if (typeof requireFeature === 'function' && !requireFeature('triage', 'รายละเอียดผู้บาดเจ็บ (ระดับ 2+)')) return;
+if (typeof requireFeature === 'function' && !requireFeature('mci', 'รายละเอียดผู้บาดเจ็บ / รพ. (ระดับ 3+)')) return;
 var labelMap = { red:'แดง', yellow:'เหลือง', green:'เขียว', black:'ดำ' };
 var rows = (window._healthTriageDetails || []).filter(function(r) {
 return String(r.triage || r.color || '').toLowerCase() === color;
@@ -1205,32 +1232,6 @@ detail: detailParts.length ? detailParts.join(' | ') : text,
 attach: '',
 by: (sit && sit.createdBy) || 'IC'
 };
-}
-function renderOCSafety(liveLocations) {
-var el = document.getElementById('oc_safety_list');
-var inZone = liveLocations.filter(function(l) {
-return l.type === 'hotzone' || l.type === 'warmzone';
-});
-if (!inZone.length) {
-el.innerHTML = '<div style="text-align:center;color:#aaa;padding:20px;font-size:13px;">ไม่มีเจ้าหน้าที่ใน Hot/Warm Zone</div>';
-return;
-}
-var now = Date.now();
-el.innerHTML = inZone.map(function(l) {
-var isHot = l.type === 'hotzone';
-var zoneLabel = isHot ? 'Hot Zone' : 'Warm Zone';
-var zoneColor = isHot ? '#e74c3c' : '#e67e22';
-return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f0f0;">' +
-'<div style="width:32px;height:32px;border-radius:50%;background:' + zoneColor + ';display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:14px;flex-shrink:0;">' +
-(l.name ? l.name.charAt(0) : '?') +
-'</div>' +
-'<div style="flex:1;">' +
-'<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' + l.name + '</div>' +
-'<div style="font-size:11px;color:#666;">' + l.role + '</div>' +
-'</div>' +
-'<span style="background:' + zoneColor + '20;color:' + zoneColor + ';border-radius:4px;padding:2px 8px;font-size:11px;font-weight:bold;">' + zoneLabel + '</span>' +
-'</div>';
-}).join('');
 }
 function showOCSending(title, text) {
 Swal.fire({
@@ -2952,6 +2953,14 @@ list = list || [];
 list = list.filter(function(item) {
 return !getRoleUpdateBucket(item.source || item.roleCode);
 });
+// 🔒 Tier 1: รับภาพหน้างานจาก OSC เท่านั้น และแสดงสูงสุด 5 ไฟล์
+if (typeof hasFeature === 'function' && !hasFeature('media_upload')) {
+list = list.filter(function(item) {
+var src = String(item.source || item.roleCode || '').trim().toUpperCase();
+return src === 'OSC' || src === 'OC';
+});
+list = list.slice(0, 5);
+}
 var latest = list[0] || null;
 var latestId = getFieldMediaId(latest);
 var seenId = window._lastSeenFieldMediaId;
@@ -3103,12 +3112,14 @@ if (result.isConfirmed) done();
 });
 }
 function doEndMission() {
+// 🔒 Tier 1: ซ่อนปุ่ม Export Log PDF (จบภารกิจได้ปกติ)
+var canExportLog = (typeof hasFeature !== 'function') || hasFeature('triage');
 Swal.fire({
 title: 'ยืนยันจบภารกิจ?',
 text: 'ระบบจะปิดศูนย์ EOC และล้างพิกัดเจ้าหน้าที่ทั้งหมด',
 icon: 'warning',
 showCancelButton: true,
-showDenyButton: true,
+showDenyButton: canExportLog,
 confirmButtonColor: '#e74c3c',
 confirmButtonText: 'ยืนยัน ปิดศูนย์',
 denyButtonColor: '#2980b9',
