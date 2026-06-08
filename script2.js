@@ -1554,6 +1554,10 @@ google.script.run
 refreshOCData();
 Swal.fire({ icon:'success', title:'บันทึกจุดแล้ว', timer:1500, showConfirmButton:false });
 })
+.withFailureHandler(function(err) {
+Swal.close();
+Swal.fire('บันทึกจุดไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
+})
 .saveZoneMarker(zType, zLabel, lat, lng, '', ocCurrentUser, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 };
 openMap();
@@ -1573,6 +1577,10 @@ google.script.run
 .withSuccessHandler(function() {
 refreshOCData();
 Swal.fire({ icon:'success', title:'บันทึก Command Post แล้ว', timer:1500, showConfirmButton:false });
+})
+.withFailureHandler(function(err) {
+Swal.close();
+Swal.fire('บันทึก Command Post ไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
 })
 .saveZoneMarker('ICP', label, lat, lng, 'Manual map', ocCurrentUser, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 };
@@ -1600,6 +1608,10 @@ google.script.run
 .withSuccessHandler(function() {
 refreshOCData();
 Swal.fire({ icon:'success', title:'บันทึก ICP แล้ว', text:'ใช้ตำแหน่งปัจจุบันเป็นจุดบัญชาการ', timer:1800, showConfirmButton:false });
+})
+.withFailureHandler(function(err) {
+Swal.close();
+Swal.fire('บันทึก ICP ไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
 })
 .saveZoneMarker('ICP', label, saveLat, saveLng, 'Current GPS', ocCurrentUser, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 };
@@ -2882,9 +2894,20 @@ function openFieldMediaItem(index) {
 var item = (window._fieldMediaReports || [])[index];
 if (!item) return;
 var mime = String(item.mimeType || '');
-var media = mime.indexOf('image/') === 0
-? '<img src="' + (item.thumbUrl || item.directUrl || item.previewUrl || item.url) + '" style="width:100%;max-height:72vh;object-fit:contain;border-radius:10px;background:#102a43;">'
-: '<iframe src="' + (item.previewUrl || item.url) + '" style="width:100%;height:72vh;border:0;border-radius:10px;background:#102a43;" allowfullscreen></iframe>';
+// 🔧 วิดีโอ/เสียง: เล่นตรงผ่าน <video>/<audio> ด้วย directUrl (ไฟล์ดิบ) แทนการฝัง Drive preview iframe
+// เพราะ iframe preview ของ Drive ต้องรอ Drive ประมวลผล/transcode ไฟล์ก่อนถึงจะเล่นได้ (ขึ้น "ยังอยู่ระหว่างประมวลผล...")
+// ส่วน <video>/<audio> ให้เบราว์เซอร์เล่นไฟล์ดิบโดยตรง ไม่ต้องรอ
+var media;
+if (mime.indexOf('image/') === 0) {
+media = '<img src="' + (item.thumbUrl || item.directUrl || item.previewUrl || item.url) + '" style="width:100%;max-height:72vh;object-fit:contain;border-radius:10px;background:#102a43;">';
+} else if (mime.indexOf('video/') === 0) {
+media = '<video controls preload="metadata" playsinline style="width:100%;max-height:72vh;border-radius:10px;background:#000;" src="' + (item.directUrl || item.previewUrl || item.url) + '">'
++ '<a href="' + (item.directUrl || item.url) + '" target="_blank" style="color:#93c5fd;">ดาวน์โหลดวิดีโอ</a></video>';
+} else if (mime.indexOf('audio/') === 0) {
+media = '<audio controls style="width:100%;margin:20px 0;" src="' + (item.directUrl || item.previewUrl || item.url) + '"></audio>';
+} else {
+media = '<iframe src="' + (item.previewUrl || item.url) + '" style="width:100%;height:72vh;border:0;border-radius:10px;background:#102a43;" allowfullscreen></iframe>';
+}
 var html = media +
 '<div style="text-align:left;margin-top:10px;font-size:14px;color:#475569;">' +
 '<b>ลำดับ ' + (index + 1) + '</b><br>' +
