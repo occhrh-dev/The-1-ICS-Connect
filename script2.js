@@ -1857,7 +1857,7 @@ var html = '<div style="display:flex;align-items:center;gap:8px;background:' + b
 '</div>';
 var detail = '<b>คำขอสนับสนุนจาก OC/ICP</b><br>' + buildOCSupportAlertDetail(activeReqs);
 var overlay = makeLongdoHtmlMarker({ lon: lng, lat: lat }, html, {
-offset: { x: -92, y: 88 },
+offset: { x: 0, y: 0 },
 weight: longdo.OverlayWeight.Top,
 title: 'คำขอสนับสนุนจาก OC/ICP',
 scaleMode: 'label',
@@ -1867,25 +1867,7 @@ dashMap.Overlays.add(overlay);
 window._icOCReqAlertOverlays.push(overlay);
 }
 function getOCZoneVisualOffset(type, zone, zones) {
-var lat = parseFloat(zone && (zone.lat || zone.Lat));
-var lng = parseFloat(zone && (zone.lng || zone.Lng));
-if (isNaN(lat) || isNaN(lng)) return { x:0, y:0 };
-var nearCount = (zones || []).filter(function(other) {
-var oLat = parseFloat(other && (other.lat || other.Lat));
-var oLng = parseFloat(other && (other.lng || other.Lng));
-if (isNaN(oLat) || isNaN(oLng)) return false;
-return distanceMetersBetween(lat, lng, oLat, oLng) <= 90;
-}).length;
-if (nearCount <= 1) return { x:0, y:0 };
-var offsets = {
-ICP: { x:0, y:0 },
-Decon: { x:-44, y:-18 },
-Treatment: { x:44, y:-18 },
-Parking: { x:50, y:24 },
-Loading: { x:-50, y:24 },
-Staging: { x:0, y:48 }
-};
-return offsets[type] || { x:0, y:-48 };
+return { x:0, y:0 };
 }
 function ensureOCRequestAlertStyle() {
 if (document.getElementById('oc_request_alert_style')) return;
@@ -1917,7 +1899,7 @@ var html = '<div style="display:flex;align-items:center;gap:7px;background:rgba(
 '<span>' + Number(speed || 0).toFixed(1) + ' m/s</span>' +
 '</div>';
 var marker = makeLongdoHtmlMarker(loc, html, {
-offset: { x: -18, y: 48 },
+offset: { x: 0, y: 0 },
 weight: longdo.OverlayWeight.Top,
 scaleMode: 'label'
 });
@@ -2257,7 +2239,7 @@ return [r.rowIndex || '', r.type || '', r.status || 'pending', r.responseNote ||
 }).join(',');
 var drawKey = zones.map(function(z) {
 return [z.type || z.ZoneType || '', z.label || z.Label || '', z.lat || z.Lat || '', z.lng || z.Lng || '', z.loggedBy || z.by || '', z.phone || z.tel || ''].join('|');
-}).join('~') + '|marker-style-command-post-stable-v4|' + reqKey;
+}).join('~') + '|marker-style-command-post-stable-v5-anchor-exact|' + reqKey;
 if (window._icOCZoneDrawKey === drawKey && window._icOCZoneMapRef === dashMap && window._icOCZoneOverlays && window._icOCZoneOverlays.length) return;
 window._icOCZoneDrawKey = drawKey;
 window._icOCZoneMapRef = dashMap;
