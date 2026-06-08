@@ -2298,10 +2298,12 @@ ocPhone
 ].join('|');
 var zoneSignature = zoneKey + '|' + (isICP ? reqKey : '');
 var existing = oldRecords[zoneKey];
-var html = '<div style="display:flex;flex-direction:column;align-items:center;pointer-events:auto;position:relative;transform:translate(' + visual.x + 'px,' + visual.y + 'px);">' +
-(reqs.length ? '<div style="position:absolute;top:-22px;right:-54px;background:' + alertColor + ';color:white;border:3px solid white;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.55);white-space:nowrap;">' + alertText + '</div>' : '') +
-'<div style="width:' + (isICP ? 42:36) + 'px;height:' + (isICP ? 42:36) + 'px;border-radius:50%;background:' + color + ';border:3px solid white;box-shadow:0 0 0 3px ' + halo + '88,0 4px 12px rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;color:white;font-size:' + (isICP ? 18:16) + 'px;"><i class="fas fa-shield-alt"></i></div>' +
-'<div style="margin-top:5px;background:' + color + ';color:white;font-weight:bold;font-size:10px;padding:2px 7px;border-radius:5px;white-space:nowrap;box-shadow:0 2px 7px rgba(0,0,0,.58);border:1px solid rgba(255,255,255,.92);">' + displayType + '</div>' +
+var iconSize = isICP ? 42 : 36;
+var labelTop = visual.y + (iconSize / 2) + 5;
+var html = '<div style="position:relative;width:0;height:0;overflow:visible;pointer-events:auto;">' +
+(reqs.length ? '<div style="position:absolute;left:' + (visual.x + 24) + 'px;top:' + (visual.y - 34) + 'px;transform:translateX(-50%) scale(var(--dash-marker-scale,1));transform-origin:bottom center;background:' + alertColor + ';color:white;border:3px solid white;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.55);white-space:nowrap;z-index:3;">' + alertText + '</div>' : '') +
+'<div style="position:absolute;left:' + visual.x + 'px;top:' + visual.y + 'px;width:' + iconSize + 'px;height:' + iconSize + 'px;transform:translate(-50%,-50%) scale(var(--dash-marker-scale,1));transform-origin:center center;transition:transform .12s ease-out;border-radius:50%;background:' + color + ';border:3px solid white;box-shadow:0 0 0 3px ' + halo + '88,0 4px 12px rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;color:white;font-size:' + (isICP ? 18:16) + 'px;z-index:2;"><i class="fas fa-shield-alt"></i></div>' +
+'<div style="position:absolute;left:' + visual.x + 'px;top:' + labelTop + 'px;transform:translateX(-50%) scale(var(--dash-marker-scale,1));transform-origin:top center;transition:transform .12s ease-out;background:' + color + ';color:white;font-weight:bold;font-size:10px;padding:2px 7px;border-radius:5px;white-space:nowrap;box-shadow:0 2px 7px rgba(0,0,0,.58);border:1px solid rgba(255,255,255,.92);z-index:2;">' + displayType + '</div>' +
 '</div>';
 var reqHtml = reqs.length ? '<hr><b>คำขอสนับสนุนจาก OC</b><br>' + reqs.map(function(r) {
 var status = String(r.status || 'pending').toLowerCase();
@@ -2340,6 +2342,8 @@ var marker = makeLongdoHtmlMarker({ lon: lng, lat: lat }, html, {
 offset: { x: 0, y: 0 },
 // 🔧 dashMap ปัจจุบันใช้ MapTiler ไม่ใช่ Longdo — ถ้าอ้าง longdo.OverlayWeight ตรงๆ จะ ReferenceError แล้วทำให้ลูปวาดหมุดทั้งหมดพังเงียบๆ (หมุดจุดปฏิบัติการเลยไม่โผล่หลังรีเฟรช)
 weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0,
+// 🔧 ตัวจริงที่ทำให้หมุด "เลื่อน" ตอนซูม คือ CSS scale (--dash-marker-scale) ที่ใส่ให้อัตโนมัติถ้าไม่ระบุ scaleMode — ใส่ 'none' เหมือนหมุดจุดเกิดเหตุ/EOC เพื่อตัดการ scale ผ่าน CSS ออก จุดจะได้นิ่งสนิทกับพิกัดจริงทุกระดับซูม
+scaleMode: 'none',
 title: displayType,
 markerOptions: { detail: detailHtml }
 });
