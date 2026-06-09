@@ -592,6 +592,12 @@ updateRoleTimerElement('evac_timer');
 }, 1000);
 }
 function openEvacMapPicker() {
+window._mapPickerContext = {
+titleHtml: '<i class="fas fa-person-shelter"></i> เลือกจุดอพยพ',
+searchPlaceholder: 'ค้นหาสถานที่สำหรับจุดอพยพ...',
+coordPlaceholder: 'วาง Google Maps link หรือ lat,lon ของจุดอพยพ',
+selectedText: 'ยังไม่ได้เลือกพิกัดจุดอพยพ'
+};
 window._zonePickerCallback = function(lat, lng) {
 evacSelectedLat = lat;
 evacSelectedLng = lng;
@@ -781,6 +787,9 @@ renderOCBanner(es);
 refreshOCBannerOnly();
 }
 window._lastERGState = state.ergState || window._lastERGState || {};
+if (typeof renderPickerMapContext === 'function') {
+try { renderPickerMapContext(true); } catch (e) { }
+}
 renderOCResources(state.resources || []);
 if (!state.resources || !state.resources.length) {
 refreshOCResourcesDirect();
@@ -1562,6 +1571,12 @@ mapPickerMode = 'zone';
 mapPickLockToCurrent = false;
 tempLat = "";
 tempLng = "";
+window._mapPickerContext = {
+titleHtml: '<i class="fas fa-map-location-dot"></i> เลือกจุดปฏิบัติการ',
+searchPlaceholder: 'ค้นหาตำแหน่งจุดปฏิบัติการ...',
+coordPlaceholder: 'วาง Google Maps link หรือ lat,lon ของจุดปฏิบัติการ',
+selectedText: 'ยังไม่ได้เลือกพิกัดจุดปฏิบัติการ'
+};
 document.getElementById('selectedCoordText').innerText = 'พิกัด: ยังไม่ได้เลือก (กำลังตั้งจุดปฏิบัติการ)';
 window._zonePickerCallback = function(lat, lng) {
 var zType = document.getElementById('oc_zone_type_sel').value;
@@ -1585,6 +1600,12 @@ mapPickerMode = 'zone';
 mapPickLockToCurrent = false;
 tempLat = "";
 tempLng = "";
+window._mapPickerContext = {
+titleHtml: '<i class="fas fa-shield-alt"></i> เลือก Command Post',
+searchPlaceholder: 'ค้นหาตำแหน่ง Command Post...',
+coordPlaceholder: 'วาง Google Maps link หรือ lat,lon ของ Command Post',
+selectedText: 'ยังไม่ได้เลือกพิกัด Command Post'
+};
 var text = document.getElementById('selectedCoordText');
 if (text) text.innerText = 'เลือกจุด Command Post บนแผนที่';
 window._zonePickerCallback = function(lat, lng) {
@@ -1614,6 +1635,12 @@ navigator.geolocation.getCurrentPosition(function(pos) {
 Swal.close();
 mapPickerMode = 'zone';
 mapPickLockToCurrent = true;
+window._mapPickerContext = {
+titleHtml: '<i class="fas fa-shield-alt"></i> เลือก Command Post',
+searchPlaceholder: 'ค้นหาตำแหน่ง Command Post...',
+coordPlaceholder: 'วาง Google Maps link หรือ lat,lon ของ Command Post',
+selectedText: 'ใช้ตำแหน่งปัจจุบันเป็น Command Post'
+};
 var lat = pos.coords.latitude.toFixed(6);
 var lng = pos.coords.longitude.toFixed(6);
 tempLat = lat;
