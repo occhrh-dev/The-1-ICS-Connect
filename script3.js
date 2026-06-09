@@ -461,6 +461,7 @@ setTimeout(ensureDashboardMarkerSeparationZoom, 350);
 if (window._lastEmergState && window._lastEmergState.wind && window._lastEmergState.wind.directionDeg != null) {
 drawWindArrowOnDashMap(window._lastEmergState.wind.directionDeg, window._lastEmergState.wind.speed || 0);
 }
+setTimeout(refreshDashboardERGZone, 350);
 setTimeout(function() {
 if (typeof refreshICOCFeedsDirect === 'function') refreshICOCFeedsDirect();
 }, 600);
@@ -1151,6 +1152,91 @@ hazmatZoneOverlays = [];
 hazmatZoneLabels = [];
 document.getElementById('zone_chips').style.display = 'none';
 document.getElementById('zone_radius_preview').style.display = 'none';
+}
+function getDashboardERGTimeKey() {
+if (typeof _timeOfDay !== 'undefined' && (_timeOfDay === 'dy' || _timeOfDay === 'nte')) return _timeOfDay;
+var h = new Date().getHours();
+return (h >= 6 && h < 18) ? 'dy' : 'nte';
+}
+function drawHazmatZonesFromState(erg) {
+erg = erg || window._lastERGState || {};
+if (!dashMap || !incidentCenter || !incidentCenter.lat || !incidentCenter.lng) return;
+var isoM = Number(erg.isoM || erg.sm_iso || erg.isolation_m || 0) || 0;
+var timeKey = getDashboardERGTimeKey();
+var protM = timeKey === 'nte'
+? Number(erg.nightM || erg.night_prot_m || erg.sm_nte || erg.lg_nte || 0)
+: Number(erg.dayM || erg.day_prot_m || erg.sm_dy || erg.lg_dy || 0);
+protM = Number(protM) || 0;
+if (!isoM && !protM) return;
+clearHazmatZones();
+var lat = incidentCenter.lat;
+var lng = incidentCenter.lng;
+var zones = [];
+if (protM && protM > isoM) {
+zones.push({
+r: protM,
+fill: 'rgba(142,68,173,0.10)',
+stroke: '#8e44ad',
+label: 'เขตเฝ้าระวังตามลม ' + protM + ' m',
+labelColor: '#8e44ad'
+});
+}
+if (isoM) {
+zones.push({
+r: isoM,
+fill: 'rgba(192,57,43,0.25)',
+stroke: '#c0392b',
+label: 'เขตกั้นแยก ' + isoM + ' m',
+labelColor: '#c0392b'
+});
+}
+zones.forEach(function(z, idx) {
+var overlay = makeMapTilerCircleOverlay({ lon: lng, lat: lat }, z.r, {
+lineWidth: 2,
+lineColor: z.stroke,
+fillColor: z.fill,
+label: false
+});
+dashMap.Overlays.add(overlay);
+hazmatZoneOverlays.push(overlay);
+var labelPoint = smartCircleLabelPoint(lat, lng, z.r * 1.02, idx);
+var lMarker = makeLongdoHtmlMarker({ lon: labelPoint.lng, lat: labelPoint.lat },
+'<div style="background:rgba(255,255,255,0.92);color:' + z.labelColor + ';font-weight:bold;font-size:10px;padding:2px 8px;border-radius:10px;border:2px solid ' + z.stroke + ';white-space:nowrap;">' + z.label + '</div>',
+{ offset: { x: 0, y: 0 }, weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0, scaleMode: 'label' }
+);
+dashMap.Overlays.add(lMarker);
+hazmatZoneLabels.push(lMarker);
+});
+if (isoM) {
+document.getElementById('chip_iso_m').innerText = isoM + ' m';
+document.getElementById('chip_iso').style.display = 'flex';
+}
+if (protM) {
+document.getElementById('chip_prot_m').innerText = protM + ' m';
+document.getElementById('chip_prot').style.display = 'flex';
+} else {
+document.getElementById('chip_prot').style.display = 'none';
+}
+document.getElementById('zone_chips').style.display = 'block';
+}
+function refreshDashboardERGZone() {
+if (!dashMap || !incidentCenter || !incidentCenter.lat) return;
+if (window._lastERGState && (window._lastERGState.isoM || window._lastERGState.dayM || window._lastERGState.nightM)) {
+drawHazmatZonesFromState(window._lastERGState);
+return;
+}
+if (typeof google === 'undefined' || !google.script || !google.script.run || window._dashboardERGLoading) return;
+window._dashboardERGLoading = true;
+google.script.run
+.withSuccessHandler(function(erg) {
+window._dashboardERGLoading = false;
+window._lastERGState = erg || window._lastERGState || {};
+drawHazmatZonesFromState(window._lastERGState);
+})
+.withFailureHandler(function() {
+window._dashboardERGLoading = false;
+})
+.getERGState();
 }
 const START_STEPS = [
 {
