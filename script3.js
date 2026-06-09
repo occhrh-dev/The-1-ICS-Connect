@@ -983,6 +983,81 @@ var hdrErg = document.getElementById('header_erg_name');
 if (hdrErg && found) hdrErg.innerText = 'UN ' + un + ' ' + found.name.split(' ')[0];
 box.style.display = 'block';
 }
+function getErgRecordBySavedState(erg) {
+erg = erg || {};
+if (typeof ERG_DATABASE === 'undefined' || !Array.isArray(ERG_DATABASE) || !ERG_DATABASE.length) return null;
+var unNum = parseInt(erg.un, 10);
+if (!isNaN(unNum)) {
+var byUn = ERG_DATABASE.find(function(r) { return parseInt(r.mtl_id, 10) === unNum; });
+if (byUn) return byUn;
+}
+var name = String(erg.name || '').trim().toUpperCase();
+if (!name) return null;
+return ERG_DATABASE.find(function(r) { return String(r.name || '').trim().toUpperCase() === name; }) || null;
+}
+function buildFallbackErgRecord(erg) {
+erg = erg || {};
+var isoM = Number(erg.isoM || erg.sm_iso || erg.isolation_m || 0) || 0;
+var dayM = Number(erg.dayM || erg.day_prot_m || erg.sm_dy || 0) || 0;
+var nightM = Number(erg.nightM || erg.night_prot_m || erg.sm_nte || 0) || 0;
+if (!String(erg.name || '').trim() && !String(erg.un || '').trim() && !isoM && !dayM && !nightM) return null;
+return {
+mtl_id: String(erg.un || '').trim(),
+name: String(erg.name || '').trim() || 'Unknown',
+guide_num: '',
+sm_iso: isoM,
+lg_iso: isoM,
+fire_iso: 0,
+sm_dy: dayM,
+lg_dy: dayM,
+sm_nte: nightM,
+lg_nte: nightM
+};
+}
+function renderSavedERGSelectionFromState(erg) {
+erg = erg || window._lastERGState || {};
+var found = getErgRecordBySavedState(erg) || buildFallbackErgRecord(erg);
+var hdrErg = document.getElementById('header_erg_name');
+var box = document.getElementById('erg_result_box');
+var txt = document.getElementById('erg_result_text');
+var input = document.getElementById('erg_query');
+if (!found) {
+if (hdrErg) hdrErg.innerText = '— ยังไม่ค้น —';
+return;
+}
+var un = found.mtl_id || erg.un || '';
+var name = found.name || erg.name || '';
+var isoM = Number(found.sm_iso || erg.isoM || erg.sm_iso || 0) || 0;
+var dayM = Number(found.sm_dy || found.lg_dy || erg.dayM || erg.day_prot_m || 0) || 0;
+var nightM = Number(found.sm_nte || found.lg_nte || erg.nightM || erg.night_prot_m || 0) || 0;
+var guide = found.guide_num ? ('#' + found.guide_num) : '—';
+_ergCurrent = {
+name: name,
+un: un,
+sm_iso: isoM,
+lg_iso: Number(found.lg_iso || isoM) || isoM,
+fire_iso: Number(found.fire_iso || 0) || 0,
+sm_dy: dayM || null,
+sm_nte: nightM || null,
+lg_dy: Number(found.lg_dy || dayM) || dayM || null,
+lg_nte: Number(found.lg_nte || nightM) || nightM || null
+};
+if (input && !input.value) input.value = String(un || name || '');
+if (hdrErg) hdrErg.innerText = ('UN ' + (un || '?') + ' ' + String(name).split(' ')[0]).trim();
+if (txt) {
+txt.innerHTML =
+'<div style="color:#f1c40f;font-size:1rem;font-weight:bold;">UN ' + ergSafeHtml(un || '?') + ' — ' + ergSafeHtml(name || '-') + '</div>' +
+'<div style="margin:4px 0;color:#aaa;font-size:0.7rem;">ERG Guide: <b style="color:white;">' + ergSafeHtml(guide) + '</b></div>' +
+'<hr style="border-color:#444;margin:6px 0;">' +
+'<div>🚧 <span class="erg-iso">เขตกั้นแยก: ' + ergSafeHtml(isoM || '-') + ' m</span></div>' +
+((dayM || nightM) ? (
+'<div style="color:#aaa;font-size:0.72rem;margin-top:4px;">📡 เขตเฝ้าระวัง/อพยพตามลม: ' +
+'☀️ <b style="color:#eee;">' + ergSafeHtml(dayM || '—') + '</b> / 🌙 <b style="color:#eee;">' + ergSafeHtml(nightM || '—') + '</b> m</div>'
+) : '<div style="color:#aaa;font-size:0.72rem;margin-top:4px;">⚠️ ไม่มีข้อมูล TIH protective action</div>');
+}
+if (box) box.style.display = 'block';
+updateZonePreview();
+}
 var hazmatZoneOverlays = [];
 var hazmatZoneLabels = [];
 function metersBetweenLatLng(aLat, aLng, bLat, bLng) {
@@ -1222,6 +1297,7 @@ document.getElementById('zone_chips').style.display = 'block';
 function refreshDashboardERGZone() {
 if (!dashMap || !incidentCenter || !incidentCenter.lat) return;
 if (window._lastERGState && (window._lastERGState.isoM || window._lastERGState.dayM || window._lastERGState.nightM)) {
+renderSavedERGSelectionFromState(window._lastERGState);
 drawHazmatZonesFromState(window._lastERGState);
 return;
 }
@@ -1231,6 +1307,7 @@ google.script.run
 .withSuccessHandler(function(erg) {
 window._dashboardERGLoading = false;
 window._lastERGState = erg || window._lastERGState || {};
+renderSavedERGSelectionFromState(window._lastERGState);
 drawHazmatZonesFromState(window._lastERGState);
 })
 .withFailureHandler(function() {
