@@ -1,9 +1,9 @@
 // Service Worker for EOC Rayong War Room
-const CACHE_NAME = 'eoc-warroom-v20260609_1125';
+const CACHE_NAME = 'eoc-warroom-v20260609_1135';
 
 const STATIC_ASSETS = [
-  'https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260609_1125',
-  'https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260609_1125',
+  'https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260609_1135',
+  'https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260609_1135',
   'https://occhrh-dev.github.io/HazMat-Mapper/the1ICS.png'
 ];
 
@@ -48,5 +48,4 @@ self.addEventListener('fetch', function(event) {
     })
   );
 });
-
 
