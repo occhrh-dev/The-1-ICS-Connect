@@ -310,15 +310,16 @@ var html = buildDashboardPointMarkerHtml(
 hideLabel ? '' : '<div style="background:#1d4ed8;color:#fff;font-weight:900;font-size:10px;padding:2px 7px;border-radius:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(15,23,42,.25);">EOC</div>',
 { iconSize: iconSize, scale: true, zIndex: compact ? 2 : 8 }
 );
-// 🔧 ใช้ offset {0,0} เหมือนหมุดจุดเกิดเหตุ (dashMarker) — ทำให้ anchor เป็น 'center' ปักกึ่งกลางไอคอนพอดีกับพิกัดจริง
-// เดิม offset {0,-6} ทำให้ anchor กลายเป็น 'bottom' (ปักที่ขอบล่างของป้าย EOC แทนที่จะเป็นกึ่งกลางไอคอน) จึงดูเหมือนหมุดเลื่อน/ไม่นิ่งเวลาซูม
+// ðŸ”§ à¹ƒà¸Šà¹‰ offset {0,0} à¹€à¸«à¸¡à¸·à¸­à¸™à¸«à¸¡à¸¸à¸”à¸ˆà¸¸à¸”à¹€à¸à¸´à¸”à¹€à¸«à¸•à¸¸ (dashMarker) â€” à¸—à¸³à¹ƒà¸«à¹‰ anchor à¹€à¸›à¹‡à¸™ 'center' à¸›à¸±à¸à¸à¸¶à¹ˆà¸‡à¸à¸¥à¸²à¸‡à¹„à¸­à¸„à¸­à¸™à¸žà¸­à¸”à¸µà¸à¸±à¸šà¸žà¸´à¸à¸±à¸”à¸ˆà¸£à¸´à¸‡
+// à¹€à¸”à¸´à¸¡ offset {0,-6} à¸—à¸³à¹ƒà¸«à¹‰ anchor à¸à¸¥à¸²à¸¢à¹€à¸›à¹‡à¸™ 'bottom' (à¸›à¸±à¸à¸—à¸µà¹ˆà¸‚à¸­à¸šà¸¥à¹ˆà¸²à¸‡à¸‚à¸­à¸‡à¸›à¹‰à¸²à¸¢ EOC à¹à¸—à¸™à¸—à¸µà¹ˆà¸ˆà¸°à¹€à¸›à¹‡à¸™à¸à¸¶à¹ˆà¸‡à¸à¸¥à¸²à¸‡à¹„à¸­à¸„à¸­à¸™) à¸ˆà¸¶à¸‡à¸”à¸¹à¹€à¸«à¸¡à¸·à¸­à¸™à¸«à¸¡à¸¸à¸”à¹€à¸¥à¸·à¹ˆà¸­à¸™/à¹„à¸¡à¹ˆà¸™à¸´à¹ˆà¸‡à¹€à¸§à¸¥à¸²à¸‹à¸¹à¸¡
 dashEOCMarker = makeLongdoHtmlMarker(eocLoc, html, {
 offset: { x: 0, y: 0 },
 weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0,
-title: 'ที่ตั้ง EOC',
+title: 'à¸—à¸µà¹ˆà¸•à¸±à¹‰à¸‡ EOC',
 scaleMode: 'none'
 });
 dashMap.Overlays.add(dashEOCMarker);
+ensureDashboardMarkerSeparationZoom();
 }
 function setDashboardMapStyle(mode) {
 window._dashboardMapStyle = mode === 'satellite' ? 'satellite' : 'streets';
@@ -375,17 +376,17 @@ return { lat: 12.6814, lng: 101.2816 };
 }
 function openLongdoTrafficMap() {
 if (typeof longdo === 'undefined' || !longdo.Map) {
-Swal.fire('ยังเปิดจราจรไม่ได้', 'Longdo Map API ยังโหลดไม่เสร็จ กรุณาลองอีกครั้ง', 'warning');
+Swal.fire('à¸¢à¸±à¸‡à¹€à¸›à¸´à¸”à¸ˆà¸£à¸²à¸ˆà¸£à¹„à¸¡à¹ˆà¹„à¸”à¹‰', 'Longdo Map API à¸¢à¸±à¸‡à¹‚à¸«à¸¥à¸”à¹„à¸¡à¹ˆà¹€à¸ªà¸£à¹‡à¸ˆ à¸à¸£à¸¸à¸“à¸²à¸¥à¸­à¸‡à¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡', 'warning');
 return;
 }
 var point = getDashboardIncidentPoint();
 Swal.fire({
-title: '<i class="fas fa-road"></i> แผนที่จราจร Longdo',
+title: '<i class="fas fa-road"></i> à¹à¸œà¸™à¸—à¸µà¹ˆà¸ˆà¸£à¸²à¸ˆà¸£ Longdo',
 html:
-'<div style="text-align:left;font-size:13px;color:#475569;margin-bottom:8px;">ดูสภาพจราจรโดยไม่กระทบแผนที่หลักของ Dashboard</div>' +
+'<div style="text-align:left;font-size:13px;color:#475569;margin-bottom:8px;">à¸”à¸¹à¸ªà¸ à¸²à¸žà¸ˆà¸£à¸²à¸ˆà¸£à¹‚à¸”à¸¢à¹„à¸¡à¹ˆà¸à¸£à¸°à¸—à¸šà¹à¸œà¸™à¸—à¸µà¹ˆà¸«à¸¥à¸±à¸à¸‚à¸­à¸‡ Dashboard</div>' +
 '<div id="longdo_traffic_map" style="width:100%;height:68vh;border-radius:8px;overflow:hidden;border:1px solid #cbd5e1;background:#eef2f7;"></div>',
 width: '92vw',
-confirmButtonText: 'ปิด',
+confirmButtonText: 'à¸›à¸´à¸”',
 didOpen: function() {
 setTimeout(function() {
 var holder = document.getElementById('longdo_traffic_map');
@@ -408,8 +409,8 @@ layer: trafficLayers.length ? trafficLayers : undefined
 window._longdoTrafficMap = trafficMap;
 try {
 trafficMap.Overlays.add(new longdo.Marker({ lon: point.lng, lat: point.lat }, {
-title: 'จุดเกิดเหตุ',
-detail: 'ตำแหน่งเหตุการณ์ปัจจุบัน'
+title: 'à¸ˆà¸¸à¸”à¹€à¸à¸´à¸”à¹€à¸«à¸•à¸¸',
+detail: 'à¸•à¸³à¹à¸«à¸™à¹ˆà¸‡à¹€à¸«à¸•à¸¸à¸à¸²à¸£à¸“à¹Œà¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™'
 }));
 } catch(e) {}
 try {
@@ -459,6 +460,7 @@ updateDashboardMarkerScale();
 mapObj.on('zoom', updateDashboardMarkerScale);
 mapObj.on('zoomend', updateDashboardMarkerScale);
 mapObj.on('zoomend', ensureDashboardMarkerSeparationZoom);
+mapObj.on('moveend', ensureDashboardMarkerSeparationZoom);
 updateDashboardMarkerScale();
 }
 removeLongdoOverlay(dashMap, dashMarker);
@@ -466,7 +468,7 @@ dashMarker = null;
 dashMarker = makeLongdoHtmlMarker(pos, buildDashboardIncidentMarkerHtml(), {
 offset: { x: 0, y: 0 },
 weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0,
-title: 'จุดเกิดเหตุ',
+title: 'à¸ˆà¸¸à¸”à¹€à¸à¸´à¸”à¹€à¸«à¸•à¸¸',
 scaleMode: 'none'
 });
 dashMap.Overlays.add(dashMarker);
@@ -505,7 +507,7 @@ label: false
 dashMap.Overlays.add(dynamicOverlay);
 var dLng = r / (111320 * Math.cos(lat * Math.PI / 180));
 var edgePos = { lon: lng + dLng, lat: lat };
-var labelText = r >= 1000 ? (r / 1000) + " กม." : r + " เมตร";
+var labelText = r >= 1000 ? (r / 1000) + " à¸à¸¡." : r + " à¹€à¸¡à¸•à¸£";
 removeLongdoOverlay(dashMap, dynamicLabelMarker);
 dynamicLabelMarker = makeLongdoHtmlMarker(edgePos,
 '<div style="background:rgba(255,255,255,0.9);color:#3498db;font-weight:bold;font-size:12px;padding:4px 8px;border-radius:12px;border:2px solid #3498db;box-shadow:0 2px 4px rgba(0,0,0,0.3);white-space:nowrap;">' + labelText + '</div>',
@@ -517,111 +519,111 @@ setTimeout(ensureDashboardMarkerSeparationZoom, 420);
 }
 function clickEscalate() {
 if (APP_ACCESS_ROLE !== 'admin') {
-Swal.fire('ต้องใช้สิทธิ์ Admin', 'ผู้ดูอย่างเดียวไม่สามารถแก้ไขแผนได้', 'warning');
+Swal.fire('à¸•à¹‰à¸­à¸‡à¹ƒà¸Šà¹‰à¸ªà¸´à¸—à¸˜à¸´à¹Œ Admin', 'à¸œà¸¹à¹‰à¸”à¸¹à¸­à¸¢à¹ˆà¸²à¸‡à¹€à¸”à¸µà¸¢à¸§à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¹à¸à¹‰à¹„à¸‚à¹à¸œà¸™à¹„à¸”à¹‰', 'warning');
 return;
 }
 var currentPlan = document.getElementById('dash_ban_status').innerText || '';
-var isPrep = currentPlan.includes('เตรียมรองรับ');
+var isPrep = currentPlan.includes('à¹€à¸•à¸£à¸µà¸¢à¸¡à¸£à¸­à¸‡à¸£à¸±à¸š');
 if (isPrep) {
 Swal.fire({
-title: '⚠️ เปลี่ยนแผนปฏิบัติการ',
+title: 'âš ï¸ à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¹à¸œà¸™à¸›à¸à¸´à¸šà¸±à¸•à¸´à¸à¸²à¸£',
 input: 'select',
 inputOptions: {
-'เตรียมรองรับสถานการณ์': 'เตรียมรองรับสถานการณ์ (ไม่มีระดับ)',
-'แผนป้องกันและบรรเทาสาธารณภัย': 'แผนป้องกันและบรรเทาสาธารณภัย',
-'แผนอัคคีภัย': 'แผนอัคคีภัย',
-'แผนรับอุบัติภัยหมู่ (RESCUE-C)': 'แผนรับอุบัติภัยหมู่ (RESCUE-C)',
-'แผนพิทักษ์ระยอง': 'แผนพิทักษ์ระยอง',
+'à¹€à¸•à¸£à¸µà¸¢à¸¡à¸£à¸­à¸‡à¸£à¸±à¸šà¸ªà¸–à¸²à¸™à¸à¸²à¸£à¸“à¹Œ': 'à¹€à¸•à¸£à¸µà¸¢à¸¡à¸£à¸­à¸‡à¸£à¸±à¸šà¸ªà¸–à¸²à¸™à¸à¸²à¸£à¸“à¹Œ (à¹„à¸¡à¹ˆà¸¡à¸µà¸£à¸°à¸”à¸±à¸š)',
+'à¹à¸œà¸™à¸›à¹‰à¸­à¸‡à¸à¸±à¸™à¹à¸¥à¸°à¸šà¸£à¸£à¹€à¸—à¸²à¸ªà¸²à¸˜à¸²à¸£à¸“à¸ à¸±à¸¢': 'à¹à¸œà¸™à¸›à¹‰à¸­à¸‡à¸à¸±à¸™à¹à¸¥à¸°à¸šà¸£à¸£à¹€à¸—à¸²à¸ªà¸²à¸˜à¸²à¸£à¸“à¸ à¸±à¸¢',
+'à¹à¸œà¸™à¸­à¸±à¸„à¸„à¸µà¸ à¸±à¸¢': 'à¹à¸œà¸™à¸­à¸±à¸„à¸„à¸µà¸ à¸±à¸¢',
+'à¹à¸œà¸™à¸£à¸±à¸šà¸­à¸¸à¸šà¸±à¸•à¸´à¸ à¸±à¸¢à¸«à¸¡à¸¹à¹ˆ (RESCUE-C)': 'à¹à¸œà¸™à¸£à¸±à¸šà¸­à¸¸à¸šà¸±à¸•à¸´à¸ à¸±à¸¢à¸«à¸¡à¸¹à¹ˆ (RESCUE-C)',
+'à¹à¸œà¸™à¸žà¸´à¸—à¸±à¸à¸©à¹Œà¸£à¸°à¸¢à¸­à¸‡': 'à¹à¸œà¸™à¸žà¸´à¸—à¸±à¸à¸©à¹Œà¸£à¸°à¸¢à¸­à¸‡',
 },
 showCancelButton: true,
 confirmButtonColor: '#e67e22',
-confirmButtonText: 'ถัดไป →'
+confirmButtonText: 'à¸–à¸±à¸”à¹„à¸› â†’'
 }).then((r1) => {
 if (!r1.isConfirmed) return;
 var selectedPlan = r1.value;
-if (selectedPlan === 'เตรียมรองรับสถานการณ์') {
+if (selectedPlan === 'à¹€à¸•à¸£à¸µà¸¢à¸¡à¸£à¸­à¸‡à¸£à¸±à¸šà¸ªà¸–à¸²à¸™à¸à¸²à¸£à¸“à¹Œ') {
 google.script.run.withSuccessHandler(() => { fetchData(); })
-.withFailureHandler(function(err) { Swal.fire('อัปเดตไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
+.withFailureHandler(function(err) { Swal.fire('à¸­à¸±à¸›à¹€à¸”à¸•à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ', err && err.message ? err.message : String(err), 'error'); })
 .updateIncidentLevel(selectedPlan, APP_ACCESS_ROLE, APP_AGENCY_ID || '');
 return;
 }
 var levelOptions = {};
-if (selectedPlan === 'แผนป้องกันและบรรเทาสาธารณภัย') {
-levelOptions = { '1':'ระดับ 1', '2':'ระดับ 2', '3':'ระดับ 3' };
-} else if (selectedPlan === 'แผนอัคคีภัย') {
-levelOptions = { '1':'ระดับ 1', '2':'ระดับ 2' };
-} else if (selectedPlan === 'แผนรับอุบัติภัยหมู่ (RESCUE-C)') {
-levelOptions = { '1':'ระดับ 1', '2':'ระดับ 2', '3':'ระดับ 3' };
-} else if (selectedPlan === 'แผนพิทักษ์ระยอง') {
-levelOptions = { '1':'ระดับ 1', '2':'ระดับ 2', '3':'ระดับ 3', '4':'ระดับ 4' };
+if (selectedPlan === 'à¹à¸œà¸™à¸›à¹‰à¸­à¸‡à¸à¸±à¸™à¹à¸¥à¸°à¸šà¸£à¸£à¹€à¸—à¸²à¸ªà¸²à¸˜à¸²à¸£à¸“à¸ à¸±à¸¢') {
+levelOptions = { '1':'à¸£à¸°à¸”à¸±à¸š 1', '2':'à¸£à¸°à¸”à¸±à¸š 2', '3':'à¸£à¸°à¸”à¸±à¸š 3' };
+} else if (selectedPlan === 'à¹à¸œà¸™à¸­à¸±à¸„à¸„à¸µà¸ à¸±à¸¢') {
+levelOptions = { '1':'à¸£à¸°à¸”à¸±à¸š 1', '2':'à¸£à¸°à¸”à¸±à¸š 2' };
+} else if (selectedPlan === 'à¹à¸œà¸™à¸£à¸±à¸šà¸­à¸¸à¸šà¸±à¸•à¸´à¸ à¸±à¸¢à¸«à¸¡à¸¹à¹ˆ (RESCUE-C)') {
+levelOptions = { '1':'à¸£à¸°à¸”à¸±à¸š 1', '2':'à¸£à¸°à¸”à¸±à¸š 2', '3':'à¸£à¸°à¸”à¸±à¸š 3' };
+} else if (selectedPlan === 'à¹à¸œà¸™à¸žà¸´à¸—à¸±à¸à¸©à¹Œà¸£à¸°à¸¢à¸­à¸‡') {
+levelOptions = { '1':'à¸£à¸°à¸”à¸±à¸š 1', '2':'à¸£à¸°à¸”à¸±à¸š 2', '3':'à¸£à¸°à¸”à¸±à¸š 3', '4':'à¸£à¸°à¸”à¸±à¸š 4' };
 }
 Swal.fire({
 title: selectedPlan,
-text: 'เลือกระดับ',
+text: 'à¹€à¸¥à¸·à¸­à¸à¸£à¸°à¸”à¸±à¸š',
 input: 'select',
 inputOptions: levelOptions,
 showCancelButton: true,
 confirmButtonColor: '#e67e22',
-confirmButtonText: 'ยืนยัน'
+confirmButtonText: 'à¸¢à¸·à¸™à¸¢à¸±à¸™'
 }).then((r2) => {
 if (!r2.isConfirmed) return;
-var fullPlan = selectedPlan + ' (ระดับ ' + r2.value + ')';
-Swal.fire({title:'กำลังอัปเดต...', didOpen:()=>Swal.showLoading()});
+var fullPlan = selectedPlan + ' (à¸£à¸°à¸”à¸±à¸š ' + r2.value + ')';
+Swal.fire({title:'à¸à¸³à¸¥à¸±à¸‡à¸­à¸±à¸›à¹€à¸”à¸•...', didOpen:()=>Swal.showLoading()});
 google.script.run.withSuccessHandler(() => {
 Swal.close(); fetchData();
 }).withFailureHandler(function(err) {
 Swal.close();
-Swal.fire('อัปเดตไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
+Swal.fire('à¸­à¸±à¸›à¹€à¸”à¸•à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ', err && err.message ? err.message : String(err), 'error');
 }).updateIncidentLevel(fullPlan, APP_ACCESS_ROLE, APP_AGENCY_ID || '');
 });
 });
 } else {
-var levelMax = currentPlan.includes('พิทักษ์ระยอง') ? 4 :
-currentPlan.includes('อัคคีภัย') ? 2 : 3;
+var levelMax = currentPlan.includes('à¸žà¸´à¸—à¸±à¸à¸©à¹Œà¸£à¸°à¸¢à¸­à¸‡') ? 4 :
+currentPlan.includes('à¸­à¸±à¸„à¸„à¸µà¸ à¸±à¸¢') ? 2 : 3;
 var levelOptions = {};
-for (var i = 1; i <= levelMax; i++) { levelOptions[i] = 'ระดับ ' + i; }
+for (var i = 1; i <= levelMax; i++) { levelOptions[i] = 'à¸£à¸°à¸”à¸±à¸š ' + i; }
 Swal.fire({
-title: '⚠️ ยกระดับความรุนแรง',
-text: currentPlan.replace(/\s*\(ระดับ.*?\)/, ''),
+title: 'âš ï¸ à¸¢à¸à¸£à¸°à¸”à¸±à¸šà¸„à¸§à¸²à¸¡à¸£à¸¸à¸™à¹à¸£à¸‡',
+text: currentPlan.replace(/\s*\(à¸£à¸°à¸”à¸±à¸š.*?\)/, ''),
 input: 'select',
 inputOptions: levelOptions,
 showCancelButton: true,
 confirmButtonColor: '#e67e22',
-confirmButtonText: 'ยืนยัน'
+confirmButtonText: 'à¸¢à¸·à¸™à¸¢à¸±à¸™'
 }).then((result) => {
 if (!result.isConfirmed) return;
-var basePlan = currentPlan.replace(/\s*\(ระดับ.*?\)/, '').trim();
-var fullPlan = basePlan + ' (ระดับ ' + result.value + ')';
-Swal.fire({title:'กำลังอัปเดต...', didOpen:()=>Swal.showLoading()});
+var basePlan = currentPlan.replace(/\s*\(à¸£à¸°à¸”à¸±à¸š.*?\)/, '').trim();
+var fullPlan = basePlan + ' (à¸£à¸°à¸”à¸±à¸š ' + result.value + ')';
+Swal.fire({title:'à¸à¸³à¸¥à¸±à¸‡à¸­à¸±à¸›à¹€à¸”à¸•...', didOpen:()=>Swal.showLoading()});
 google.script.run.withSuccessHandler(() => {
 Swal.close(); fetchData();
 }).withFailureHandler(function(err) {
 Swal.close();
-Swal.fire('อัปเดตไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
+Swal.fire('à¸­à¸±à¸›à¹€à¸”à¸•à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ', err && err.message ? err.message : String(err), 'error');
 }).updateIncidentLevel(fullPlan, APP_ACCESS_ROLE, APP_AGENCY_ID || '');
 });
 }
 }
 function handleCheckIn() {
-if (typeof requireFeature === 'function' && !requireFeature('live_location', 'รายงานตำแหน่งสด (ระดับ 2+)')) return;
+if (typeof requireFeature === 'function' && !requireFeature('live_location', 'à¸£à¸²à¸¢à¸‡à¸²à¸™à¸•à¸³à¹à¸«à¸™à¹ˆà¸‡à¸ªà¸” (à¸£à¸°à¸”à¸±à¸š 2+)')) return;
 Swal.fire({
-title: '📍 ระบุจุดปฏิบัติการ',
+title: 'ðŸ“ à¸£à¸°à¸šà¸¸à¸ˆà¸¸à¸”à¸›à¸à¸´à¸šà¸±à¸•à¸´à¸à¸²à¸£',
 html: `
-<div style="text-align:left;font-size:0.9rem;margin-bottom:5px;">ชื่อผู้รายงาน / ทีม</div>
-<input id="checkin_name" class="swal2-input" value="${USER_NAME}" placeholder="ระบุชื่อ...">
-<div style="text-align:left;font-size:0.9rem;margin-top:15px;margin-bottom:5px;">ประเภทจุด</div>
+<div style="text-align:left;font-size:0.9rem;margin-bottom:5px;">à¸Šà¸·à¹ˆà¸­à¸œà¸¹à¹‰à¸£à¸²à¸¢à¸‡à¸²à¸™ / à¸—à¸µà¸¡</div>
+<input id="checkin_name" class="swal2-input" value="${USER_NAME}" placeholder="à¸£à¸°à¸šà¸¸à¸Šà¸·à¹ˆà¸­...">
+<div style="text-align:left;font-size:0.9rem;margin-top:15px;margin-bottom:5px;">à¸›à¸£à¸°à¹€à¸ à¸—à¸ˆà¸¸à¸”</div>
 <select id="checkin_type" class="swal2-input" style="width:100%;margin-top:0;">
-<option value="Staff">👤 ตำแหน่งตัวฉัน (ไม่ต้องตีวง 20m)</option>
-<option value="CP">🚩 กองอำนวยการ (พื้นที่ 20m)</option>
-<option value="Treatment">🏥 จุดปฐมพยาบาล (พื้นที่ 20m)</option>
-<option value="Staging">🚛 จุดพักคอย (พื้นที่ 20m)</option>
+<option value="Staff">ðŸ‘¤ à¸•à¸³à¹à¸«à¸™à¹ˆà¸‡à¸•à¸±à¸§à¸‰à¸±à¸™ (à¹„à¸¡à¹ˆà¸•à¹‰à¸­à¸‡à¸•à¸µà¸§à¸‡ 20m)</option>
+<option value="CP">ðŸš© à¸à¸­à¸‡à¸­à¸³à¸™à¸§à¸¢à¸à¸²à¸£ (à¸žà¸·à¹‰à¸™à¸—à¸µà¹ˆ 20m)</option>
+<option value="Treatment">ðŸ¥ à¸ˆà¸¸à¸”à¸›à¸à¸¡à¸žà¸¢à¸²à¸šà¸²à¸¥ (à¸žà¸·à¹‰à¸™à¸—à¸µà¹ˆ 20m)</option>
+<option value="Staging">ðŸš› à¸ˆà¸¸à¸”à¸žà¸±à¸à¸„à¸­à¸¢ (à¸žà¸·à¹‰à¸™à¸—à¸µà¹ˆ 20m)</option>
 </select>
 `,
 showCancelButton: true,
 showDenyButton: true,
-confirmButtonText: '<i class="fas fa-location-arrow"></i> ใช้ GPS ปัจจุบัน',
-denyButtonText: '<i class="fas fa-map"></i> จิ้มบนแผนที่',
-cancelButtonText: 'ยกเลิก',
+confirmButtonText: '<i class="fas fa-location-arrow"></i> à¹ƒà¸Šà¹‰ GPS à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™',
+denyButtonText: '<i class="fas fa-map"></i> à¸ˆà¸´à¹‰à¸¡à¸šà¸™à¹à¸œà¸™à¸—à¸µà¹ˆ',
+cancelButtonText: 'à¸¢à¸à¹€à¸¥à¸´à¸',
 confirmButtonColor: '#2ecc71',
 denyButtonColor: '#3498db',
 preConfirm: () => {
@@ -634,17 +636,17 @@ type: document.getElementById('checkin_type').value
 if (!result.isConfirmed && !result.isDenied) return;
 const data = document.getElementById('checkin_name').value ?
 {name: document.getElementById('checkin_name').value, type: document.getElementById('checkin_type').value} : null;
-if(!data || !data.name) return Swal.fire('Error', 'กรุณาระบุชื่อ', 'error');
+if(!data || !data.name) return Swal.fire('Error', 'à¸à¸£à¸¸à¸“à¸²à¸£à¸°à¸šà¸¸à¸Šà¸·à¹ˆà¸­', 'error');
 if (result.isConfirmed) {
-Swal.fire({title: 'กำลังดึงพิกัด GPS...', didOpen: () => Swal.showLoading()});
+Swal.fire({title: 'à¸à¸³à¸¥à¸±à¸‡à¸”à¸¶à¸‡à¸žà¸´à¸à¸±à¸” GPS...', didOpen: () => Swal.showLoading()});
 navigator.geolocation.getCurrentPosition((pos) => {
-google.script.run.withSuccessHandler((msg) => { Swal.fire('สำเร็จ', msg, 'success'); fetchData(); })
+google.script.run.withSuccessHandler((msg) => { Swal.fire('à¸ªà¸³à¹€à¸£à¹‡à¸ˆ', msg, 'success'); fetchData(); })
 .checkInLocation(data.name, TEMP_ROLE, data.type, pos.coords.latitude, pos.coords.longitude);
-}, () => { Swal.fire('Error', 'ไม่สามารถดึงพิกัด GPS ได้', 'error'); });
+}, () => { Swal.fire('Error', 'à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¸”à¸¶à¸‡à¸žà¸´à¸à¸±à¸” GPS à¹„à¸”à¹‰', 'error'); });
 } else if (result.isDenied) {
 isCheckInMode = true;
 checkInTempData = data;
-document.getElementById('selectedCoordText').innerText = `พิกัด: ยังไม่ได้เลือก (กำลังตั้งจุด ${data.type})`;
+document.getElementById('selectedCoordText').innerText = `à¸žà¸´à¸à¸±à¸”: à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¹€à¸¥à¸·à¸­à¸ (à¸à¸³à¸¥à¸±à¸‡à¸•à¸±à¹‰à¸‡à¸ˆà¸¸à¸” ${data.type})`;
 openMap();
 }
 });
@@ -671,11 +673,11 @@ var lng = parseFloat(l.lng);
 if (isNaN(lat) || isNaN(lng)) return;
 switch(l.type) {
 case 'CP':
-iconClass = "fa-landmark"; bgClass = "mk-cp"; hexColor = "#2c3e50"; labelText = "กองอำนวยการ"; break;
+iconClass = "fa-landmark"; bgClass = "mk-cp"; hexColor = "#2c3e50"; labelText = "à¸à¸­à¸‡à¸­à¸³à¸™à¸§à¸¢à¸à¸²à¸£"; break;
 case 'Treatment':
-iconClass = "fa-hand-holding-medical"; bgClass = "mk-treat"; hexColor = "#e74c3c"; labelText = "จุดปฐมพยาบาล"; break;
+iconClass = "fa-hand-holding-medical"; bgClass = "mk-treat"; hexColor = "#e74c3c"; labelText = "à¸ˆà¸¸à¸”à¸›à¸à¸¡à¸žà¸¢à¸²à¸šà¸²à¸¥"; break;
 case 'Staging':
-iconClass = "fa-truck-ramp-box"; bgClass = "mk-stage"; hexColor = "#f39c12"; labelText = "จุดพักคอย"; break;
+iconClass = "fa-truck-ramp-box"; bgClass = "mk-stage"; hexColor = "#f39c12"; labelText = "à¸ˆà¸¸à¸”à¸žà¸±à¸à¸„à¸­à¸¢"; break;
 default:
 iconClass = "fa-user"; bgClass = "mk-staff"; hexColor = "#3498db";
 }
@@ -771,9 +773,9 @@ return '';
 }
 function ackOCSupportRequest() {
 google.script.run.withSuccessHandler(function() {
-Swal.fire({ icon:'success', title:'รับทราบแล้ว', timer:1200, showConfirmButton:false });
+Swal.fire({ icon:'success', title:'à¸£à¸±à¸šà¸—à¸£à¸²à¸šà¹à¸¥à¹‰à¸§', timer:1200, showConfirmButton:false });
 fetchData();
-}).addCommanderLog('✅ IC รับทราบคำขอสนับสนุนจาก OC/ICP', USER_NAME || 'IC');
+}).addCommanderLog('âœ… IC à¸£à¸±à¸šà¸—à¸£à¸²à¸šà¸„à¸³à¸‚à¸­à¸ªà¸™à¸±à¸šà¸ªà¸™à¸¸à¸™à¸ˆà¸²à¸ OC/ICP', USER_NAME || 'IC');
 }
 function setupUserUI() {
 const checkInBtn = document.getElementById('btn_checkin');
@@ -808,14 +810,14 @@ if (data && data.current) {
 const speed = data.current.wind_speed_10m.toFixed(1);
 const meteoDeg = data.current.wind_direction_10m;
 const destDeg = (meteoDeg + 180) % 360;
-const directions = ['เหนือ', 'ตะวันออกเฉียงเหนือ', 'ตะวันออก', 'ตะวันออกเฉียงใต้', 'ใต้', 'ตะวันตกเฉียงใต้', 'ตะวันตก', 'ตะวันตกเฉียงเหนือ'];
+const directions = ['à¹€à¸«à¸™à¸·à¸­', 'à¸•à¸°à¸§à¸±à¸™à¸­à¸­à¸à¹€à¸‰à¸µà¸¢à¸‡à¹€à¸«à¸™à¸·à¸­', 'à¸•à¸°à¸§à¸±à¸™à¸­à¸­à¸', 'à¸•à¸°à¸§à¸±à¸™à¸­à¸­à¸à¹€à¸‰à¸µà¸¢à¸‡à¹ƒà¸•à¹‰', 'à¹ƒà¸•à¹‰', 'à¸•à¸°à¸§à¸±à¸™à¸•à¸à¹€à¸‰à¸µà¸¢à¸‡à¹ƒà¸•à¹‰', 'à¸•à¸°à¸§à¸±à¸™à¸•à¸', 'à¸•à¸°à¸§à¸±à¸™à¸•à¸à¹€à¸‰à¸µà¸¢à¸‡à¹€à¸«à¸™à¸·à¸­'];
 const dirIndex = Math.round(destDeg / 45) % 8;
 const dirName = directions[dirIndex];
 document.getElementById('weather_info').innerText = dirName + ' ' + speed + ' m/s';
 document.getElementById('wind_arrow').style.transform = 'rotate(' + destDeg + 'deg)';
 }
 } catch (error) {
-document.getElementById('weather_info').innerText = "ไม่สามารถดึงข้อมูลได้";
+document.getElementById('weather_info').innerText = "à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¸”à¸¶à¸‡à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹„à¸”à¹‰";
 }
 }
 var eocStartTime = null;
@@ -853,9 +855,9 @@ document.getElementById('eoc_timer').innerText = h + ":" + m + ":" + s;
 autoDetectTime();
 setInterval(runEocTimer, 1000);
 function switchTab(tabId, btn) {
-// 🔒 กันคลิกเข้า tab ที่ tier ปัจจุบันยังไม่ปลดล็อค (ribbon ทำได้แค่แสดงผล ไม่ได้กันคลิก)
-if (tabId === 'tab_sitrep' && typeof requireFeature === 'function' && !requireFeature('sitrep', 'SITREP (ระดับ 2+)')) return;
-if (tabId === 'tab_erg' && typeof requireFeature === 'function' && !requireFeature('erg', 'สารเคมี / ERG (ระดับ 2+)')) return;
+// ðŸ”’ à¸à¸±à¸™à¸„à¸¥à¸´à¸à¹€à¸‚à¹‰à¸² tab à¸—à¸µà¹ˆ tier à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸›à¸¥à¸”à¸¥à¹‡à¸­à¸„ (ribbon à¸—à¸³à¹„à¸”à¹‰à¹à¸„à¹ˆà¹à¸ªà¸”à¸‡à¸œà¸¥ à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸à¸±à¸™à¸„à¸¥à¸´à¸)
+if (tabId === 'tab_sitrep' && typeof requireFeature === 'function' && !requireFeature('sitrep', 'SITREP (à¸£à¸°à¸”à¸±à¸š 2+)')) return;
+if (tabId === 'tab_erg' && typeof requireFeature === 'function' && !requireFeature('erg', 'à¸ªà¸²à¸£à¹€à¸„à¸¡à¸µ / ERG (à¸£à¸°à¸”à¸±à¸š 2+)')) return;
 document.querySelectorAll('.eoc-tab-content').forEach(t => t.classList.remove('active'));
 document.querySelectorAll('.eoc-tab').forEach(b => b.classList.remove('active'));
 document.getElementById(tabId).classList.add('active');
@@ -887,24 +889,24 @@ const shown = _ergSearchResults.slice(0, 60);
 const qLabel = ergSafeHtml(q);
 const rows = shown.map(function(r) {
 const guide = r.guide_num ? 'ERG #' + r.guide_num : 'ERG -';
-const iso = r.sm_iso ? 'กั้นแยก ' + r.sm_iso + ' m' : 'ไม่มีค่า isolation';
+const iso = r.sm_iso ? 'à¸à¸±à¹‰à¸™à¹à¸¢à¸ ' + r.sm_iso + ' m' : 'à¹„à¸¡à¹ˆà¸¡à¸µà¸„à¹ˆà¸² isolation';
 return '<button type="button" onclick="ergSelectResult(' + Number(r.mtl_id || 0) + ')" style="width:100%;text-align:left;background:#111827;color:white;border:1px solid #334155;border-radius:8px;padding:9px 10px;margin:5px 0;cursor:pointer;font-family:&quot;Prompt&quot;,sans-serif;">' +
 '<div style="display:flex;gap:8px;align-items:flex-start;justify-content:space-between;">' +
 '<div style="min-width:0;"><b style="color:#facc15;">UN ' + ergSafeHtml(r.mtl_id) + '</b> <span style="font-weight:900;">' + ergSafeHtml(r.name) + '</span>' +
 '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">' + ergSafeHtml(guide) + ' | ' + ergSafeHtml(iso) + '</div></div>' +
-'<span style="font-size:11px;color:#bfdbfe;white-space:nowrap;">เลือก</span>' +
+'<span style="font-size:11px;color:#bfdbfe;white-space:nowrap;">à¹€à¸¥à¸·à¸­à¸</span>' +
 '</div>' +
 '</button>';
 }).join('');
 txt.innerHTML =
-'<div style="color:#facc15;font-size:0.9rem;font-weight:900;margin-bottom:6px;">พบ ' + _ergSearchResults.length + ' รายการที่มีคำว่า "' + qLabel + '"</div>' +
-'<div style="color:#cbd5e1;font-size:0.75rem;margin-bottom:8px;">กรุณาเลือกสารให้ตรงก่อน ระบบจะยังไม่วาด ERG zone จนกว่าจะเลือกสาร</div>' +
+'<div style="color:#facc15;font-size:0.9rem;font-weight:900;margin-bottom:6px;">à¸žà¸š ' + _ergSearchResults.length + ' à¸£à¸²à¸¢à¸à¸²à¸£à¸—à¸µà¹ˆà¸¡à¸µà¸„à¸³à¸§à¹ˆà¸² "' + qLabel + '"</div>' +
+'<div style="color:#cbd5e1;font-size:0.75rem;margin-bottom:8px;">à¸à¸£à¸¸à¸“à¸²à¹€à¸¥à¸·à¸­à¸à¸ªà¸²à¸£à¹ƒà¸«à¹‰à¸•à¸£à¸‡à¸à¹ˆà¸­à¸™ à¸£à¸°à¸šà¸šà¸ˆà¸°à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸§à¸²à¸” ERG zone à¸ˆà¸™à¸à¸§à¹ˆà¸²à¸ˆà¸°à¹€à¸¥à¸·à¸­à¸à¸ªà¸²à¸£</div>' +
 rows +
-(_ergSearchResults.length > shown.length ? '<div style="color:#94a3b8;font-size:11px;margin-top:8px;">แสดง 60 รายการแรก ลองพิมพ์ชื่อให้เจาะจงขึ้นถ้ายังไม่พบ</div>' : '');
+(_ergSearchResults.length > shown.length ? '<div style="color:#94a3b8;font-size:11px;margin-top:8px;">à¹à¸ªà¸”à¸‡ 60 à¸£à¸²à¸¢à¸à¸²à¸£à¹à¸£à¸ à¸¥à¸­à¸‡à¸žà¸´à¸¡à¸žà¹Œà¸Šà¸·à¹ˆà¸­à¹ƒà¸«à¹‰à¹€à¸ˆà¸²à¸°à¸ˆà¸‡à¸‚à¸¶à¹‰à¸™à¸–à¹‰à¸²à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸žà¸š</div>' : '');
 box.style.display = 'block';
 }
 function ergLookup() {
-if (typeof requireFeature === 'function' && !requireFeature('erg', 'ERG ค้นหาสารเคมี (ระดับ 2+)')) return;
+if (typeof requireFeature === 'function' && !requireFeature('erg', 'ERG à¸„à¹‰à¸™à¸«à¸²à¸ªà¸²à¸£à¹€à¸„à¸¡à¸µ (à¸£à¸°à¸”à¸±à¸š 2+)')) return;
 const q = document.getElementById('erg_query').value.trim();
 if (!q) return;
 const box = document.getElementById('erg_result_box');
@@ -927,8 +929,8 @@ return an.localeCompare(bn);
 });
 }
 if (results.length === 0) {
-txt.innerHTML = `<span style="color:#f1c40f;">⚠️ ไม่พบ "<b>${q}</b>" ในฐานข้อมูล ERG (2,923 รายการ)<br>
-<small style="color:#aaa;">ลองพิมพ์ UN number เช่น 1017, 1053 หรือชื่อสาร เช่น Chlorine, Ammonia</small></span>`;
+txt.innerHTML = `<span style="color:#f1c40f;">âš ï¸ à¹„à¸¡à¹ˆà¸žà¸š "<b>${q}</b>" à¹ƒà¸™à¸à¸²à¸™à¸‚à¹‰à¸­à¸¡à¸¹à¸¥ ERG (2,923 à¸£à¸²à¸¢à¸à¸²à¸£)<br>
+<small style="color:#aaa;">à¸¥à¸­à¸‡à¸žà¸´à¸¡à¸žà¹Œ UN number à¹€à¸Šà¹ˆà¸™ 1017, 1053 à¸«à¸£à¸·à¸­à¸Šà¸·à¹ˆà¸­à¸ªà¸²à¸£ à¹€à¸Šà¹ˆà¸™ Chlorine, Ammonia</small></span>`;
 box.style.display = 'block';
 return;
 }
@@ -946,29 +948,29 @@ const isToxic = (g >= 151 && g <= 175);
 const isFlam = (g >= 115 && g <= 132) || (g >= 135 && g <= 139);
 const isReact = (g >= 135 && g <= 148);
 const hazTags = [
-isFlam ? `<span class="erg-tag fire">🔥 ไวไฟ/ระเบิด</span>` : '',
-isToxic ? `<span class="erg-tag health">☠️ พิษ (TIH)</span>` : '',
-isReact ? `<span class="erg-tag react">⚡ ทำปฏิกิริยา</span>` : '',
-].filter(Boolean).join('') || `<span style="color:#aaa;font-size:0.72rem;">ดูรายละเอียดใน ERG Guide #${g}</span>`;
+isFlam ? `<span class="erg-tag fire">ðŸ”¥ à¹„à¸§à¹„à¸Ÿ/à¸£à¸°à¹€à¸šà¸´à¸”</span>` : '',
+isToxic ? `<span class="erg-tag health">â˜ ï¸ à¸žà¸´à¸© (TIH)</span>` : '',
+isReact ? `<span class="erg-tag react">âš¡ à¸—à¸³à¸›à¸à¸´à¸à¸´à¸£à¸´à¸¢à¸²</span>` : '',
+].filter(Boolean).join('') || `<span style="color:#aaa;font-size:0.72rem;">à¸”à¸¹à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”à¹ƒà¸™ ERG Guide #${g}</span>`;
 const protHTML = dayProtM
 ? `<div style="color:#aaa;font-size:0.72rem;margin-top:2px;">
-📡 เขตเฝ้าระวัง/อพยพตามลม:
-☀️ small: <b style="color:#eee;">${found.sm_dy||'—'}</b> / 🌙 <b style="color:#eee;">${found.sm_nte||'—'}</b> m &nbsp;|&nbsp;
-☀️ large: <b style="color:#2ecc71;">${found.lg_dy||'—'}</b> / 🌙 <b style="color:#2ecc71;">${found.lg_nte||'—'}</b> m
-<br><span style="color:#666;">เลือก scenario ด้านล่างแล้ววาดบนแผนที่</span>
+ðŸ“¡ à¹€à¸‚à¸•à¹€à¸à¹‰à¸²à¸£à¸°à¸§à¸±à¸‡/à¸­à¸žà¸¢à¸žà¸•à¸²à¸¡à¸¥à¸¡:
+â˜€ï¸ small: <b style="color:#eee;">${found.sm_dy||'â€”'}</b> / ðŸŒ™ <b style="color:#eee;">${found.sm_nte||'â€”'}</b> m &nbsp;|&nbsp;
+â˜€ï¸ large: <b style="color:#2ecc71;">${found.lg_dy||'â€”'}</b> / ðŸŒ™ <b style="color:#2ecc71;">${found.lg_nte||'â€”'}</b> m
+<br><span style="color:#666;">à¹€à¸¥à¸·à¸­à¸ scenario à¸”à¹‰à¸²à¸™à¸¥à¹ˆà¸²à¸‡à¹à¸¥à¹‰à¸§à¸§à¸²à¸”à¸šà¸™à¹à¸œà¸™à¸—à¸µà¹ˆ</span>
 </div>`
-: `<div style="color:#aaa;font-size:0.72rem;">⚠️ ไม่มีข้อมูล TIH protective action</div>`;
+: `<div style="color:#aaa;font-size:0.72rem;">âš ï¸ à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥ TIH protective action</div>`;
 const moreHTML = results.length > 1
-? `<div style="color:#f1c40f;font-size:0.7rem;margin-top:6px;">🔍 พบ ${results.length} รายการ — แสดงรายการแรก (UN ${results[0].mtl_id})<br>
-<span style="color:#aaa;">อื่นๆ: ${results.slice(1,4).map(r => `UN ${r.mtl_id} ${r.name}`).join(', ')}${results.length > 4 ? '...' : ''}</span></div>`
+? `<div style="color:#f1c40f;font-size:0.7rem;margin-top:6px;">ðŸ” à¸žà¸š ${results.length} à¸£à¸²à¸¢à¸à¸²à¸£ â€” à¹à¸ªà¸”à¸‡à¸£à¸²à¸¢à¸à¸²à¸£à¹à¸£à¸ (UN ${results[0].mtl_id})<br>
+<span style="color:#aaa;">à¸­à¸·à¹ˆà¸™à¹†: ${results.slice(1,4).map(r => `UN ${r.mtl_id} ${r.name}`).join(', ')}${results.length > 4 ? '...' : ''}</span></div>`
 : '';
 txt.innerHTML = `
-<div style="color:#f1c40f;font-size:1rem;font-weight:bold;">UN ${un} — ${found.name}</div>
+<div style="color:#f1c40f;font-size:1rem;font-weight:bold;">UN ${un} â€” ${found.name}</div>
 <div style="margin:4px 0;">${hazTags}</div>
 <div style="color:#aaa;font-size:0.7rem;">ERG Guide: <b style="color:white;">#${g}</b></div>
 <hr style="border-color:#444;margin:6px 0;">
-<div>🚧 <span class="erg-iso">เขตกั้นแยก (รั่วไหลน้อย): ${found.sm_iso || '-'} m</span>
-${found.lg_iso ? `&nbsp;|&nbsp; <span class="erg-iso">เขตกั้นแยก (รั่วไหลมาก): ${found.lg_iso} m</span>` : ''}</div>
+<div>ðŸš§ <span class="erg-iso">à¹€à¸‚à¸•à¸à¸±à¹‰à¸™à¹à¸¢à¸ (à¸£à¸±à¹ˆà¸§à¹„à¸«à¸¥à¸™à¹‰à¸­à¸¢): ${found.sm_iso || '-'} m</span>
+${found.lg_iso ? `&nbsp;|&nbsp; <span class="erg-iso">à¹€à¸‚à¸•à¸à¸±à¹‰à¸™à¹à¸¢à¸ (à¸£à¸±à¹ˆà¸§à¹„à¸«à¸¥à¸¡à¸²à¸): ${found.lg_iso} m</span>` : ''}</div>
 ${protHTML}
 ${moreHTML}
 `;
@@ -1041,8 +1043,8 @@ function autoDetectTime() {
 const h = new Date().getHours();
 const isDaytime = h >= 6 && h < 18;
 _timeOfDay = isDaytime ? 'dy' : 'nte';
-const label = isDaytime ? 'กลางวัน (06:00–17:59)' : 'กลางคืน (18:00–05:59)';
-const icon = isDaytime ? '☀️' : '🌙';
+const label = isDaytime ? 'à¸à¸¥à¸²à¸‡à¸§à¸±à¸™ (06:00â€“17:59)' : 'à¸à¸¥à¸²à¸‡à¸„à¸·à¸™ (18:00â€“05:59)';
+const icon = isDaytime ? 'â˜€ï¸' : 'ðŸŒ™';
 const el = document.getElementById('time_auto_label');
 const ic = document.getElementById('time_auto_icon');
 if (el) el.innerText = label;
@@ -1064,10 +1066,10 @@ const isoM = _withFire
 : (_spillSize === 'lg' ? _ergCurrent.lg_iso : _ergCurrent.sm_iso) || 0;
 const protKey = _spillSize + '_' + _timeOfDay;
 const protM = _ergCurrent[protKey] || null;
-document.getElementById('prev_iso').innerText = isoM ? isoM + ' เมตร' : '— (ไม่มีข้อมูล)';
+document.getElementById('prev_iso').innerText = isoM ? isoM + ' à¹€à¸¡à¸•à¸£' : 'â€” (à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥)';
 const protRow = document.getElementById('prev_prot_row');
 if (protM) {
-document.getElementById('prev_prot').innerText = protM + ' เมตร';
+document.getElementById('prev_prot').innerText = protM + ' à¹€à¸¡à¸•à¸£';
 protRow.style.display = 'block';
 } else {
 protRow.style.display = 'none';
@@ -1075,9 +1077,9 @@ protRow.style.display = 'none';
 prev.style.display = 'block';
 }
 async function drawHazmatZones() {
-if (typeof requireFeature === 'function' && !requireFeature('erg', 'ERG วาด Zone สารเคมี (ระดับ 2+)')) return;
+if (typeof requireFeature === 'function' && !requireFeature('erg', 'ERG à¸§à¸²à¸” Zone à¸ªà¸²à¸£à¹€à¸„à¸¡à¸µ (à¸£à¸°à¸”à¸±à¸š 2+)')) return;
 if (!dashMap || incidentCenter.lat === 0) {
-Swal.fire('แจ้งเตือน', 'ยังไม่มีแผนที่/พิกัดเหตุ กรุณาเปิดแผนที่ก่อน', 'warning');
+Swal.fire('à¹à¸ˆà¹‰à¸‡à¹€à¸•à¸·à¸­à¸™', 'à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¹à¸œà¸™à¸—à¸µà¹ˆ/à¸žà¸´à¸à¸±à¸”à¹€à¸«à¸•à¸¸ à¸à¸£à¸¸à¸“à¸²à¹€à¸›à¸´à¸”à¹à¸œà¸™à¸—à¸µà¹ˆà¸à¹ˆà¸­à¸™', 'warning');
 return;
 }
 autoDetectTime();
@@ -1090,20 +1092,20 @@ const protKey = _spillSize + '_' + _timeOfDay;
 protM = _ergCurrent[protKey] || null;
 } else {
 const { value: manualR } = await Swal.fire({
-title: 'กรอกรัศมี Isolation',
-text: 'ไม่มีข้อมูลสาร ERG — กรอกรัศมีเอง (เมตร)',
+title: 'à¸à¸£à¸­à¸à¸£à¸±à¸¨à¸¡à¸µ Isolation',
+text: 'à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸ªà¸²à¸£ ERG â€” à¸à¸£à¸­à¸à¸£à¸±à¸¨à¸¡à¸µà¹€à¸­à¸‡ (à¹€à¸¡à¸•à¸£)',
 input: 'number',
 inputValue: 100,
 inputAttributes: { min: 1, step: 1 },
-confirmButtonText: 'วาด Zone',
+confirmButtonText: 'à¸§à¸²à¸” Zone',
 showCancelButton: true,
-cancelButtonText: 'ยกเลิก',
+cancelButtonText: 'à¸¢à¸à¹€à¸¥à¸´à¸',
 });
 if (!manualR) return;
 isoM = parseInt(manualR) || 100;
 }
 if (!isoM) {
-Swal.fire('ข้อมูลไม่ครบ', 'ไม่มีค่า Isolation radius — กรุณาค้นหาสารก่อน', 'warning');
+Swal.fire('à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹„à¸¡à¹ˆà¸„à¸£à¸š', 'à¹„à¸¡à¹ˆà¸¡à¸µà¸„à¹ˆà¸² Isolation radius â€” à¸à¸£à¸¸à¸“à¸²à¸„à¹‰à¸™à¸«à¸²à¸ªà¸²à¸£à¸à¹ˆà¸­à¸™', 'warning');
 return;
 }
 clearHazmatZones();
@@ -1115,7 +1117,7 @@ r: isoM,
 fill: 'rgba(192,57,43,0.25)',
 stroke: '#c0392b',
 dash: '',
-label: `เขตกั้นแยก ${isoM} m`,
+label: `à¹€à¸‚à¸•à¸à¸±à¹‰à¸™à¹à¸¢à¸ ${isoM} m`,
 labelColor: '#c0392b',
 });
 if (protM && protM > isoM) {
@@ -1124,7 +1126,7 @@ r: protM,
 fill: 'rgba(142,68,173,0.10)',
 stroke: '#8e44ad',
 dash: '8,4',
-label: `เขตเฝ้าระวังตามลม ${protM} m`,
+label: `à¹€à¸‚à¸•à¹€à¸à¹‰à¸²à¸£à¸°à¸§à¸±à¸‡à¸•à¸²à¸¡à¸¥à¸¡ ${protM} m`,
 labelColor: '#8e44ad',
 });
 }
@@ -1170,38 +1172,38 @@ document.getElementById('zone_radius_preview').style.display = 'none';
 const START_STEPS = [
 {
 id: 'walk',
-progress: 'ขั้นตอนที่ 1/4 — เดินได้?',
-q: 'ผู้ป่วยเดินได้เองไหม?',
-yes: { next: null, result: 'green', label: '🟢 GREEN — เดินได้ Minor' },
+progress: 'à¸‚à¸±à¹‰à¸™à¸•à¸­à¸™à¸—à¸µà¹ˆ 1/4 â€” à¹€à¸”à¸´à¸™à¹„à¸”à¹‰?',
+q: 'à¸œà¸¹à¹‰à¸›à¹ˆà¸§à¸¢à¹€à¸”à¸´à¸™à¹„à¸”à¹‰à¹€à¸­à¸‡à¹„à¸«à¸¡?',
+yes: { next: null, result: 'green', label: 'ðŸŸ¢ GREEN â€” à¹€à¸”à¸´à¸™à¹„à¸”à¹‰ Minor' },
 no: { next: 'breathe' }
 },
 {
 id: 'breathe',
-progress: 'ขั้นตอนที่ 2/4 — หายใจได้?',
-q: 'เปิดทางเดินหายใจแล้ว — หายใจได้ไหม?',
+progress: 'à¸‚à¸±à¹‰à¸™à¸•à¸­à¸™à¸—à¸µà¹ˆ 2/4 â€” à¸«à¸²à¸¢à¹ƒà¸ˆà¹„à¸”à¹‰?',
+q: 'à¹€à¸›à¸´à¸”à¸—à¸²à¸‡à¹€à¸”à¸´à¸™à¸«à¸²à¸¢à¹ƒà¸ˆà¹à¸¥à¹‰à¸§ â€” à¸«à¸²à¸¢à¹ƒà¸ˆà¹„à¸”à¹‰à¹„à¸«à¸¡?',
 yes: { next: 'resp_rate' },
-no: { next: null, result: 'black', label: '⚫ BLACK — หยุดหายใจ / สิ้นหวัง' }
+no: { next: null, result: 'black', label: 'âš« BLACK â€” à¸«à¸¢à¸¸à¸”à¸«à¸²à¸¢à¹ƒà¸ˆ / à¸ªà¸´à¹‰à¸™à¸«à¸§à¸±à¸‡' }
 },
 {
 id: 'resp_rate',
-progress: 'ขั้นตอนที่ 3/4 — อัตราหายใจ?',
-q: 'อัตราการหายใจ < 10 หรือ > 30 ครั้ง/นาที?',
-yes: { next: null, result: 'red', label: '🔴 RED — หายใจผิดปกติ IMMEDIATE' },
+progress: 'à¸‚à¸±à¹‰à¸™à¸•à¸­à¸™à¸—à¸µà¹ˆ 3/4 â€” à¸­à¸±à¸•à¸£à¸²à¸«à¸²à¸¢à¹ƒà¸ˆ?',
+q: 'à¸­à¸±à¸•à¸£à¸²à¸à¸²à¸£à¸«à¸²à¸¢à¹ƒà¸ˆ < 10 à¸«à¸£à¸·à¸­ > 30 à¸„à¸£à¸±à¹‰à¸‡/à¸™à¸²à¸—à¸µ?',
+yes: { next: null, result: 'red', label: 'ðŸ”´ RED â€” à¸«à¸²à¸¢à¹ƒà¸ˆà¸œà¸´à¸”à¸›à¸à¸•à¸´ IMMEDIATE' },
 no: { next: 'perfusion' }
 },
 {
 id: 'perfusion',
-progress: 'ขั้นตอนที่ 4/4 — Radial Pulse / CRT?',
-q: 'ไม่มี Radial pulse หรือ CRT > 2 วินาที?',
-yes: { next: null, result: 'red', label: '🔴 RED — Shock IMMEDIATE' },
+progress: 'à¸‚à¸±à¹‰à¸™à¸•à¸­à¸™à¸—à¸µà¹ˆ 4/4 â€” Radial Pulse / CRT?',
+q: 'à¹„à¸¡à¹ˆà¸¡à¸µ Radial pulse à¸«à¸£à¸·à¸­ CRT > 2 à¸§à¸´à¸™à¸²à¸—à¸µ?',
+yes: { next: null, result: 'red', label: 'ðŸ”´ RED â€” Shock IMMEDIATE' },
 no: { next: 'mental' }
 },
 {
 id: 'mental',
-progress: 'ขั้นตอนที่ 5/5 — Mental Status?',
-q: 'ไม่สามารถปฏิบัติตามคำสั่งง่ายๆ ได้?',
-yes: { next: null, result: 'red', label: '🔴 RED — Mental ผิดปกติ IMMEDIATE' },
-no: { next: null, result: 'yellow', label: '🟡 YELLOW — Delayed (รอได้)' }
+progress: 'à¸‚à¸±à¹‰à¸™à¸•à¸­à¸™à¸—à¸µà¹ˆ 5/5 â€” Mental Status?',
+q: 'à¹„à¸¡à¹ˆà¸ªà¸²à¸¡à¸²à¸£à¸–à¸›à¸à¸´à¸šà¸±à¸•à¸´à¸•à¸²à¸¡à¸„à¸³à¸ªà¸±à¹ˆà¸‡à¸‡à¹ˆà¸²à¸¢à¹† à¹„à¸”à¹‰?',
+yes: { next: null, result: 'red', label: 'ðŸ”´ RED â€” Mental à¸œà¸´à¸”à¸›à¸à¸•à¸´ IMMEDIATE' },
+no: { next: null, result: 'yellow', label: 'ðŸŸ¡ YELLOW â€” Delayed (à¸£à¸­à¹„à¸”à¹‰)' }
 }
 ];
 var startCurrentStep = 'walk';
@@ -1219,8 +1221,8 @@ document.getElementById('start_question_area').innerHTML = `
 <div class="start-question">
 <div class="q-text">${step.q}</div>
 <div class="start-ans-row">
-<button class="start-ans yes" onclick="startAnswer(true)">✅ ใช่</button>
-<button class="start-ans no" onclick="startAnswer(false)">❌ ไม่ใช่</button>
+<button class="start-ans yes" onclick="startAnswer(true)">âœ… à¹ƒà¸Šà¹ˆ</button>
+<button class="start-ans no" onclick="startAnswer(false)">âŒ à¹„à¸¡à¹ˆà¹ƒà¸Šà¹ˆ</button>
 </div>
 </div>`;
 renderStartHistory();
@@ -1229,13 +1231,13 @@ function startAnswer(ans) {
 const step = START_STEPS.find(s => s.id === startCurrentStep);
 if (!step) return;
 const branch = ans ? step.yes : step.no;
-startHistoryLog.push({ q: step.q, a: ans ? 'ใช่' : 'ไม่ใช่' });
+startHistoryLog.push({ q: step.q, a: ans ? 'à¹ƒà¸Šà¹ˆ' : 'à¹„à¸¡à¹ˆà¹ƒà¸Šà¹ˆ' });
 if (branch.result) {
 const colors = { red: 'red', yellow: 'yellow', green: 'green', black: 'black' };
-document.getElementById('start_progress').innerText = '✅ ผลการ Triage';
+document.getElementById('start_progress').innerText = 'âœ… à¸œà¸¥à¸à¸²à¸£ Triage';
 document.getElementById('start_question_area').innerHTML = `
 <div class="start-result ${colors[branch.result]}">${branch.label}</div>
-<button class="mod-btn gray" style="width:100%;margin-top:8px;" onclick="startReset()">↺ ผู้ป่วยรายต่อไป</button>`;
+<button class="mod-btn gray" style="width:100%;margin-top:8px;" onclick="startReset()">â†º à¸œà¸¹à¹‰à¸›à¹ˆà¸§à¸¢à¸£à¸²à¸¢à¸•à¹ˆà¸­à¹„à¸›</button>`;
 renderStartHistory();
 } else {
 startCurrentStep = branch.next;
@@ -1245,16 +1247,16 @@ renderStartStep();
 function renderStartHistory() {
 const el = document.getElementById('start_history');
 if (startHistoryLog.length === 0) { el.innerHTML = ''; return; }
-el.innerHTML = startHistoryLog.map((x, i) => `<span style="color:#bbb;">${i+1}. ${x.q}</span> → <b>${x.a}</b>`).join('<br>');
+el.innerHTML = startHistoryLog.map((x, i) => `<span style="color:#bbb;">${i+1}. ${x.q}</span> â†’ <b>${x.a}</b>`).join('<br>');
 }
 function addTriageCount(type) {
-// ถ้าเรียกจาก START tab → ต้องการ Tier 3 / ถ้าจาก MED tab ปกติ → Tier 2+
+// à¸–à¹‰à¸²à¹€à¸£à¸µà¸¢à¸à¸ˆà¸²à¸ START tab â†’ à¸•à¹‰à¸­à¸‡à¸à¸²à¸£ Tier 3 / à¸–à¹‰à¸²à¸ˆà¸²à¸ MED tab à¸›à¸à¸•à¸´ â†’ Tier 2+
 var calledFromStart = document.getElementById('healthtab_field') &&
 document.getElementById('healthtab_field').style.display !== 'none';
 if (calledFromStart) {
-if (typeof requireFeature === 'function' && !requireFeature('mci', 'START Triage Protocol (ระดับ 3+)')) return;
+if (typeof requireFeature === 'function' && !requireFeature('mci', 'START Triage Protocol (à¸£à¸°à¸”à¸±à¸š 3+)')) return;
 } else {
-if (typeof requireFeature === 'function' && !requireFeature('triage', 'Triage 4 สี (ระดับ 2+)')) return;
+if (typeof requireFeature === 'function' && !requireFeature('triage', 'Triage 4 à¸ªà¸µ (à¸£à¸°à¸”à¸±à¸š 2+)')) return;
 }
 const valEl = document.getElementById('val_' + type);
 const currentVal = parseInt((valEl && valEl.innerText) || '0', 10);
@@ -1265,7 +1267,7 @@ Swal.fire({ icon: 'success', title: `+ 1 ${type.toUpperCase()}`, timer: 800, sho
 fetchData();
 }).updateEmerCount(type, newVal, 'Field', USER_NAME || 'Staff');
 } else {
-Swal.fire({ icon: 'info', text: 'ทดสอบ: +1 ' + type, timer: 800, showConfirmButton: false });
+Swal.fire({ icon: 'info', text: 'à¸—à¸”à¸ªà¸­à¸š: +1 ' + type, timer: 800, showConfirmButton: false });
 }
 }
 var _resCache = { ambulance: 0, fireTruck: 0, staff: 0, decon: 0 };
@@ -1283,7 +1285,7 @@ openAddResourceModal(cfg.label);
 }
 function updateRes(type, delta) {
 if (APP_ACCESS_ROLE !== 'admin') {
-Swal.fire('โหมดดูอย่างเดียว', 'ต้องใช้สิทธิ์ Admin จึงจะแก้ไขทรัพยากรได้', 'info');
+Swal.fire('à¹‚à¸«à¸¡à¸”à¸”à¸¹à¸­à¸¢à¹ˆà¸²à¸‡à¹€à¸”à¸µà¸¢à¸§', 'à¸•à¹‰à¸­à¸‡à¹ƒà¸Šà¹‰à¸ªà¸´à¸—à¸˜à¸´à¹Œ Admin à¸ˆà¸¶à¸‡à¸ˆà¸°à¹à¸à¹‰à¹„à¸‚à¸—à¸£à¸±à¸žà¸¢à¸²à¸à¸£à¹„à¸”à¹‰', 'info');
 return;
 }
 const keyMap = {
@@ -1299,20 +1301,20 @@ if (el) el.innerText = newVal;
 const status = document.getElementById('rt_status');
 if (typeof google !== 'undefined' && google.script) {
 status.style.color = '#aaa';
-status.innerText = 'กำลังบันทึก...';
+status.innerText = 'à¸à¸³à¸¥à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸...';
 google.script.run.withSuccessHandler(function() {
 status.style.color = '#27ae60';
-status.innerText = '✅ บันทึก ' + type + ' = ' + newVal + ' แล้ว';
+status.innerText = 'âœ… à¸šà¸±à¸™à¸—à¸¶à¸ ' + type + ' = ' + newVal + ' à¹à¸¥à¹‰à¸§';
 setTimeout(() => { status.innerText = ''; }, 2000);
 }).withFailureHandler(function(e) {
 status.style.color = '#e74c3c';
-status.innerText = '❌ Error: ' + e.message;
+status.innerText = 'âŒ Error: ' + e.message;
 }).updateResource(type, newVal);
 }
 }
 function submitExposure() {
 if (typeof getCurrentTier === 'function' && getCurrentTier() !== '3') {
-Swal.fire({ icon:'info', title:'🔒 ใช้ได้ Tier 3 เท่านั้น', text:'ระบบบันทึก Exposure สำหรับศูนย์บัญชาการระดับสูง', confirmButtonText:'รับทราบ' });
+Swal.fire({ icon:'info', title:'ðŸ”’ à¹ƒà¸Šà¹‰à¹„à¸”à¹‰ Tier 3 à¹€à¸—à¹ˆà¸²à¸™à¸±à¹‰à¸™', text:'à¸£à¸°à¸šà¸šà¸šà¸±à¸™à¸—à¸¶à¸ Exposure à¸ªà¸³à¸«à¸£à¸±à¸šà¸¨à¸¹à¸™à¸¢à¹Œà¸šà¸±à¸à¸Šà¸²à¸à¸²à¸£à¸£à¸°à¸”à¸±à¸šà¸ªà¸¹à¸‡', confirmButtonText:'à¸£à¸±à¸šà¸—à¸£à¸²à¸š' });
 return;
 }
 const name = document.getElementById('exp_name').value.trim();
@@ -1323,13 +1325,13 @@ const dur = document.getElementById('exp_dur').value;
 const ppe = document.getElementById('exp_ppe').value;
 const note = document.getElementById('exp_note').value.trim();
 if (!name || !chem) {
-Swal.fire('ข้อมูลไม่ครบ', 'กรุณาระบุชื่อผู้สัมผัสและชื่อสาร', 'warning');
+Swal.fire('à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹„à¸¡à¹ˆà¸„à¸£à¸š', 'à¸à¸£à¸¸à¸“à¸²à¸£à¸°à¸šà¸¸à¸Šà¸·à¹ˆà¸­à¸œà¸¹à¹‰à¸ªà¸±à¸¡à¸œà¸±à¸ªà¹à¸¥à¸°à¸Šà¸·à¹ˆà¸­à¸ªà¸²à¸£', 'warning');
 return;
 }
-Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading() });
+Swal.fire({ title: 'à¸à¸³à¸¥à¸±à¸‡à¸šà¸±à¸™à¸—à¸¶à¸...', didOpen: () => Swal.showLoading() });
 if (typeof google !== 'undefined' && google.script) {
 google.script.run.withSuccessHandler(function() {
-Swal.fire({ icon: 'success', title: 'บันทึก Exposure แล้ว', timer: 1200, showConfirmButton: false });
+Swal.fire({ icon: 'success', title: 'à¸šà¸±à¸™à¸—à¸¶à¸ Exposure à¹à¸¥à¹‰à¸§', timer: 1200, showConfirmButton: false });
 ['exp_name','exp_role','exp_chem','exp_un','exp_dur','exp_note'].forEach(id => {
 document.getElementById(id).value = '';
 });
@@ -1343,11 +1345,11 @@ Swal.fire({ icon: 'info', text: 'Dev mode: ' + JSON.stringify({name,chem,un,dur,
 }
 function loadExposureLog() {
 const tbody = document.getElementById('exp_tbody');
-tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:8px;">กำลังโหลด...</td></tr>';
+tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:8px;">à¸à¸³à¸¥à¸±à¸‡à¹‚à¸«à¸¥à¸”...</td></tr>';
 if (typeof google !== 'undefined' && google.script) {
 google.script.run.withSuccessHandler(function(rows) {
 if (!rows || rows.length === 0) {
-tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:8px;">ยังไม่มีข้อมูล</td></tr>';
+tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#aaa;padding:8px;">à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥</td></tr>';
 return;
 }
 const ppeBadge = (p) => {
@@ -1378,47 +1380,47 @@ const e = document.getElementById('sitrep_e').value || '-';
 const a = document.getElementById('sitrep_a').value || '-';
 const now = new Date().toLocaleString('th-TH', { hour12: false });
 const SEP = '--------------------';
-const preview = `🚨 SITREP — [EOC]\n📅 ${now}\n${SEP}\n[S] :\n${s}\n\n[M] :\n${m}\n\n[E] :\n${e}\n\n[A] :\n${a}\n${SEP}\n(ข้อมูล Triage จะเพิ่มอัตโนมัติเมื่อส่งจริง)`;
+const preview = `ðŸš¨ SITREP â€” [EOC]\nðŸ“… ${now}\n${SEP}\n[S] :\n${s}\n\n[M] :\n${m}\n\n[E] :\n${e}\n\n[A] :\n${a}\n${SEP}\n(à¸‚à¹‰à¸­à¸¡à¸¹à¸¥ Triage à¸ˆà¸°à¹€à¸žà¸´à¹ˆà¸¡à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´à¹€à¸¡à¸·à¹ˆà¸­à¸ªà¹ˆà¸‡à¸ˆà¸£à¸´à¸‡)`;
 document.getElementById('sitrep_preview_text').innerText = preview;
 document.getElementById('sitrep_preview_box').style.display = 'block';
 }
 function updateObjective() {
 var objText = document.getElementById('input_objective').value;
 if(!objText) {
-Swal.fire('แจ้งเตือน', 'กรุณาระบุเป้าหมายก่อนประกาศครับ', 'warning');
+Swal.fire('à¹à¸ˆà¹‰à¸‡à¹€à¸•à¸·à¸­à¸™', 'à¸à¸£à¸¸à¸“à¸²à¸£à¸°à¸šà¸¸à¹€à¸›à¹‰à¸²à¸«à¸¡à¸²à¸¢à¸à¹ˆà¸­à¸™à¸›à¸£à¸°à¸à¸²à¸¨à¸„à¸£à¸±à¸š', 'warning');
 return;
 }
 Swal.fire({
-title: 'ยืนยันการประกาศ',
-text: "เป้าหมาย: " + objText,
+title: 'à¸¢à¸·à¸™à¸¢à¸±à¸™à¸à¸²à¸£à¸›à¸£à¸°à¸à¸²à¸¨',
+text: "à¹€à¸›à¹‰à¸²à¸«à¸¡à¸²à¸¢: " + objText,
 icon: 'info',
 showCancelButton: true,
-confirmButtonText: 'ประกาศให้ทุกทีมทราบ',
-cancelButtonText: 'ยกเลิก'
+confirmButtonText: 'à¸›à¸£à¸°à¸à¸²à¸¨à¹ƒà¸«à¹‰à¸—à¸¸à¸à¸—à¸µà¸¡à¸—à¸£à¸²à¸š',
+cancelButtonText: 'à¸¢à¸à¹€à¸¥à¸´à¸'
 }).then((result) => {
 if (result.isConfirmed) {
 google.script.run.withSuccessHandler(function(logs) {
 renderLogList(logs);
-Swal.fire('ประกาศแล้ว!', 'ส่งเป้าหมายให้ทุกทีมเรียบร้อย', 'success');
-}).addCommanderLog('🎯 [เป้าหมาย EOC] ' + objText, USER_NAME || 'IC');
+Swal.fire('à¸›à¸£à¸°à¸à¸²à¸¨à¹à¸¥à¹‰à¸§!', 'à¸ªà¹ˆà¸‡à¹€à¸›à¹‰à¸²à¸«à¸¡à¸²à¸¢à¹ƒà¸«à¹‰à¸—à¸¸à¸à¸—à¸µà¸¡à¹€à¸£à¸µà¸¢à¸šà¸£à¹‰à¸­à¸¢', 'success');
+}).addCommanderLog('ðŸŽ¯ [à¹€à¸›à¹‰à¸²à¸«à¸¡à¸²à¸¢ EOC] ' + objText, USER_NAME || 'IC');
 }
 });
 }
 function sendQuickCmd(command) {
 Swal.fire({
-title: 'ยืนยันสั่งการด่วน?',
+title: 'à¸¢à¸·à¸™à¸¢à¸±à¸™à¸ªà¸±à¹ˆà¸‡à¸à¸²à¸£à¸”à¹ˆà¸§à¸™?',
 text: command,
 icon: 'warning',
 showCancelButton: true,
 confirmButtonColor: '#d33',
 cancelButtonColor: '#3085d6',
-confirmButtonText: 'ใช่, สั่งการทันที!'
+confirmButtonText: 'à¹ƒà¸Šà¹ˆ, à¸ªà¸±à¹ˆà¸‡à¸à¸²à¸£à¸—à¸±à¸™à¸—à¸µ!'
 }).then((result) => {
 if (result.isConfirmed) {
 google.script.run.withSuccessHandler(function(logs) {
 renderLogList(logs);
-Swal.fire('สั่งการสำเร็จ', 'ส่งคำสั่ง "' + command + '" ลงในบันทึกเหตุการณ์แล้ว', 'success');
-}).addCommanderLog('⚡ [Quick CMD] ' + command, USER_NAME || 'IC');
+Swal.fire('à¸ªà¸±à¹ˆà¸‡à¸à¸²à¸£à¸ªà¸³à¹€à¸£à¹‡à¸ˆ', 'à¸ªà¹ˆà¸‡à¸„à¸³à¸ªà¸±à¹ˆà¸‡ "' + command + '" à¸¥à¸‡à¹ƒà¸™à¸šà¸±à¸™à¸—à¸¶à¸à¹€à¸«à¸•à¸¸à¸à¸²à¸£à¸“à¹Œà¹à¸¥à¹‰à¸§', 'success');
+}).addCommanderLog('âš¡ [Quick CMD] ' + command, USER_NAME || 'IC');
 }
 });
 }
@@ -1426,7 +1428,7 @@ function renderLogList(logs) {
 var el = document.getElementById('logList');
 if (!el) return;
 if (!logs || !Array.isArray(logs) || logs.length === 0) {
-el.innerHTML = '<div style="color:#aaa;text-align:center;padding:10px;">ยังไม่มีบันทึก</div>';
+el.innerHTML = '<div style="color:#aaa;text-align:center;padding:10px;">à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸šà¸±à¸™à¸—à¸¶à¸</div>';
 return;
 }
 var h = "";
@@ -1445,7 +1447,7 @@ if (!points.length && window._dashboardEvacPoints && window._dashboardEvacPoints
 points = window._dashboardEvacPoints;
 }
 if (points.length) window._dashboardEvacPoints = points;
-var emptyHtml = '<div style="font-size:0.72rem;color:#aaa;text-align:center;padding:8px 0;">ยังไม่มีรายงานจากจุดอพยพ</div>';
+var emptyHtml = '<div style="font-size:0.72rem;color:#aaa;text-align:center;padding:8px 0;">à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸£à¸²à¸¢à¸‡à¸²à¸™à¸ˆà¸²à¸à¸ˆà¸¸à¸”à¸­à¸žà¸¢à¸ž</div>';
 var icEl = document.getElementById('ic_evac_point_list');
 if (icEl) {
 if (!points.length) {
@@ -1455,9 +1457,9 @@ icEl.innerHTML = points.slice(0, 4).map(function(p) {
 return '<div style="background:#f8fafc;border:1px solid #dbe8cf;border-radius:8px;padding:8px;">' +
 '<div style="font-size:0.82rem;font-weight:900;color:#14532d;margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(p.pointName || '-') + '</div>' +
 '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;">' +
-'<div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:7px;padding:6px 4px;"><div style="font-size:1.25rem;font-weight:900;color:#16a34a;line-height:1;">' + (p.evacueeCount || 0) + '</div><div style="font-size:0.6rem;color:#166534;margin-top:3px;">ผู้อพยพ</div></div>' +
-'<button onclick="openICEvacPointDetails(' + p.rowIndex + ')" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:6px 4px;cursor:pointer;font-family:Prompt,sans-serif;"><div style="font-size:1.05rem;font-weight:900;color:#2563eb;line-height:1;"><i class="fas fa-boxes-stacked"></i></div><div style="font-size:0.6rem;color:#1d4ed8;margin-top:3px;">สิ่งของ</div></button>' +
-'<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:7px;padding:6px 4px;"><div style="font-size:1.25rem;font-weight:900;color:#ea580c;line-height:1;">' + (p.staffCount || 0) + '</div><div style="font-size:0.6rem;color:#9a3412;margin-top:3px;">เจ้าหน้าที่</div></div>' +
+'<div style="background:#ecfdf5;border:1px solid #bbf7d0;border-radius:7px;padding:6px 4px;"><div style="font-size:1.25rem;font-weight:900;color:#16a34a;line-height:1;">' + (p.evacueeCount || 0) + '</div><div style="font-size:0.6rem;color:#166534;margin-top:3px;">à¸œà¸¹à¹‰à¸­à¸žà¸¢à¸ž</div></div>' +
+'<button onclick="openICEvacPointDetails(' + p.rowIndex + ')" style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:7px;padding:6px 4px;cursor:pointer;font-family:Prompt,sans-serif;"><div style="font-size:1.05rem;font-weight:900;color:#2563eb;line-height:1;"><i class="fas fa-boxes-stacked"></i></div><div style="font-size:0.6rem;color:#1d4ed8;margin-top:3px;">à¸ªà¸´à¹ˆà¸‡à¸‚à¸­à¸‡</div></button>' +
+'<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:7px;padding:6px 4px;"><div style="font-size:1.25rem;font-weight:900;color:#ea580c;line-height:1;">' + (p.staffCount || 0) + '</div><div style="font-size:0.6rem;color:#9a3412;margin-top:3px;">à¹€à¸ˆà¹‰à¸²à¸«à¸™à¹‰à¸²à¸—à¸µà¹ˆ</div></div>' +
 '</div>' +
 '</div>';
 }).join('');
@@ -1474,7 +1476,7 @@ return '<div style="display:flex;align-items:center;gap:5px;background:#f8f9fa;b
 '<span style="background:#2980b9;color:white;padding:2px 6px;border-radius:3px;font-size:0.68rem;font-weight:bold;">' + (i + 1) + '</span>' +
 '<div style="flex:1;min-width:0;">' +
 '<div style="font-size:0.72rem;font-weight:bold;color:#2c3e50;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(p.pointName || '-') + '</div>' +
-'<div style="font-size:0.63rem;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">หัวหน้า ' + roleSafeText(p.leaderName || '-') + ' | จนท. ' + (p.staffCount || 0) + '</div>' +
+'<div style="font-size:0.63rem;color:#777;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">à¸«à¸±à¸§à¸«à¸™à¹‰à¸² ' + roleSafeText(p.leaderName || '-') + ' | à¸ˆà¸™à¸—. ' + (p.staffCount || 0) + '</div>' +
 '</div>' +
 '<div style="font-size:0.95rem;font-weight:900;color:#2980b9;min-width:36px;text-align:right;">' + (p.evacueeCount || 0) + '</div>' +
 '</div>';
@@ -1498,43 +1500,43 @@ var p = (window._dashboardEvacPoints || []).find(function(x) { return parseInt(x
 if (!p) return;
 var html = '<div style="text-align:left;font-size:13px;">' +
 '<b>' + (p.pointName || '-') + '</b><br>' +
-'<span>ผู้อพยพ ' + (p.evacueeCount || 0) + ' คน | เจ้าหน้าที่ ' + (p.staffCount || 0) + ' คน</span><hr>' +
-'<div>น้ำดื่ม: <b>' + (p.water || 0) + '</b></div>' +
-'<div>อาหาร: <b>' + (p.food || 0) + '</b></div>' +
-'<div>ผ้าห่ม: <b>' + (p.blanket || 0) + '</b></div>' +
-'<div>เตียงนอน: <b>' + (p.bed || 0) + '</b></div>' +
-'<div>อื่นๆ: <b>' + (p.otherResources || '-') + '</b></div>' +
-(p.note ? '<hr><div>หมายเหตุ: ' + p.note + '</div>' : '') +
+'<span>à¸œà¸¹à¹‰à¸­à¸žà¸¢à¸ž ' + (p.evacueeCount || 0) + ' à¸„à¸™ | à¹€à¸ˆà¹‰à¸²à¸«à¸™à¹‰à¸²à¸—à¸µà¹ˆ ' + (p.staffCount || 0) + ' à¸„à¸™</span><hr>' +
+'<div>à¸™à¹‰à¸³à¸”à¸·à¹ˆà¸¡: <b>' + (p.water || 0) + '</b></div>' +
+'<div>à¸­à¸²à¸«à¸²à¸£: <b>' + (p.food || 0) + '</b></div>' +
+'<div>à¸œà¹‰à¸²à¸«à¹ˆà¸¡: <b>' + (p.blanket || 0) + '</b></div>' +
+'<div>à¹€à¸•à¸µà¸¢à¸‡à¸™à¸­à¸™: <b>' + (p.bed || 0) + '</b></div>' +
+'<div>à¸­à¸·à¹ˆà¸™à¹†: <b>' + (p.otherResources || '-') + '</b></div>' +
+(p.note ? '<hr><div>à¸«à¸¡à¸²à¸¢à¹€à¸«à¸•à¸¸: ' + p.note + '</div>' : '') +
 '</div>';
-Swal.fire({ title: 'ทรัพยากรจุดอพยพ', html: html, confirmButtonText: 'ปิด' });
+Swal.fire({ title: 'à¸—à¸£à¸±à¸žà¸¢à¸²à¸à¸£à¸ˆà¸¸à¸”à¸­à¸žà¸¢à¸ž', html: html, confirmButtonText: 'à¸›à¸´à¸”' });
 }
 function openICTriageColorDetails(color) {
-// 🔒 Tier 2 เห็นแค่จำนวน, รายละเอียดว่าอยู่ รพ.ใด ต้อง Tier 3+ (mci)
-if (typeof requireFeature === 'function' && !requireFeature('mci', 'รายละเอียดผู้บาดเจ็บ / รพ. (ระดับ 3+)')) return;
-var labelMap = { red:'แดง', yellow:'เหลือง', green:'เขียว', black:'ดำ' };
+// ðŸ”’ Tier 2 à¹€à¸«à¹‡à¸™à¹à¸„à¹ˆà¸ˆà¸³à¸™à¸§à¸™, à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”à¸§à¹ˆà¸²à¸­à¸¢à¸¹à¹ˆ à¸£à¸ž.à¹ƒà¸” à¸•à¹‰à¸­à¸‡ Tier 3+ (mci)
+if (typeof requireFeature === 'function' && !requireFeature('mci', 'à¸£à¸²à¸¢à¸¥à¸°à¹€à¸­à¸µà¸¢à¸”à¸œà¸¹à¹‰à¸šà¸²à¸”à¹€à¸ˆà¹‡à¸š / à¸£à¸ž. (à¸£à¸°à¸”à¸±à¸š 3+)')) return;
+var labelMap = { red:'à¹à¸”à¸‡', yellow:'à¹€à¸«à¸¥à¸·à¸­à¸‡', green:'à¹€à¸‚à¸µà¸¢à¸§', black:'à¸”à¸³' };
 var rows = (window._icPatientTransfers || []).filter(function(t) {
 return String(t.triage || '').toLowerCase() === color;
 });
 if (!rows.length) {
-Swal.fire({ title: 'ผู้บาดเจ็บสี' + (labelMap[color] || color), html: '<div style="color:#999;">ยังไม่มีข้อมูลการส่งต่อไปโรงพยาบาล</div>', confirmButtonText: 'ปิด' });
+Swal.fire({ title: 'à¸œà¸¹à¹‰à¸šà¸²à¸”à¹€à¸ˆà¹‡à¸šà¸ªà¸µ' + (labelMap[color] || color), html: '<div style="color:#999;">à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸à¸²à¸£à¸ªà¹ˆà¸‡à¸•à¹ˆà¸­à¹„à¸›à¹‚à¸£à¸‡à¸žà¸¢à¸²à¸šà¸²à¸¥</div>', confirmButtonText: 'à¸›à¸´à¸”' });
 return;
 }
 var byHosp = {};
 rows.forEach(function(r) {
-var hosp = r.hospital || 'ไม่ระบุ รพ.';
+var hosp = r.hospital || 'à¹„à¸¡à¹ˆà¸£à¸°à¸šà¸¸ à¸£à¸ž.';
 if (!byHosp[hosp]) byHosp[hosp] = { qty:0, rows:[] };
 byHosp[hosp].qty += parseInt(r.qty, 10) || 1;
 byHosp[hosp].rows.push(r);
 });
 var html = Object.keys(byHosp).map(function(hosp) {
 return '<div style="text-align:left;border-bottom:1px solid #eee;padding:7px 0;">' +
-'<b>' + hosp + '</b> <span style="float:right;">' + byHosp[hosp].qty + ' ราย</span><br>' +
+'<b>' + hosp + '</b> <span style="float:right;">' + byHosp[hosp].qty + ' à¸£à¸²à¸¢</span><br>' +
 byHosp[hosp].rows.map(function(r) {
-return '<div style="font-size:12px;color:#666;">' + (r.time || '-') + ' | ' + (r.loggedBy || 'MED') + ' | ' + (r.qty || 1) + ' ราย</div>';
+return '<div style="font-size:12px;color:#666;">' + (r.time || '-') + ' | ' + (r.loggedBy || 'MED') + ' | ' + (r.qty || 1) + ' à¸£à¸²à¸¢</div>';
 }).join('') +
 '</div>';
 }).join('');
-Swal.fire({ title: 'ผู้บาดเจ็บสี' + (labelMap[color] || color), html: html, confirmButtonText: 'ปิด' });
+Swal.fire({ title: 'à¸œà¸¹à¹‰à¸šà¸²à¸”à¹€à¸ˆà¹‡à¸šà¸ªà¸µ' + (labelMap[color] || color), html: html, confirmButtonText: 'à¸›à¸´à¸”' });
 }
 async function updateIncidentMarker(coords) {
 if (!coords || !coords.includes(',')) return;
@@ -1544,17 +1546,17 @@ if (isNaN(lat) || isNaN(lng)) return;
 const pos = { lon: lng, lat: lat };
 incidentCenter.lat = lat;
 incidentCenter.lng = lng;
-// ลบ marker เดิมถ้ามี
+// à¸¥à¸š marker à¹€à¸”à¸´à¸¡à¸–à¹‰à¸²à¸¡à¸µ
 if (dashMarker) {
 try { removeLongdoOverlay(dashMap, dashMarker); } catch(e) {}
 dashMarker = null;
 }
-// สร้าง marker ใหม่เสมอ (ไม่ว่า dashMarker จะเป็น null หรือไม่)
+// à¸ªà¸£à¹‰à¸²à¸‡ marker à¹ƒà¸«à¸¡à¹ˆà¹€à¸ªà¸¡à¸­ (à¹„à¸¡à¹ˆà¸§à¹ˆà¸² dashMarker à¸ˆà¸°à¹€à¸›à¹‡à¸™ null à¸«à¸£à¸·à¸­à¹„à¸¡à¹ˆ)
 try {
 dashMarker = makeLongdoHtmlMarker(pos, buildDashboardIncidentMarkerHtml(), {
 offset: { x: 0, y: 0 },
 weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0,
-title: 'จุดเกิดเหตุ',
+title: 'à¸ˆà¸¸à¸”à¹€à¸à¸´à¸”à¹€à¸«à¸•à¸¸',
 scaleMode: 'none'
 });
 dashMap.Overlays.add(dashMarker);
@@ -1584,7 +1586,7 @@ if (el) el.value = '';
 function submitLogistics() {
 var agency = (document.getElementById('logAgencyInput').value || '').trim();
 if (!agency) {
-Swal.fire('กรุณาระบุหน่วยงาน', '', 'warning');
+Swal.fire('à¸à¸£à¸¸à¸“à¸²à¸£à¸°à¸šà¸¸à¸«à¸™à¹ˆà¸§à¸¢à¸‡à¸²à¸™', '', 'warning');
 return;
 }
 var name = (document.getElementById('logNameInput').value || '').trim() || agency;
@@ -1600,7 +1602,7 @@ TEMP_ROLE_LABEL = agency;
 currentRole = 'Logistics';
 window.currentUserPhone = phone;
 document.getElementById('modal_Logistics').style.display = 'none';
-Swal.fire({ title:'กำลังรายงานตัว...', allowOutsideClick:false, showConfirmButton:false, didOpen:function(){ Swal.showLoading(); } });
+Swal.fire({ title:'à¸à¸³à¸¥à¸±à¸‡à¸£à¸²à¸¢à¸‡à¸²à¸™à¸•à¸±à¸§...', allowOutsideClick:false, showConfirmButton:false, didOpen:function(){ Swal.showLoading(); } });
 try {
 google.script.run
 .withSuccessHandler(function() {})
@@ -1609,10 +1611,10 @@ google.script.run
 } catch(e) {}
 var rescue = _logCounts.rescue || 0;
 var resources = [
-{ type:'รถพยาบาล', qty: amb },
-{ type:'รถดับเพลิง', qty: fire },
-{ type:'กู้ชีพ/กู้ภัย', qty: rescue },
-{ type:'ตำรวจ', qty: police }
+{ type:'à¸£à¸–à¸žà¸¢à¸²à¸šà¸²à¸¥', qty: amb },
+{ type:'à¸£à¸–à¸”à¸±à¸šà¹€à¸žà¸¥à¸´à¸‡', qty: fire },
+{ type:'à¸à¸¹à¹‰à¸Šà¸µà¸ž/à¸à¸¹à¹‰à¸ à¸±à¸¢', qty: rescue },
+{ type:'à¸•à¸³à¸£à¸§à¸ˆ', qty: police }
 ].filter(function(r) {
 return r.qty > 0;
 });
@@ -1630,7 +1632,7 @@ try {
 google.script.run
 .withSuccessHandler(function() {})
 .withFailureHandler(function(e) { })
-.saveResourceIncoming('กำลังพล', 0, personnel, agency, phone);
+.saveResourceIncoming('à¸à¸³à¸¥à¸±à¸‡à¸žà¸¥', 0, personnel, agency, phone);
 } catch(e) {}
 }
 Swal.close();
@@ -1709,8 +1711,8 @@ banner.style.cssText = [
 ].join(';');
 banner.innerHTML =
 '<i class="fas fa-lock" style="font-size:16px;flex-shrink:0;"></i>' +
-'<span>คุณไม่ได้เป็นหัวหน้าหน่วยนี้ — ดูข้อมูลได้เท่านั้น ' +
-'ใช้ปุ่ม <b>แนบภาพ/วิดีโอ</b> เพื่อส่งข้อมูลเข้า IC ได้</span>';
+'<span>à¸„à¸¸à¸“à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¹€à¸›à¹‡à¸™à¸«à¸±à¸§à¸«à¸™à¹‰à¸²à¸«à¸™à¹ˆà¸§à¸¢à¸™à¸µà¹‰ â€” à¸”à¸¹à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹„à¸”à¹‰à¹€à¸—à¹ˆà¸²à¸™à¸±à¹‰à¸™ ' +
+'à¹ƒà¸Šà¹‰à¸›à¸¸à¹ˆà¸¡ <b>à¹à¸™à¸šà¸ à¸²à¸ž/à¸§à¸´à¸”à¸µà¹‚à¸­</b> à¹€à¸žà¸·à¹ˆà¸­à¸ªà¹ˆà¸‡à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹€à¸‚à¹‰à¸² IC à¹„à¸”à¹‰</span>';
 var children = scene.children;
 var insertAfterIndex = Math.min(2, children.length - 1);
 var refNode = children[insertAfterIndex];
