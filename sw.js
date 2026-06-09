@@ -1,10 +1,10 @@
 // Service Worker for EOC Rayong War Room
-const CACHE_NAME = 'eoc-warroom-v20260609_0840';
+const CACHE_NAME = 'eoc-warroom-v20260609_0905';
 
 // ไฟล์ที่ cache ไว้ตอน install
 const STATIC_ASSETS = [
-  'https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260609_0840',
-  'https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260609_0840',
+  'https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260609_0905',
+  'https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260609_0905',
   'https://occhrh-dev.github.io/HazMat-Mapper/the1ICS.png'
 ];
 
