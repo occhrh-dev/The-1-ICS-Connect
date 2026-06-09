@@ -1174,7 +1174,8 @@ byHosp[hosp].rows.map(function(r) { return (r.time || '-') + ' | ' + (r.loggedBy
 }).join('');
 Swal.fire({ title:'ผู้บาดเจ็บสี' + (labelMap[color] || color), html:html, confirmButtonText:'ปิด', width:560 });
 }
-function openMedicalTriageColorPopup(color) {
+ffunction openMedicalTriageColorPopup(color) {
+if (typeof requireFeature === 'function' && !requireFeature('triage', 'อัปเดตยอดผู้บาดเจ็บ / Triage 4 สี (ระดับ 2+)')) return;
 if (!IS_LEAD && !IS_COORD) {
 Swal.fire('ดูรายละเอียดได้ แต่แก้ยอดไม่ได้', 'การเพิ่มยอดให้หัวหน้าหน่วยหรือผู้ประสานสาธารณสุขเป็นผู้บันทึก', 'warning');
 return;
