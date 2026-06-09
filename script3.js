@@ -233,9 +233,9 @@ return '<div style="position:relative;width:0;height:0;overflow:visible;pointer-
 }
 function buildDashboardIncidentMarkerHtml() {
 return buildDashboardPointMarkerHtml(
-'<div class="incident-sonar-body"><div class="sonar-ring-1"></div><div class="sonar-ring-2"></div><div class="sonar-ring-3"></div><div class="sonar-core"><i class="fas fa-radiation-alt"></i></div></div>',
+'<div class="incident-sonar-body" style="transform:scale(.88);transform-origin:center center;"><div class="sonar-ring-1"></div><div class="sonar-ring-2"></div><div class="sonar-ring-3"></div><div class="sonar-core"><i class="fas fa-radiation-alt"></i></div></div>',
 '',
-{ iconSize: 44, scale: true, zIndex: 10 }
+{ iconSize: 39, scale: true, zIndex: 10 }
 );
 }
 function getDashboardScreenDistance(locA, locB) {
