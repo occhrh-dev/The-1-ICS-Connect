@@ -33,7 +33,11 @@ if (typeof clearDashboardSceneLocks === 'function') clearDashboardSceneLocks();
 healthCurrentUser = userName || currentUserName || 'MED';
 document.getElementById('health_username').textContent = healthCurrentUser;
 document.getElementById('scene_OrgChart').style.display = 'none';
-document.getElementById('scene_Health').style.display = 'flex';
+var healthScene = document.getElementById('scene_Health');
+if (healthScene) {
+healthScene.removeAttribute('aria-hidden');
+healthScene.style.display = 'flex';
+}
 if (typeof setHealthMediaFooterVisible === 'function') setHealthMediaFooterVisible(true);
 if (typeof startRoleBroadcastPolling === 'function') startRoleBroadcastPolling('MED');
 startHealthTimer();
@@ -51,11 +55,12 @@ if (tabPatient) tabPatient.style.display = '';
 if (tabField) tabField.style.display = '';
 }
 // reset to Tab 1 เสมอตอนเข้า scene
-var btn1 = document.querySelector('.health-tab.active');
+var btn1 = healthScene ? healthScene.querySelector('.health-tab.active') : document.querySelector('.health-tab.active');
 if (btn1) btn1.classList.remove('active');
-var overviewBtn = document.querySelector('button[onclick*="overview"]');
+var overviewBtn = healthScene ? healthScene.querySelector('button[onclick*="overview"]') : document.querySelector('button[onclick*="overview"]');
 if (overviewBtn) overviewBtn.classList.add('active');
-document.querySelectorAll('.health-tab-content').forEach(function(el) { el.style.display = 'none'; });
+var healthTabs = healthScene ? healthScene.querySelectorAll('.health-tab-content') : document.querySelectorAll('.health-tab-content');
+healthTabs.forEach(function(el) { el.style.display = 'none'; });
 var overview = document.getElementById('healthtab_overview');
 if (overview) overview.style.display = 'block';
 })();
@@ -122,10 +127,12 @@ updateRoleTimerElement('health_timer');
 }, 1000);
 }
 function switchHealthTab(tabId, btn) {
-document.querySelectorAll('.health-tab-content').forEach(function(el) { el.style.display = 'none'; });
-document.querySelectorAll('.health-tab').forEach(function(el) { el.classList.remove('active'); });
-document.getElementById('healthtab_' + tabId).style.display = 'block';
-btn.classList.add('active');
+var scene = document.getElementById('scene_Health') || document;
+scene.querySelectorAll('.health-tab-content').forEach(function(el) { el.style.display = 'none'; });
+scene.querySelectorAll('.health-tab').forEach(function(el) { el.classList.remove('active'); });
+var target = document.getElementById('healthtab_' + tabId);
+if (target) target.style.display = 'block';
+if (btn) btn.classList.add('active');
 }
 function renderHospitalDirectoryForHealthCard(list) {
 var box = document.getElementById('health_hospital_directory_list');
