@@ -1,14 +1,14 @@
 // Service Worker for EOC Rayong War Room
-const CACHE_NAME = 'eoc-warroom-v20260609_0820';
+const CACHE_NAME = 'eoc-warroom-v20260609_0840';
 
-// à¹„à¸Ÿà¸¥à¹Œà¸—à¸µà¹ˆ cache à¹„à¸§à¹‰à¸•à¸­à¸™ install
+// ไฟล์ที่ cache ไว้ตอน install
 const STATIC_ASSETS = [
-  'https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260609_0820',
-  'https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260609_0820',
+  'https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260609_0840',
+  'https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260609_0840',
   'https://occhrh-dev.github.io/HazMat-Mapper/the1ICS.png'
 ];
 
-// Install â€” cache static assets
+// Install — cache static assets
 self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
@@ -19,7 +19,7 @@ self.addEventListener('install', function(event) {
   );
 });
 
-// Activate â€” à¸¥à¸š cache à¹€à¸à¹ˆà¸²
+// Activate — ลบ cache เก่า
 self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(keys) {
@@ -33,9 +33,9 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-// Fetch â€” Network first, fallback to cache
+// Fetch — Network first, fallback to cache
 self.addEventListener('fetch', function(event) {
-  // à¹„à¸¡à¹ˆ cache GAS requests (google.script.run à¹ƒà¸Šà¹‰ channel à¸‚à¸­à¸‡à¸•à¸±à¸§à¹€à¸­à¸‡)
+  // ไม่ cache GAS requests (google.script.run ใช้ channel ของตัวเอง)
   if (event.request.url.includes('script.google.com') ||
       event.request.url.includes('googleapis.com')) {
     return;
@@ -44,7 +44,7 @@ self.addEventListener('fetch', function(event) {
   event.respondWith(
     fetch(event.request)
       .then(function(response) {
-        // Cache response à¹ƒà¸«à¸¡à¹ˆà¸ˆà¸²à¸ GitHub Pages
+        // Cache response ใหม่จาก GitHub Pages
         if (response.ok && event.request.url.includes('github.io')) {
           var clone = response.clone();
           caches.open(CACHE_NAME).then(function(cache) {
@@ -54,7 +54,7 @@ self.addEventListener('fetch', function(event) {
         return response;
       })
       .catch(function() {
-        // à¸–à¹‰à¸² network à¹„à¸¡à¹ˆà¹„à¸”à¹‰ à¹ƒà¸Šà¹‰ cache
+        // ถ้า network ไม่ได้ ใช้ cache
         return caches.match(event.request);
       })
   );
