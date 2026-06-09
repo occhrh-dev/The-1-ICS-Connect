@@ -1236,7 +1236,12 @@ drawHazmatZonesFromState(window._lastERGState);
 .withFailureHandler(function() {
 window._dashboardERGLoading = false;
 })
-.getERGState();
+// 🔧 ส่ง agency/token ให้ server route ไปยัง sheet ที่ถูกต้อง (Join Link session จำเป็นมากตอนนี้)
+.getERGState(
+  (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : '') || '',
+  (typeof APP_AGENCY_SHEET_ID !== 'undefined' ? APP_AGENCY_SHEET_ID : '') || '',
+  (typeof getActiveJoinToken === 'function' ? getActiveJoinToken() : '')
+);
 }
 const START_STEPS = [
 {
