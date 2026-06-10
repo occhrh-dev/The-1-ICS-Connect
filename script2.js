@@ -2768,7 +2768,7 @@ return;
 _uploadToDriveResumable_(file, tok.token, tok.folderId, source, reporter, agencyId, done, statusCallback);
 })
 .withFailureHandler(function(err) { if (typeof done === 'function') done(err); })
-.getFieldMediaUploadToken(agencyId);
+.getFieldMediaUploadToken(agencyId, source || 'Field', file.type || '');
 return;
 }
 // --- Small file: use base64 via google.script.run ---
