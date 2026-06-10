@@ -255,6 +255,25 @@ _optimisticRun_('addRoleNote',
 ['MED', 'สาธารณสุข/1669', healthCurrentUser || USER_NAME || 'MED', window.currentUserPhone || '', note],
 'ส่ง Note เข้า IC แล้ว ✓', 'ส่ง Note ไม่สำเร็จ');
 }
+// 📝 Note ของ OC/ICP และจุดอพยพ — เปิดให้ทุกคนในกล่อง (ไม่อยู่ใน lock selectors เหมือนปุ่มแนบไฟล์)
+function submitOCNote() {
+var noteEl = document.getElementById('oc_note_text');
+var note = noteEl ? noteEl.value.trim() : '';
+if (!note) return Swal.fire('กรุณาพิมพ์ Note ก่อนส่ง', '', 'warning');
+if (noteEl) noteEl.value = '';
+_optimisticRun_('addRoleNote',
+['OSC', 'OC/ICP', ocCurrentUser || USER_NAME || 'OC', window.currentUserPhone || '', note],
+'ส่ง Note เข้า IC แล้ว ✓', 'ส่ง Note ไม่สำเร็จ');
+}
+function submitEvacNote() {
+var noteEl = document.getElementById('evac_note_text');
+var note = noteEl ? noteEl.value.trim() : '';
+if (!note) return Swal.fire('กรุณาพิมพ์ Note ก่อนส่ง', '', 'warning');
+if (noteEl) noteEl.value = '';
+_optimisticRun_('addRoleNote',
+['EVAC_POINT', 'จุดอพยพ', evacCurrentUser || USER_NAME || 'EVAC', window.currentUserPhone || '', note],
+'ส่ง Note เข้า IC แล้ว ✓', 'ส่ง Note ไม่สำเร็จ');
+}
 function submitHealthRequest() {
 if (typeof requireFeature === 'function' && !requireFeature('support_request', 'ขอสนับสนุน/รายงานสาธารณสุข (ระดับ 2+)')) return;
 var type = document.getElementById('health_req_type').value;
