@@ -2633,7 +2633,7 @@ confirmButtonColor: '#34495e'
 }
 var FIELD_MEDIA_LIMITS = {
 image: 10 * 1024 * 1024,
-video: 80 * 1024 * 1024,
+video: 50 * 1024 * 1024,
 audio: 15 * 1024 * 1024,
 other: 15 * 1024 * 1024
 };
@@ -2689,7 +2689,7 @@ if (file.size > limit) {
 return {
 ok:false,
 message:'ไฟล์ใหญ่เกินไป (' + formatFileSize(file.size) + ')',
-detail:'เพื่อให้ใช้ได้ไวบนมือถือ แนะนำรูปไม่เกิน 8 MB และวิดีโอไม่เกิน 25 MB ต่อไฟล์'
+detail:'เพื่อให้ใช้ได้ไวบนมือถือ แนะนำรูปไม่เกิน 10 MB และวิดีโอไม่เกิน 50 MB ต่อไฟล์'
 };
 }
 return { ok:true };
@@ -2904,6 +2904,21 @@ if (Swal.isVisible()) Swal.update({ text: status });
 function handleAttach(input) {
 var files = input && input.files ? Array.prototype.slice.call(input.files) : [];
 if (!files.length) return;
+
+if (typeof hasFeature === 'function' && !hasFeature('media_upload')) {
+  var bad = files.filter(function(f) { return !/^image\//.test(f.type || ''); });
+  if (bad.length) {
+    Swal.fire('ส่งได้เฉพาะรูปภาพ', 'Tier 1 ของ OC/ICP ส่งได้เฉพาะรูปภาพ ไม่รองรับวิดีโอ/เสียง/ไฟล์อื่น', 'warning');
+    input.value = '';
+    return;
+  }
+  if (files.length > 5) {
+    Swal.fire('รูปเกิน 5 รูป', 'Tier 1 ของ OC/ICP ส่งรูปได้สูงสุด 5 รูปต่อครั้ง', 'warning');
+    input.value = '';
+    return;
+  }
+}
+
 var validation = validateFieldMediaFiles(files);
 if (!validation.ok) {
 Swal.fire(validation.message, validation.detail || '', 'warning');
