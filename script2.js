@@ -272,7 +272,7 @@ Swal.fire({ icon:'success', title:'ส่งคำขอแล้ว', timer:150
 .withFailureHandler(function(err) {
 Swal.fire('ส่งคำขอไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
 })
-.submitSupportRequest(type, detail, healthCurrentUser || 'MED');
+.submitSupportRequest(type, detail, healthCurrentUser || 'MED', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 }
 function openUpdateMedicalTriage() {
 if (typeof requireFeature === 'function' && !requireFeature('triage', 'Triage 4 สี (ระดับ 2+)')) return;
@@ -1346,16 +1346,18 @@ box.style.display = 'none';
 box.innerHTML = '';
 }
 function submitFieldCasualty() {
+if (typeof requireFeature === 'function' && !requireFeature('casualty_report', 'ยอดผู้บาดเจ็บประมาณการ (ระดับ 2+)')) return;
 var total = document.getElementById('oc_field_total').value;
 var still = document.getElementById('oc_field_still').value;
 var evacuated = document.getElementById('oc_field_evacuated').value;
 var note = document.getElementById('oc_field_note').value.trim();
 _optimisticRun_('submitFieldCasualtyReport',
-[total, still, evacuated, note, ocCurrentUser || 'OC'],
+[total, still, evacuated, note, ocCurrentUser || 'OC', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : '')],
 'บันทึกยอดและส่งขึ้น IC แล้ว ✓', 'บันทึกไม่สำเร็จ',
 function() { refreshOCData(); });
 }
 function submitOCRequest() {
+if (!_tier1SupportQuotaOk_()) return;
 var type = document.getElementById('oc_req_type').value;
 var detail = document.getElementById('oc_req_detail').value.trim();
 if (!type) { Swal.fire('กรุณาเลือกประเภท', '', 'warning'); return; }
@@ -1363,7 +1365,7 @@ document.getElementById('oc_req_detail').value = '';
 document.getElementById('oc_req_type').selectedIndex = 0;
 document.querySelectorAll('#oc_req_presets .oc-preset-btn').forEach(function(b) { b.classList.remove('active'); });
 _optimisticRun_('submitSupportRequest',
-[type, detail || '-', ocCurrentUser],
+[type, detail || '-', ocCurrentUser, (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : '')],
 'ส่งคำขอเข้า EOC แล้ว ✓', 'ส่งคำขอไม่สำเร็จ',
 function() { refreshOCData(); });
 }
@@ -1445,6 +1447,7 @@ Swal.fire('ส่งรายงานไม่สำเร็จ', err && err.m
 });
 }
 function openOCCasualtyPopup() {
+if (typeof requireFeature === 'function' && !requireFeature('casualty_report', 'ยอดผู้บาดเจ็บประมาณการ (ระดับ 2+)')) return;
 var total = document.getElementById('oc_field_total');
 var still = document.getElementById('oc_field_still');
 var evacuated = document.getElementById('oc_field_evacuated');
@@ -1481,11 +1484,21 @@ Swal.fire({ icon:'success', title:'ส่งยอดประมาณการ
 .withFailureHandler(function(err) {
 Swal.fire('ส่งยอดไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
 })
-.submitFieldCasualtyReport(r.value.total, r.value.still, r.value.evac, r.value.note, ocCurrentUser || 'OC');
+.submitFieldCasualtyReport(r.value.total, r.value.still, r.value.evac, r.value.note, ocCurrentUser || 'OC', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 });
 }
+// 🎚️ Tier 1: OC/ICP ขอสนับสนุนได้สูงสุด 5 คำขอต่อ 1 เหตุการณ์ — ตัวเลขจริงบังคับที่ server
+function _tier1SupportQuotaOk_() {
+if (typeof hasFeature !== 'function' || hasFeature('support_request')) return true;
+var list = (window._lastOCState && window._lastOCState.supportReqs) || [];
+if (list.length >= 5) {
+Swal.fire('เกินโควต้าขอสนับสนุน', 'Tier 1 ส่งคำขอสนับสนุนได้สูงสุด 5 คำขอต่อ 1 เหตุการณ์ (ส่งไปแล้ว ' + list.length + ' คำขอ)', 'warning');
+return false;
+}
+return true;
+}
 function openOCSupportPopup() {
-if (typeof requireFeature === 'function' && !requireFeature('support_request', 'ระบบขอสนับสนุน (ระดับ 2+)')) return;
+if (!_tier1SupportQuotaOk_()) return;
 Swal.fire({
 title: 'ขอสนับสนุน',
 html:
@@ -1536,7 +1549,7 @@ Swal.fire({ icon:'success', title:'ส่งคำขอแล้ว', timer:130
 .withFailureHandler(function(err) {
 Swal.fire('ส่งคำขอไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
 })
-.submitSupportRequest(r.value.type, r.value.detail, ocCurrentUser);
+.submitSupportRequest(r.value.type, r.value.detail, ocCurrentUser, (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 });
 }
 function openOCWindInput() {
