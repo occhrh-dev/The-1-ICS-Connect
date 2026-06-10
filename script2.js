@@ -1346,7 +1346,6 @@ box.style.display = 'none';
 box.innerHTML = '';
 }
 function submitFieldCasualty() {
-if (typeof requireFeature === 'function' && !requireFeature('casualty_report', 'รายงานผู้บาดเจ็บ (ระดับ 2+)')) return;
 var total = document.getElementById('oc_field_total').value;
 var still = document.getElementById('oc_field_still').value;
 var evacuated = document.getElementById('oc_field_evacuated').value;
@@ -1446,7 +1445,6 @@ Swal.fire('ส่งรายงานไม่สำเร็จ', err && err.m
 });
 }
 function openOCCasualtyPopup() {
-if (typeof requireFeature === 'function' && !requireFeature('casualty_report', 'รายงานผู้บาดเจ็บ (ระดับ 2+)')) return;
 var total = document.getElementById('oc_field_total');
 var still = document.getElementById('oc_field_still');
 var evacuated = document.getElementById('oc_field_evacuated');
