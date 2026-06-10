@@ -1810,8 +1810,8 @@ var OC_LOCK_SELECTORS = [
 '#oc_zone_label'
 ];
 var HEALTH_LOCK_SELECTORS = [
+// 📝 Note + แนบรูป เปิดให้ทุกคนในกล่อง (ตามสเปค) — ไม่ใส่ submitHealthNote / #health_note_text / ปุ่มแนบไฟล์
 'button[onclick="openUpdateMedicalTriage()"]',
-'button[onclick="submitHealthNote()"]',
 'button[onclick="openAddPatientTransfer()"]',
 'button[onclick="openAddHealthUnit()"]',
 'button[onclick="submitHealthRequest()"]',
@@ -1819,7 +1819,6 @@ var HEALTH_LOCK_SELECTORS = [
 'button[onclick="refreshHealthData()"]',
 '#health_req_type',
 '#health_req_detail',
-'#health_note_text',
 '.health-tab'
 ];
 var EVAC_LOCK_SELECTORS = [
@@ -1860,8 +1859,8 @@ banner.style.cssText = [
 ].join(';');
 banner.innerHTML =
 '<i class="fas fa-lock" style="font-size:16px;flex-shrink:0;"></i>' +
-'<span>คุณไม่ได้เป็นหัวหน้าหน่วยนี้ — ดูข้อมูลได้เท่านั้น ' +
-'ใช้ปุ่ม <b>แนบภาพ/วิดีโอ</b> เพื่อส่งข้อมูลเข้า IC ได้</span>';
+'<span>คุณไม่ได้เป็นหัวหน้า/ผู้ประสานหน่วยนี้ — แก้ข้อมูลไม่ได้ ' +
+'แต่ส่ง <b>Note</b> และ <b>แนบภาพ/วิดีโอ</b> เข้า IC ได้</span>';
 var children = scene.children;
 var insertAfterIndex = Math.min(2, children.length - 1);
 var refNode = children[insertAfterIndex];
