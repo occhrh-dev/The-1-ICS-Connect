@@ -2826,7 +2826,7 @@ window._lastUploadedFieldMedia = media;
 if (typeof done === 'function') done(null, media);
 })
 .withFailureHandler(function(err) { if (typeof done === 'function') done(err); })
-.registerFieldMediaFile(driveFile.id, source || 'Field', reporter || USER_NAME || '-', file.name, mimeType, '');
+.registerFieldMediaFile(driveFile.id, source || 'Field', reporter || USER_NAME || '-', file.name, mimeType, '', agencyId || '');
 }).catch(function(err) {
 if (typeof done === 'function') done(err instanceof Error ? err : new Error(String(err)));
 });
@@ -2873,13 +2873,47 @@ if (typeof statusCallback === 'function') statusCallback('ไฟล์ ' + (inde
 }
 next(0);
 }
-function handleGenericFieldMedia(input, source, reporter) {
-if (typeof requireFeature === 'function' && !requireFeature('media_upload', 'อัปโหลดรูป/วิดีโอ')) {
-if (input) input.value = '';
-return;
+// 🎚️ Tier 1: โควต้ารูปสะสมต่อ 1 เหตุการณ์ (บทบาทละ 5 รูป) — ตัวเลขจริงบังคับที่ server
+function _tier1MediaBucket_(source) {
+var raw = String(source || '');
+var src = raw.toUpperCase();
+if (src === 'OC' || src === 'OSC' || src.indexOf('OC/ICP') !== -1) return 'OC/ICP';
+if (raw.indexOf('สาธารณสุข') !== -1 || src === 'MED') return 'MED';
+if (raw.indexOf('จุดอพยพ') !== -1 || src === 'EVAC') return 'EVAC';
+return '';
 }
+function _tier1MediaUsedCount_(bucket) {
+var list = window._fieldMediaReports || [];
+var n = 0;
+list.forEach(function(item) {
+if (_tier1MediaBucket_(item.source || item.roleCode) === bucket) n++;
+});
+return n;
+}
+// คืนค่า true = ผ่าน, false = บล็อกแล้ว (เด้งเตือนให้แล้ว)
+function _tier1CheckMediaFiles_(input, files, source) {
+if (typeof hasFeature !== 'function' || hasFeature('media_upload')) return true;
+var bad = files.filter(function(f) { return !/^image\//.test(f.type || ''); });
+if (bad.length) {
+Swal.fire('ส่งได้เฉพาะรูปภาพ', 'Tier 1 ส่งได้เฉพาะรูปภาพ ไม่รองรับวิดีโอ/เสียง/ไฟล์อื่น', 'warning');
+if (input) input.value = '';
+return false;
+}
+var bucket = _tier1MediaBucket_(source);
+var used = bucket ? _tier1MediaUsedCount_(bucket) : 0;
+if (files.length + used > 5) {
+Swal.fire('เกินโควต้ารูป Tier 1',
+'ส่งรูปได้สูงสุด 5 รูปต่อ 1 เหตุการณ์' + (used ? ' — ส่งไปแล้ว ' + used + ' รูป เหลือส่งได้อีก ' + Math.max(0, 5 - used) + ' รูป' : ''),
+'warning');
+if (input) input.value = '';
+return false;
+}
+return true;
+}
+function handleGenericFieldMedia(input, source, reporter) {
 var files = input && input.files ? Array.prototype.slice.call(input.files) : [];
 if (!files.length) return;
+if (!_tier1CheckMediaFiles_(input, files, source)) return;
 var validation = validateFieldMediaFiles(files);
 if (!validation.ok) {
 Swal.fire(validation.message, validation.detail || '', 'warning');
@@ -2903,19 +2937,7 @@ function handleAttach(input) {
 var files = input && input.files ? Array.prototype.slice.call(input.files) : [];
 if (!files.length) return;
 
-if (typeof hasFeature === 'function' && !hasFeature('media_upload')) {
-  var bad = files.filter(function(f) { return !/^image\//.test(f.type || ''); });
-  if (bad.length) {
-    Swal.fire('ส่งได้เฉพาะรูปภาพ', 'Tier 1 ของ OC/ICP ส่งได้เฉพาะรูปภาพ ไม่รองรับวิดีโอ/เสียง/ไฟล์อื่น', 'warning');
-    input.value = '';
-    return;
-  }
-  if (files.length > 5) {
-    Swal.fire('รูปเกิน 5 รูป', 'Tier 1 ของ OC/ICP ส่งรูปได้สูงสุด 5 รูปต่อครั้ง', 'warning');
-    input.value = '';
-    return;
-  }
-}
+if (!_tier1CheckMediaFiles_(input, files, 'OC/ICP')) return;
 
 var validation = validateFieldMediaFiles(files);
 if (!validation.ok) {
@@ -3031,13 +3053,23 @@ list = list || [];
 list = list.filter(function(item) {
 return !getRoleUpdateBucket(item.source || item.roleCode);
 });
-// 🔒 Tier 1: รับภาพหน้างานจาก OSC เท่านั้น และแสดงสูงสุด 5 ไฟล์
+// 🔒 Tier 1: รับภาพหน้างานจาก OC/ICP, MED, จุดอพยพ — แสดงสูงสุดแหล่งละ 5 ไฟล์
 if (typeof hasFeature === 'function' && !hasFeature('media_upload')) {
+var t1SourceKey = function(item) {
+var raw = String(item.source || item.roleCode || '').trim();
+var src = raw.toUpperCase();
+if (src === 'OSC' || src === 'OC' || src.indexOf('OC/ICP') !== -1) return 'OC';
+if (raw.indexOf('สาธารณสุข') !== -1 || src === 'MED') return 'MED';
+if (raw.indexOf('จุดอพยพ') !== -1 || src === 'EVAC') return 'EVAC';
+return '';
+};
+var t1Counts = {};
 list = list.filter(function(item) {
-var src = String(item.source || item.roleCode || '').trim().toUpperCase();
-return src === 'OSC' || src === 'OC' || src.indexOf('OC/ICP') !== -1;
+var key = t1SourceKey(item);
+if (!key) return false;
+t1Counts[key] = (t1Counts[key] || 0) + 1;
+return t1Counts[key] <= 5;
 });
-list = list.slice(0, 5);
 }
 var latest = list[0] || null;
 var latestId = getFieldMediaId(latest);
