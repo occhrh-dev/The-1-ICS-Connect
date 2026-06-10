@@ -1464,10 +1464,8 @@ status.innerText = '❌ Error: ' + e.message;
 }
 }
 function submitExposure() {
-if (typeof getCurrentTier === 'function' && getCurrentTier() !== '3') {
-Swal.fire({ icon:'info', title:'🔒 ใช้ได้ Tier 3 เท่านั้น', text:'ระบบบันทึก Exposure สำหรับศูนย์บัญชาการระดับสูง', confirmButtonText:'รับทราบ' });
-return;
-}
+// 🎚️ ตาม TIER_CONFIG: exposure_log = Tier 3 เท่านั้น (เช็คผ่าน feature flag จะได้ตรงกับการ์ดที่ซ่อน/แสดง)
+if (typeof requireFeature === 'function' && !requireFeature('exposure_log', 'บันทึก Exposure (ระดับ 3 เท่านั้น)')) return;
 const name = document.getElementById('exp_name').value.trim();
 const role = document.getElementById('exp_role').value.trim();
 const chem = document.getElementById('exp_chem').value.trim();
