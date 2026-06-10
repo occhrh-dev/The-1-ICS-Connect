@@ -3035,7 +3035,7 @@ return !getRoleUpdateBucket(item.source || item.roleCode);
 if (typeof hasFeature === 'function' && !hasFeature('media_upload')) {
 list = list.filter(function(item) {
 var src = String(item.source || item.roleCode || '').trim().toUpperCase();
-return src === 'OSC' || src === 'OC';
+return src === 'OSC' || src === 'OC' || src.indexOf('OC/ICP') !== -1;
 });
 list = list.slice(0, 5);
 }
