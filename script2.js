@@ -2632,8 +2632,8 @@ confirmButtonColor: '#34495e'
 });
 }
 var FIELD_MEDIA_LIMITS = {
-image: 5 * 1024 * 1024,
-video: 150 * 1024 * 1024,
+image: 10 * 1024 * 1024,
+video: 80 * 1024 * 1024,
 audio: 15 * 1024 * 1024,
 other: 15 * 1024 * 1024
 };
