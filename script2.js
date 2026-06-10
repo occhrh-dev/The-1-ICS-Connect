@@ -3417,15 +3417,20 @@ checkSystemStatus();
 // ---- แสดง Join Link popup ก่อนเสมอ (ไม่ขึ้นกับ video room) ----
 setTimeout(function() {
 var joinUrl = (res && res.joinUrl) ? res.joinUrl : '';
+if (joinUrl) window._currentJoinUrl = joinUrl; // ให้ปุ่มโหลด/แชร์ QR ใน popup ใช้ได้ทันที
 var joinHtml = joinUrl
 ? '<div style="text-align:left;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:12px;margin-bottom:10px;">' +
   '<div style="font-weight:900;color:#1e3a8a;margin-bottom:6px;">🔗 Join Link สำหรับเจ้าหน้าที่</div>' +
-  '<div style="font-size:0.8rem;color:#475569;margin-bottom:8px;">ส่ง link นี้ให้ จนท. ทุกคน — กดลิงก์เข้าได้เลยไม่ต้อง login</div>' +
+  '<div style="font-size:0.8rem;color:#475569;margin-bottom:8px;">ส่ง link นี้ให้ จนท. ทุกคน — กดลิงก์หรือสแกน QR เข้าได้เลยไม่ต้อง login</div>' +
   '<div style="background:white;border-radius:7px;padding:8px;font-size:0.78rem;word-break:break-all;color:#334155;border:1px solid #e2e8f0;margin-bottom:8px;">' + joinUrl + '</div>' +
+  '<div style="text-align:center;"><img src="' + _joinQrUrl_(joinUrl, 300) + '" style="width:160px;height:160px;border-radius:8px;border:1px solid #c7d2fe;background:white;padding:6px;" alt="QR Join Link"/></div>' +
+  '<div style="text-align:center;margin-top:6px;">' +
   '<button type="button" onclick="' +
     'navigator.clipboard && navigator.clipboard.writeText(' + JSON.stringify(joinUrl) + ')' +
     '.then(function(){ this.innerText=\'คัดลอกแล้ว ✓\'; }.bind(this)).catch(function(){});' +
   '" style="background:#2563eb;color:white;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-weight:900;font-size:0.85rem;">📋 คัดลอก Join Link</button>' +
+  '</div>' +
+  _joinQrButtonsHtml_() +
   '</div>'
 : '<div style="background:#fef3c7;border-radius:8px;padding:10px;color:#92400e;font-size:0.85rem;">ยังไม่สามารถสร้าง Join Link ได้ — ตรวจสอบว่า PUBLIC_APP_URL ตั้งค่าแล้ว</div>';
 Swal.fire({
@@ -3461,6 +3466,59 @@ Swal.fire('เปิดเหตุไม่สำเร็จ', err && err.mess
 })
 .activateEmergency(v[0], v[1], v[2], v[3], v[4], v[5], v[6], APP_ACCESS_ROLE, v[7] || '', v[8] || '', v[9] || '', v[10] || 'manual', APP_AGENCY_ID || '', v[11] || '');
 });
+}
+// ============================================================
+// 🔳 QR Code ของ Join Link — ใช้ร่วมกันทั้ง popup เปิด EOC และปุ่มบนแดชบอร์ด
+// ============================================================
+function _joinQrUrl_(url, size) {
+size = size || 300;
+return 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&data=' + encodeURIComponent(url);
+}
+function _fetchJoinQrBlob_(url) {
+return fetch(_joinQrUrl_(url, 500)).then(function(res) {
+if (!res.ok) throw new Error('โหลด QR ไม่สำเร็จ');
+return res.blob();
+});
+}
+function downloadJoinQr() {
+var url = window._currentJoinUrl || '';
+if (!url) { Swal.fire({ icon:'warning', title:'ยังไม่มี Join Link', timer:1500, showConfirmButton:false }); return; }
+_fetchJoinQrBlob_(url).then(function(blob) {
+var a = document.createElement('a');
+a.href = URL.createObjectURL(blob);
+a.download = 'EOC-join-QR.png';
+document.body.appendChild(a);
+a.click();
+document.body.removeChild(a);
+setTimeout(function() { URL.revokeObjectURL(a.href); }, 5000);
+}).catch(function() {
+// fetch โดน CORS/เน็ตล่ม — เปิดรูปในแท็บใหม่ให้กดเซฟเอง
+window.open(_joinQrUrl_(url, 500), '_blank');
+});
+}
+function shareJoinQr() {
+var url = window._currentJoinUrl || '';
+if (!url) { Swal.fire({ icon:'warning', title:'ยังไม่มี Join Link', timer:1500, showConfirmButton:false }); return; }
+_fetchJoinQrBlob_(url).then(function(blob) {
+var file = new File([blob], 'EOC-join-QR.png', { type: 'image/png' });
+if (navigator.canShare && navigator.canShare({ files: [file] })) {
+return navigator.share({ files: [file], title: 'Join Link EOC', text: 'สแกน QR หรือกดลิงก์เพื่อเข้าระบบ EOC\n' + url });
+}
+if (navigator.share) return navigator.share({ title: 'Join Link EOC', text: 'เข้าระบบ EOC', url: url });
+throw new Error('no-share-api');
+}).catch(function(e) {
+if (e && e.name === 'AbortError') return; // ผู้ใช้กดยกเลิกแชร์เอง — ไม่ใช่ error
+// เครื่องไม่รองรับ Web Share (เช่น เดสก์ท็อป) → โหลด QR + คัดลอกลิงก์ให้แทน
+downloadJoinQr();
+if (typeof copyTextToClipboard === 'function') copyTextToClipboard(url, function() {});
+Swal.fire({ icon:'info', title:'เครื่องนี้แชร์ตรงไม่ได้', text:'ดาวน์โหลด QR และคัดลอกลิงก์ไว้ให้แล้ว ส่งต่อได้เลย', timer:2400, showConfirmButton:false });
+});
+}
+function _joinQrButtonsHtml_() {
+return '<div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">' +
+'<button type="button" onclick="downloadJoinQr()" style="background:#0f172a;color:white;border:none;border-radius:7px;padding:7px 14px;cursor:pointer;font-weight:900;font-size:0.8rem;"><i class="fas fa-download"></i> โหลด QR</button>' +
+'<button type="button" onclick="shareJoinQr()" style="background:#16a34a;color:white;border:none;border-radius:7px;padding:7px 14px;cursor:pointer;font-weight:900;font-size:0.8rem;"><i class="fas fa-share-nodes"></i> แชร์ QR</button>' +
+'</div>';
 }
 function toggleDeclareWindMode() {
 var modeEl = document.querySelector('input[name="swal-wind-mode"]:checked');
