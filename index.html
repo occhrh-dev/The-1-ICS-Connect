@@ -4078,35 +4078,49 @@ if (!url) {
 Swal.fire({ icon: 'warning', title: 'ยังไม่มี Join Link', text: 'ระบบยังไม่สร้าง Join Link — กรุณาปิดและเปิดเหตุใหม่', confirmButtonText: 'ปิด' });
 return;
 }
-window._currentJoinUrl = url; // ให้ปุ่มโหลด/แชร์ QR ใช้ลิงก์เดียวกัน
+window._currentJoinUrl = url;
 var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url);
+var videoRoom = window._lastEmergState && window._lastEmergState.videoRoomName ? window._lastEmergState.videoRoomName : '';
+var videoBtn = videoRoom ? '<button onclick="Swal.close();openJitsiModal(\'' + videoRoom + '\',\'EOC Video Call\')" style="margin-top:8px;width:100%;border:none;background:#16a34a;color:white;border-radius:8px;padding:9px;font-weight:900;cursor:pointer;font-family:Prompt,sans-serif;">📹 เปิดห้องวิดีโอด้วย</button>' : '';
 Swal.fire({
 title: '🔗 Join Link สำหรับ จนท.',
 html:
 '<div style="font-size:0.82rem;color:#475569;margin-bottom:10px;">ส่ง link นี้ให้ จนท. ทุกคน — กดลิงก์เข้าได้เลย <b>ไม่ต้อง login</b></div>' +
-'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px;font-size:0.75rem;word-break:break-all;color:#334155;text-align:left;margin-bottom:10px;">' + url + '</div>' +
+'<input id="join_link_input" value="' + url + '" readonly onclick="this.select()" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.75rem;color:#334155;margin-bottom:8px;cursor:pointer;">' +
 '<img src="' + qrUrl + '" style="width:150px;height:150px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:6px;" alt="QR Code"/>' +
-'<div style="font-size:0.78rem;color:#64748b;">สแกน QR หรือ copy link ได้เลย</div>' +
-(typeof _joinQrButtonsHtml_ === 'function' ? _joinQrButtonsHtml_() : ''),
+'<div style="font-size:0.78rem;color:#64748b;margin-bottom:6px;">สแกน QR หรือกดที่ช่อง link เพื่อ copy</div>' +
+videoBtn,
 showCancelButton: true,
 confirmButtonText: '📋 คัดลอก Link',
 cancelButtonText: 'ปิด',
-confirmButtonColor: '#16a34a'
+confirmButtonColor: '#16a34a',
+didOpen: function() {
+var inp = document.getElementById('join_link_input');
+if (inp) { inp.select(); document.execCommand('copy'); }
+}
 }).then(function(r) {
 if (!r.isConfirmed) return;
+var inp = document.getElementById('join_link_input');
+if (inp) {
+inp.select();
+var ok = document.execCommand('copy');
+if (ok) {
+Swal.fire({ icon: 'success', title: 'คัดลอกแล้ว!', timer: 1200, showConfirmButton: false });
+return;
+}
+}
 if (navigator.clipboard && navigator.clipboard.writeText) {
 navigator.clipboard.writeText(url).then(function() {
 Swal.fire({ icon: 'success', title: 'คัดลอกแล้ว!', timer: 1200, showConfirmButton: false });
+}).catch(function() {
+prompt('คัดลอก link นี้:', url);
 });
 } else {
-var ta = document.createElement('textarea');
-ta.value = url; document.body.appendChild(ta); ta.select();
-try { document.execCommand('copy'); } catch(e) {}
-document.body.removeChild(ta);
-Swal.fire({ icon: 'success', title: 'คัดลอกแล้ว!', timer: 1200, showConfirmButton: false });
+prompt('คัดลอก link นี้:', url);
 }
 });
 }
+
 function copyDashboardViewLink(event) {
 if (event) {
 event.preventDefault();
