@@ -209,9 +209,24 @@ function updateDashboardMarkerScale() {
 var mapObj = dashMap && dashMap._maptiler;
 if (!mapObj || !mapObj.getZoom) return;
 var zoom = mapObj.getZoom();
-var scale = zoom >= 15 ? 1 : zoom >= 13 ? 0.92 : zoom >= 11 ? 0.82 : zoom >= 9 ? 0.72 : zoom >= 7 ? 0.64 : 0.58;
+// scale หมุด
+var scale = zoom >= 15 ? 1 : zoom >= 13 ? 0.85 : zoom >= 11 ? 0.65 : zoom >= 9 ? 0.45 : 0.3;
 var root = document.getElementById('scene_Dashboard');
 if (root) root.style.setProperty('--dash-marker-scale', scale.toFixed(2));
+// zoom < 12 → ซ่อน label หมุดทุกตัวยกเว้น incident+EOC
+var hideLabel = zoom < 12;
+var hideOthers = zoom < 10;
+if (root) {
+  root.style.setProperty('--dash-label-display', hideLabel ? 'none' : '');
+  root.style.setProperty('--dash-other-display', hideOthers ? 'none' : '');
+}
+// apply ให้ live location markers และ zone markers
+var allMarkerEls = root ? root.querySelectorAll('.dash-live-marker, .dash-zone-marker') : [];
+allMarkerEls.forEach(function(el) {
+  el.style.display = hideOthers ? 'none' : '';
+  var labelEl = el.querySelector('.dash-marker-label');
+  if (labelEl) labelEl.style.display = hideLabel ? 'none' : '';
+});
 if (dashEOCCoordsRaw && !window._dashboardEOCMarkerRendering) {
 window._dashboardEOCMarkerRendering = true;
 try { renderDashboardEOCMarker(dashEOCCoordsRaw); } catch(e) {}
