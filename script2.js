@@ -1478,19 +1478,29 @@ Swal.fire('ส่งรายงานไม่สำเร็จ', err && err.m
 }
 function openOCCasualtyPopup() {
 if (typeof requireFeature === 'function' && !requireFeature('casualty_report', 'ยอดผู้บาดเจ็บประมาณการ (ระดับ 2+)')) return;
-var total = document.getElementById('oc_field_total');
-var still = document.getElementById('oc_field_still');
-var evacuated = document.getElementById('oc_field_evacuated');
-var note = document.getElementById('oc_field_note');
+var prev = window._lastOCFieldCasualty || {};
+var prevTotal = prev.totalEstimate || 0;
+var prevStill = prev.stillInArea || 0;
+var prevEvac = prev.evacuatedOrSent || 0;
+var prevNote = prev.note || '';
+var prevTime = prev.timestamp ? prev.timestamp.replace('T',' ').slice(0,16) : '';
+var prevBox = prevTotal || prevStill || prevEvac
+  ? '<div style="background:#fff3e0;border:1px solid #f97316;border-radius:7px;padding:8px 10px;margin-bottom:10px;font-size:12px;text-align:left;">' +
+    '<div style="font-weight:900;color:#c2410c;margin-bottom:4px;">📤 ยอดที่ส่งล่าสุด' + (prevTime ? ' (' + prevTime + ')' : '') + '</div>' +
+    '<div style="display:flex;gap:12px;"><span>รวม: <b>' + prevTotal + '</b></span><span>อยู่ในพื้นที่: <b>' + prevStill + '</b></span><span>ออกแล้ว: <b>' + prevEvac + '</b></span></div>' +
+    (prevNote ? '<div style="color:#555;margin-top:3px;">หมายเหตุ: ' + prevNote + '</div>' : '') +
+    '</div>'
+  : '';
 Swal.fire({
 title: 'ยอดผู้บาดเจ็บประมาณการ',
 html:
+prevBox +
 '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">' +
-'<div style="text-align:left;"><label style="display:block;font-size:12px;font-weight:800;color:#475569;margin-bottom:4px;">รวมทั้งหมด</label><input id="oc_pop_total" class="swal2-input" type="number" min="0" placeholder="รวม" value="' + (total ? total.value : 0) + '" style="margin:0;width:100%;box-sizing:border-box;"></div>' +
-'<div style="text-align:left;"><label style="display:block;font-size:12px;font-weight:800;color:#475569;margin-bottom:4px;">อยู่ในพื้นที่</label><input id="oc_pop_still" class="swal2-input" type="number" min="0" placeholder="ยังอยู่" value="' + (still ? still.value : 0) + '" style="margin:0;width:100%;box-sizing:border-box;"></div>' +
-'<div style="text-align:left;"><label style="display:block;font-size:12px;font-weight:800;color:#475569;margin-bottom:4px;">ออกนอกพื้นที่</label><input id="oc_pop_evac" class="swal2-input" type="number" min="0" placeholder="ส่งออก" value="' + (evacuated ? evacuated.value : 0) + '" style="margin:0;width:100%;box-sizing:border-box;"></div>' +
+'<div style="text-align:left;"><label style="display:block;font-size:12px;font-weight:800;color:#475569;margin-bottom:4px;">รวมทั้งหมด</label><input id="oc_pop_total" class="swal2-input" type="number" min="0" placeholder="รวม" value="' + prevTotal + '" style="margin:0;width:100%;box-sizing:border-box;"></div>' +
+'<div style="text-align:left;"><label style="display:block;font-size:12px;font-weight:800;color:#475569;margin-bottom:4px;">อยู่ในพื้นที่</label><input id="oc_pop_still" class="swal2-input" type="number" min="0" placeholder="ยังอยู่" value="' + prevStill + '" style="margin:0;width:100%;box-sizing:border-box;"></div>' +
+'<div style="text-align:left;"><label style="display:block;font-size:12px;font-weight:800;color:#475569;margin-bottom:4px;">ออกนอกพื้นที่</label><input id="oc_pop_evac" class="swal2-input" type="number" min="0" placeholder="ส่งออก" value="' + prevEvac + '" style="margin:0;width:100%;box-sizing:border-box;"></div>' +
 '</div>' +
-'<textarea id="oc_pop_note" class="swal2-textarea" style="margin:10px 0 0;width:100%;box-sizing:border-box;min-height:90px;" placeholder="หมายเหตุสั้นๆ">' + (note ? roleSafeText(note.value) : '') + '</textarea>',
+'<textarea id="oc_pop_note" class="swal2-textarea" style="margin:10px 0 0;width:100%;box-sizing:border-box;min-height:90px;" placeholder="หมายเหตุสั้นๆ">' + roleSafeText(prevNote) + '</textarea>',
 confirmButtonText: 'ส่งยอดขึ้น IC',
 confirmButtonColor: '#e67e22',
 showCancelButton: true,
