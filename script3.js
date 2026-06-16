@@ -444,6 +444,10 @@ mapObj.on('zoom', updateDashboardMarkerScale);
 mapObj.on('zoomend', updateDashboardMarkerScale);
 mapObj.on('zoomend', ensureDashboardMarkerSeparationZoom);
 mapObj.on('moveend', ensureDashboardMarkerSeparationZoom);
+mapObj.on('dragstart', function() { window._userInteractingMap = true; });
+mapObj.on('zoomstart', function(e) { if (e.originalEvent) window._userInteractingMap = true; });
+mapObj.on('dragend', function() { setTimeout(function(){ window._userInteractingMap = false; }, 3000); });
+mapObj.on('zoomend', function(e) { if (e.originalEvent) setTimeout(function(){ window._userInteractingMap = false; }, 3000); });
 updateDashboardMarkerScale();
 }
 removeLongdoOverlay(dashMap, dashMarker);
@@ -456,7 +460,7 @@ scaleMode: 'none'
 });
 dashMap.Overlays.add(dashMarker);
 renderDashboardEOCMarker(window._lastEmergState && window._lastEmergState.evtEOCCoords);
-dashMap.location(pos, true);
+if (!window._userInteractingMap) { dashMap.location(pos, true); }
 setTimeout(ensureDashboardMarkerSeparationZoom, 350);
 if (window._lastEmergState && window._lastEmergState.wind && window._lastEmergState.wind.directionDeg != null) {
 drawWindArrowOnDashMap(window._lastEmergState.wind.directionDeg, window._lastEmergState.wind.speed || 0);
