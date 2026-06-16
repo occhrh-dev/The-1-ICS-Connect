@@ -84,8 +84,8 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
     searchPlaces:'searchPlaces',
     setEOCCallBusy:'setEOCCallBusy',setEOCCallFree:'setEOCCallFree',
     clearEOCCallByRoom:'clearEOCCallByRoom',getEOCCallStatus:'getEOCCallStatus',
-    getDashboardViewUrl:'__noop__',validateJoinToken:'__noop__',
-    createDashboardViewToken:'__noop__',validateDashboardViewToken:'__noop__',
+    getDashboardViewUrl:'getDashboardViewUrl',validateJoinToken:'validateJoinToken',
+    createDashboardViewToken:'createDashboardViewToken',validateDashboardViewToken:'validateDashboardViewToken',
     setEOCCoords:'__noop__',updateIncidentLevel:'__noop__',
     acceptPendingWindReport:'__noop__',generateAndSendSitrep:'__noop__',
     getFieldMediaReports:'__noop__',getFieldMediaUploadToken:'__noop__',
@@ -140,7 +140,10 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       claimICRole:{name:a[0],position:a[1],phone:a[2]},
       releaseICRole:{name:a[0],accessRole:a[1]},
       getAttendanceListByRole:{roleCode:a[0]},
-      searchPlaces:{query:a[0]}
+      searchPlaces:{query:a[0]},
+      validateJoinToken:{joinToken:a[0]},
+      createDashboardViewToken:{agencyId:a[0]},
+      validateDashboardViewToken:{token:a[0]}
     };
     return m[fn] || {};
   }
