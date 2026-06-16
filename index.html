@@ -645,9 +645,9 @@ if (detected) {
 <div style="font-size:0.6rem;color:#7fb3d3;font-weight:bold;">📡 SITREP</div>
 <div style="font-size:0.72rem;color:white;white-space:nowrap;" id="hdr_sitrep_time">— ยังไม่ออก —</div>
 </div>
-<div id="hdr_oc_sitrep_box" style="background:#1a1a2e;border:1px solid #f97316;border-radius:8px;padding:4px 12px;flex-shrink:0;min-width:150px;max-width:210px;">
+<div id="hdr_oc_sitrep_box" style="background:#1a1a2e;border:1px solid #f97316;border-radius:8px;padding:4px 12px;flex-shrink:0;min-width:150px;max-width:320px;">
 <div style="font-size:0.6rem;color:#fdba74;font-weight:bold;"><i class="fas fa-signal"></i> รายงานสถานการณ์จาก OC/ICP</div>
-<div id="hdr_oc_sitrep_text" style="font-size:0.72rem;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">— ยังไม่มีรายงาน —</div>
+<div id="hdr_oc_sitrep_text" style="font-size:0.72rem;color:white;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">— ยังไม่มีรายงาน —</div>
 </div>
 <div id="eoc_incoming_call_bar" style="display:none;background:linear-gradient(135deg,#16a34a,#15803d);border-radius:8px;padding:5px 12px;flex-shrink:0;animation:eocCallPulse 1s infinite;cursor:pointer;" onclick="answerEOCCall()">
 <div style="font-size:0.6rem;color:rgba(255,255,255,0.85);font-weight:bold;">📞 มีสายเข้า!</div>
@@ -5483,7 +5483,7 @@ function() { refreshRoleWorkState(currentRole || TEMP_ROLE); }
 }
 function getDashboardUserInfoText() {
 var state = window._lastEmergState || {};
-var name = (state.registeredICName || '').trim() || state.commanderName || '-';
+var name = (state.registeredICName || '').trim() || state.commanderName || (TEMP_ROLE === 'IC' ? USER_NAME : 'ยังไม่มี IC');
 var position = state.commanderPosition || '';
 var suffix = position || (TEMP_ROLE === 'IC' && TEMP_ROLE_LABEL === 'ผู้บัญชาการเหตุการณ์' ? '' : TEMP_ROLE_LABEL);
 return name + (suffix ? ' (' + suffix + ')' : '');
