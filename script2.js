@@ -1314,12 +1314,15 @@ document.getElementById('modal_AddResource').style.display = 'flex';
 function normalizeOCFieldCasualty(report) {
 report = report || {};
 var total = report.totalEstimate;
+if (total === undefined) total = report.total_estimate;
 if (total === undefined) total = report.total;
 if (total === undefined) total = report.totalEstimated;
 var still = report.stillInArea;
+if (still === undefined) still = report.still_in_area;
 if (still === undefined) still = report.still;
 if (still === undefined) still = report.onsite;
 var evacuated = report.evacuatedOrSent;
+if (evacuated === undefined) evacuated = report.evacuated_or_sent;
 if (evacuated === undefined) evacuated = report.evacuated;
 if (evacuated === undefined) evacuated = report.sentOut;
 return {
@@ -1327,7 +1330,8 @@ totalEstimate: parseInt(total, 10) || 0,
 stillInArea: parseInt(still, 10) || 0,
 evacuatedOrSent: parseInt(evacuated, 10) || 0,
 note: report.note || report.Note || '',
-loggedBy: report.loggedBy || report.by || report.reporter || '',
+loggedBy: report.loggedBy || report.logged_by || report.by || report.reporter || '',
+timestamp: report.timestamp || report.time || '',
 time: report.time || report.timestamp || ''
 };
 }
