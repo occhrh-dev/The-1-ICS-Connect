@@ -6041,5 +6041,78 @@ function _stopCallRingtone() {
 if (_ringtoneInterval) { clearInterval(_ringtoneInterval); _ringtoneInterval = null; }
 }
 </script>
+<script>
+// Override ackOCSupportRequest ให้แสดง popup รายละเอียดและรับทราบ
+function ackOCSupportRequest(reqId, reqType, reqDetail) {
+  // ถ้าเรียกแบบเดิม (ไม่มี args) → รับทราบทั้งหมด
+  if (!reqId && !reqType) {
+    Swal.fire({
+      title: '✅ รับทราบคำขอสนับสนุน?',
+      text: 'IC จะรับทราบคำขอสนับสนุนจาก OC/ICP ทั้งหมด',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'รับทราบ',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#16a34a'
+    }).then(function(r) {
+      if (!r.isConfirmed) return;
+      google.script.run
+        .withSuccessHandler(function() {
+          Swal.fire({ icon:'success', title:'รับทราบแล้ว!', timer:1200, showConfirmButton:false });
+          setTimeout(function() { if(typeof fetchData==='function') fetchData(); }, 500);
+        })
+        .withFailureHandler(function(err) {
+          Swal.fire('ไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
+        })
+        .addCommanderLog('✅ IC รับทราบคำขอสนับสนุนจาก OC/ICP', USER_NAME || 'IC');
+    });
+    return;
+  }
+  // มี reqId → รับทราบเฉพาะรายการนี้
+  Swal.fire({
+    title: '📋 คำขอสนับสนุน',
+    html: '<div style="text-align:left;padding:8px;">' +
+      '<b>ประเภท:</b> ' + (reqType || '-') + '<br>' +
+      '<b>รายละเอียด:</b> ' + (reqDetail || '-') + '</div>',
+    icon: 'info',
+    showCancelButton: true,
+    confirmButtonText: '✅ รับทราบ',
+    cancelButtonText: 'ปิด',
+    confirmButtonColor: '#16a34a'
+  }).then(function(r) {
+    if (!r.isConfirmed) return;
+    google.script.run
+      .withSuccessHandler(function() {
+        Swal.fire({ icon:'success', title:'รับทราบแล้ว!', timer:1200, showConfirmButton:false });
+        setTimeout(function() { if(typeof fetchData==='function') fetchData(); }, 500);
+      })
+      .withFailureHandler(function(err) {
+        Swal.fire('ไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
+      })
+      .updateSupportRequestStatus(reqId, 'acknowledged', 'IC รับทราบแล้ว', USER_NAME || 'IC');
+  });
+}
+
+// Override showOCSupportRequestDetail ให้แสดง popup สวยกว่าเดิม
+function showOCSupportRequestDetail(reqId, reqType, reqDetail, status) {
+  var statusLabel = status === 'acknowledged' ? '✅ รับทราบแล้ว' : '⏳ รอ IC รับทราบ';
+  var statusColor = status === 'acknowledged' ? '#16a34a' : '#dc2626';
+  Swal.fire({
+    title: '📋 คำขอสนับสนุน',
+    html: '<div style="text-align:left;padding:8px;line-height:1.8;">' +
+      '<b>ประเภท:</b> ' + (reqType || '-') + '<br>' +
+      '<b>รายละเอียด:</b> ' + (reqDetail || '-') + '<br>' +
+      '<b>สถานะ:</b> <span style="color:' + statusColor + ';font-weight:900;">' + statusLabel + '</span>' +
+      '</div>',
+    showCancelButton: status !== 'acknowledged',
+    confirmButtonText: status === 'acknowledged' ? 'ปิด' : '✅ รับทราบ',
+    cancelButtonText: 'ปิด',
+    confirmButtonColor: status === 'acknowledged' ? '#475569' : '#16a34a'
+  }).then(function(r) {
+    if (!r.isConfirmed || status === 'acknowledged') return;
+    ackOCSupportRequest(reqId, reqType, reqDetail);
+  });
+}
+</script>
 </body>
 </html>
