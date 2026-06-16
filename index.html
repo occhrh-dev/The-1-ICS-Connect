@@ -89,7 +89,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
     setEOCCoords:'__noop__',updateIncidentLevel:'__noop__',
     acceptPendingWindReport:'__noop__',generateAndSendSitrep:'__noop__',
     getFieldMediaReports:'__noop__',getFieldMediaUploadToken:'__noop__',
-    registerFieldMediaFile:'__noop__',uploadFieldMedia:'__noop__',
+    registerFieldMediaFile:'registerFieldMediaFile',uploadFieldMedia:'uploadFieldMedia',
     getTierConfigForAgency:'__noop__',checkAgencyLogin_:'__noop__',
     checkAgencySetupAccess:'__noop__',getPhoneDirectory:'__noop__',
     savePhoneDirectoryEntry:'__noop__',deletePhoneDirectoryEntry:'__noop__',
@@ -142,6 +142,9 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       getAttendanceListByRole:{roleCode:a[0]},
       searchPlaces:{query:a[0]},
       validateJoinToken:{joinToken:a[0]},
+      uploadFieldMedia:{source:a[0],reporter:a[1],fileName:a[2],mimeType:a[3],base64Data:a[4],note:a[5],agencyId:a[6]},
+      registerFieldMediaFile:{source:a[0],reporter:a[1],fileName:a[2],mimeType:a[3],fileUrl:a[4],fileId:a[5],note:a[6],agencyId:a[7]},
+      getFieldMediaUploadToken:{agencyId:a[0],source:a[1],mimeType:a[2]},
       createDashboardViewToken:{agencyId:a[0]},
       validateDashboardViewToken:{token:a[0]}
     };
