@@ -1796,8 +1796,24 @@ shareText: 'ที่ตั้ง EOC: ' + eocName + '\n' + mapsUrl
 };
 }
 function copyTextToClipboard(text, done) {
+// ถ้า document ไม่ focused (เช่นอยู่ใน Swal popup) → ใช้ execCommand แทน
+var tryExecCommand = function() {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.top = '0';
+  ta.style.left = '-9999px';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+  if (done) done(ok);
+};
 if (navigator.clipboard && navigator.clipboard.writeText) {
-navigator.clipboard.writeText(text).then(function() { if (done) done(true); }).catch(function() { if (done) done(false); });
+navigator.clipboard.writeText(text).then(function() { if (done) done(true); }).catch(function() { tryExecCommand(); });
 return;
 }
 var ta = document.createElement('textarea');
