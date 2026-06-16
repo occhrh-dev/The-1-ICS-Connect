@@ -317,7 +317,7 @@ satBtn.style.color = sat ? 'white' : '#334155';
 }
 if (!dashMap || !dashMap._maptiler || typeof maptilersdk === 'undefined') return;
 var style = window._dashboardMapStyle === 'satellite'
-? (maptilersdk.MapStyle.SATELLITE || 'https://api.maptiler.com/maps/satellite/style.json?key=' + encodeURIComponent(MAPTILER_API_KEY))
+? (maptilersdk.MapStyle.HYBRID || 'https://api.maptiler.com/maps/hybrid/style.json?key=' + encodeURIComponent(MAPTILER_API_KEY))
 : maptilersdk.MapStyle.STREETS;
 clearLongdoOverlayList(dashMap, otherMarkers);
 clearLongdoOverlayList(dashMap, zoneCircles);
