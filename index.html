@@ -1424,6 +1424,7 @@ if (detected) {
 </div>
 <div style="display:flex;gap:8px;align-items:center;">
 <button id="btn_call_eoc" data-require-feature="ic_dashboard" data-min-tier="2" onclick="startCallEOC()" style="background:#16a34a;border:none;border-radius:8px;color:white;padding:8px 14px;font-weight:900;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-phone"></i> โทร EOC</button>
+<button id="btn_release_lead" style="display:none;background:#e74c3c;border:none;border-radius:8px;color:white;padding:8px 12px;font-weight:800;cursor:pointer;align-items:center;gap:6px;"><i class="fas fa-user-minus"></i> ออกจากหัวหน้า</button>
 <button onclick="exitRoleWorkScene()" style="background:rgba(255,255,255,.14);border:none;border-radius:8px;color:white;padding:8px 12px;font-weight:800;cursor:pointer;"><i class="fas fa-arrow-left"></i> กลับผัง ICS</button>
 </div>
 </div>
@@ -4977,6 +4978,37 @@ if (icon) { icon.textContent = meta.icon; icon.style.background = meta.color; }
 if (document.getElementById('role_work_title')) document.getElementById('role_work_title').textContent = meta.title;
 if (document.getElementById('role_work_user')) document.getElementById('role_work_user').textContent = USER_NAME || '-';
 if (document.getElementById('role_work_role_label')) document.getElementById('role_work_role_label').textContent = TEMP_ROLE_LABEL || '-';
+
+// แสดง/ซ่อนปุ่มออกจากหัวหน้า
+var releaseLeadBtn = document.getElementById('btn_release_lead');
+if (releaseLeadBtn) {
+  releaseLeadBtn.style.display = IS_LEAD ? 'inline-flex' : 'none';
+  var sectionCode = getLeadSectionCode(roleCode);
+  releaseLeadBtn.onclick = function() {
+    Swal.fire({
+      title: 'ออกจากตำแหน่งหัวหน้า?',
+      text: 'คนอื่นจะสามารถรับตำแหน่งหัวหน้า ' + (meta.title || roleCode) + ' แทนได้',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'ออก',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: '#e74c3c'
+    }).then(function(r) {
+      if (!r.isConfirmed) return;
+      google.script.run
+        .withSuccessHandler(function() {
+          IS_LEAD = false;
+          releaseLeadBtn.style.display = 'none';
+          Swal.fire({ icon:'success', title:'ออกจากตำแหน่งหัวหน้าแล้ว', timer:1200, showConfirmButton:false });
+          refreshICSLeads();
+        })
+        .withFailureHandler(function(err) {
+          Swal.fire('ไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
+        })
+        .releaseICSLead(sectionCode, USER_NAME, window.currentUserPhone || '');
+    });
+  };
+}
 applyRoleWorkHeader(window._lastEmergState || {}, {});
 updateRoleEOCNavigationCard(roleCode);
 // 🎚️ แสดง note Tier 1 สำหรับ media upload
