@@ -590,12 +590,12 @@ if (detected) {
 </button>
 </div>
 </div>
-<div style="display:flex;flex-direction:column;justify-content:center;padding:0 0 0 20px;cursor:pointer;" onclick="openEOCLocationModal()" title="กดเพื่อดูพิกัด+นำทาง EOC">
-<div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">📍 ที่ตั้ง EOC</div>
+<div style="display:none;flex-direction:column;justify-content:center;padding:0 0 0 20px;">
+<div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">ที่ตั้ง EOC</div>
 <div id="dash_ban_eoc" style="font-size:0.9rem;color:white;white-space:nowrap;">-</div>
 </div>
-<div style="display:flex;flex-direction:column;justify-content:center;padding:0 0 0 20px;flex:1;">
-<div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">ที่ตั้ง EOC / ผู้บัญชาการ</div>
+<div style="display:flex;flex-direction:column;justify-content:center;padding:0 0 0 20px;flex:1;cursor:pointer;" onclick="openEOCLocationModal()" title="กดเพื่อดูพิกัด+นำทาง EOC">
+<div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">📍 ที่ตั้ง EOC / ผู้บัญชาการ</div>
 <div style="display:flex;gap:10px;align-items:center;color:white;white-space:nowrap;overflow:hidden;">
 <span id="dash_ban_eoc_inline" style="font-size:0.9rem;overflow:hidden;text-overflow:ellipsis;">-</span>
 <span style="opacity:0.5;">|</span>
@@ -5493,7 +5493,7 @@ function() { refreshRoleWorkState(currentRole || TEMP_ROLE); }
 }
 function getDashboardUserInfoText() {
 var state = window._lastEmergState || {};
-var name = USER_NAME || currentUserName || state.commanderName || '-';
+var name = (state.registeredICName || '').trim() || state.commanderName || '-';
 var position = state.commanderPosition || '';
 var suffix = position || (TEMP_ROLE === 'IC' && TEMP_ROLE_LABEL === 'ผู้บัญชาการเหตุการณ์' ? '' : TEMP_ROLE_LABEL);
 return name + (suffix ? ' (' + suffix + ')' : '');
