@@ -3710,7 +3710,7 @@ if (code === 'SPECIALIST') return 'specialist';
 if (code === 'LIAISON') return 'liaison';
 if (code === 'PLANNING' || code === 'PLAN') return 'plan';
 if (code === 'LOGISTICS' || code === 'LOG' || code === 'LOGISTIC') return 'log';
-if (code === 'MED' || code === 'OSC' || code === 'EVAC_POINT' || code === 'OPERATION' || code === 'OPERATIONS' || code === 'OPS') return 'ops';
+if (code === 'MED' || code === 'OSC' || code === 'EVAC_POINT' || code === 'OPERATION' || code === 'OPERATIONS' || code === 'OPS' || code === 'OC/ICP' || code === 'OC' || code === 'FIELD') return 'ops';
 return '';
 }
 function renderRoleUpdateBadgesForIC(updates) {
