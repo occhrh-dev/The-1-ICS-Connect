@@ -2630,7 +2630,7 @@ haloOpacity: 0.85
 });
 map.Overlays.add(protCircle);
 pickerErgOverlays.push(protCircle);
-var protLabelPoint = { lon: incident.lon + (protM / 111320), lat: incident.lat };
+var protLabelPoint = { lon: incident.lon, lat: incident.lat + (protM / 111320) };
 var protLabel = makePickerHtmlMarker(protLabelPoint,
 '<div style="background:#fff;color:#7e22ce;border:2px solid #8e44ad;border-radius:10px;padding:2px 8px;font-weight:bold;font-size:11px;white-space:nowrap;">เฝ้าระวัง ' + protM + ' m</div>',
 { offset: { x: 0, y: 0 } }
@@ -2650,7 +2650,7 @@ haloOpacity: 0.85
 });
 map.Overlays.add(circle);
 pickerErgOverlays.push(circle);
-var labelPoint = { lon: incident.lon + (isoM / 111320), lat: incident.lat };
+var labelPoint = { lon: incident.lon, lat: incident.lat + (isoM / 111320) };
 var label = makePickerHtmlMarker(labelPoint,
 '<div style="background:#fff;color:#be123c;border:2px solid #e11d48;border-radius:10px;padding:2px 8px;font-weight:bold;font-size:11px;white-space:nowrap;">ERG ' + isoM + ' m</div>',
 { offset: { x: 0, y: 0 } }
