@@ -3119,9 +3119,8 @@ function refreshFieldMediaReports() {
 if (typeof google === 'undefined' || !google.script || !google.script.run) return;
 google.script.run.withSuccessHandler(function(list) {
 list = list || [];
-list = list.filter(function(item) {
-return !getRoleUpdateBucket(item.source || item.roleCode);
-});
+// แสดงรูปจากทุก role รวม OC/ICP, JIC, Liaison ฯลฯ
+// ไม่ filter ออก
 // 🔒 Tier 1: รับภาพหน้างานจาก OC/ICP, MED, จุดอพยพ — แสดงสูงสุดแหล่งละ 5 ไฟล์
 if (typeof hasFeature === 'function' && !hasFeature('media_upload')) {
 var t1SourceKey = function(item) {
