@@ -3602,9 +3602,10 @@ try { sessionStorage.setItem('EOC_JOIN_URL', d.joinUrl); } catch(e) {}
 try { showJoinLinkInDashboard(d.joinUrl); } catch(e) {}
 }
 if (d.wind && d.wind.directionDeg !== null && d.wind.directionDeg !== '' && !isNaN(Number(d.wind.directionDeg))) {
-applyWindDisplay(Number(d.wind.directionDeg), Number(d.wind.speed) || 0, d.wind.source || 'OC', d.wind.updatedBy || '');
+applyWindDisplay(Number(d.wind.directionDeg), Number(d.wind.speedMs || d.wind.speed) || 0, d.wind.source || 'OC', d.wind.updatedBy || '');
 } else {
-applyWindWaitingDisplay();
+var _wc = d.evtCoords ? d.evtCoords.split(',') : [];
+if (_wc.length === 2) { updateWeather(parseFloat(_wc[0]), parseFloat(_wc[1])); } else { applyWindWaitingDisplay(); }
 }
 checkPendingOCWind(d.wind);
 document.getElementById('dash_ban_name').innerText = d.evtName || '-';
@@ -5667,9 +5668,10 @@ return;
 window._lastEmergState = d;
 try { applyIncidentTierFromState(d); } catch(e) {}
 if (d.wind && d.wind.directionDeg !== null && d.wind.directionDeg !== '' && !isNaN(Number(d.wind.directionDeg))) {
-applyWindDisplay(Number(d.wind.directionDeg), Number(d.wind.speed) || 0, d.wind.source || 'OC', d.wind.updatedBy || '');
+applyWindDisplay(Number(d.wind.directionDeg), Number(d.wind.speedMs || d.wind.speed) || 0, d.wind.source || 'OC', d.wind.updatedBy || '');
 } else {
-applyWindWaitingDisplay();
+var _wc2 = d.evtCoords ? d.evtCoords.split(',') : [];
+if (_wc2.length === 2) { updateWeather(parseFloat(_wc2[0]), parseFloat(_wc2[1])); } else { applyWindWaitingDisplay(); }
 }
 checkPendingOCWind(d.wind);
 document.getElementById('dash_ban_name').innerText = d.evtName;
