@@ -2719,7 +2719,7 @@ return;
 }
 pickerIncidentMarker = makePickerHtmlMarker(incident,
 '<div style="width:28px;height:28px;border-radius:50%;background:#e74c3c;color:white;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35);"><i class="fas fa-fire" style="font-size:13px;"></i></div>',
-{ offset: { x: 0, y: 0 } }
+{ offset: { x: 0, y: 0 }, anchor: 'center' }
 );
 map.Overlays.add(pickerIncidentMarker);
 }
