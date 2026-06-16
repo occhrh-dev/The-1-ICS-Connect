@@ -4916,7 +4916,7 @@ return raw;
 function shouldShowRoleEOCNavigation(roleCode) {
 var code = normalizeRoleWorkCodeForEOC(roleCode || currentRole || TEMP_ROLE);
 // 🔒 ลิงก์นำทาง EOC ในการ์ดงาน — แสดงเฉพาะ Tier 3 เท่านั้น (T1 ใช้ไม่ได้, T2 ใช้ได้แต่ไม่โชว์ในการ์ดงาน)
-if (parseInt(getCurrentTier(), 10) < 3) return false;
+if (typeof hasFeature === 'function' && !hasFeature('role_navigation')) return false;
 return isRoleWorkCardRole(code);
 }
 function getCurrentIncidentNavigationInfo() {
