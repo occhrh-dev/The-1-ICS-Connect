@@ -35,7 +35,150 @@ body.ic-login-mode #staffCoordBox { display:none !important; }
 body.ic-login-mode #staffRoleInput { list-style:none; }
 </style>
 <!-- ERG database loaded on demand -->
-<script src="https://occhrh-dev.github.io/The-1-ICS-script/gas_bridge.js"></script>
+<script>
+// Inline bridge — ทำงานทันทีก่อน external scripts โหลด
+(function() {
+  var WORKER_URL = 'https://the-1-ics-connect.occ-hrh.workers.dev';
+  var ACTION_MAP = {
+    checkAppLogin:'checkAppLogin',getEmergencyState:'getEmergencyState',
+    getEmergencyStateLite:'getEmergencyStateLite',getEmergencyStateForAgency:'getEmergencyState',
+    getEmergencyStateLiteForAgency:'getEmergencyStateLite',activateEmergency:'activateEmergency',
+    deactivateEmergency:'deactivateEmergency',getResources:'getResources',updateResource:'updateResource',
+    updateEmerCount:'updateResource',submitEmergencyAttendance:'submitEmergencyAttendance',
+    getAttendanceData:'getAttendanceData',getAttendanceSummary:'getAttendanceSummary',
+    getICSLeads:'getICSLeads',setICSLead:'claimICSLead',claimICSLead:'claimICSLead',
+    releaseICSLead:'releaseICSLead',getICSCoords:'getICSCoords',claimICSCoord:'claimICSCoord',
+    releaseICSCoord:'releaseICSCoord',updateMedicalTriage:'updateMedicalTriage',
+    getMedicalTriageDetails:'getMedicalTriageDetails',saveZoneMarker:'saveZoneMarker',
+    getZoneMarkers:'getZoneMarkers',saveZoneConfig:'saveZoneConfig',getZoneConfig:'getZoneConfig',
+    addTask:'addTask',updateTaskStatus:'updateTaskStatus',getTasks:'getTasks',
+    getHospitalCapacity:'getHospitalCapacity',updateHospitalCapacity:'updateHospitalCapacity',
+    addPatientTransfer:'addPatientTransfer',getPatientTransfers:'getPatientTransfers',
+    saveWindReport:'saveWindReport',saveERGSelection:'saveERGSelection',getERGState:'getERGState',
+    checkInLocation:'checkInLocation',getAllLiveLocations:'getAllLiveLocations',
+    addCommanderLog:'addCommanderLog',logAccess:'addCommanderLog',getLogData:'getLogData',
+    submitSitReport:'submitSitReport',getSitReports:'getSitReports',
+    addRoleNote:'addRoleNote',getRoleNotes:'getRoleNotes',
+    getOCState:'getOCState',getICDashboardOCData:'getOCState',
+    getICDashboardOCDataForAgency:'getOCState',
+    getBroadcastEventsSince:'getBroadcastEvents',
+    getLatestRoleSitrep:'getLatestRoleSitrep',saveRoleSitrep:'saveRoleSitrep',
+    getRoleWorkState:'getRoleWorkState',getRoleUpdatesForIC:'getRoleUpdatesForIC',
+    markRoleMediaReadForIC:'markRoleMediaReadForIC',
+    getEvacuationPoints:'getEvacuationPoints',saveEvacuationPoint:'saveEvacuationPoint',
+    getEvacuationState:'getEvacuationState',
+    submitFieldCasualtyReport:'submitFieldCasualtyReport',
+    getFieldCasualtyReports:'getFieldCasualtyReports',
+    getLatestFieldCasualtyReport:'getLatestFieldCasualtyReport',
+    submitSupportRequest:'submitSupportRequest',getSupportRequests:'getSupportRequests',
+    updateSupportRequestStatus:'updateSupportRequestStatus',
+    addResourceIncoming:'addResourceIncoming',saveResourceIncoming:'addResourceIncoming',
+    getResourceIncoming:'getResourceIncoming',
+    getHealthState:'getHealthState',addHealthUnit:'addHealthUnit',getHealthUnits:'getHealthUnits',
+    getAttendanceCountsDirect:'getAttendanceCountsDirect',
+    getAttendanceListByRole:'getAttendanceListByRole',
+    getStaffAttendanceDashboard:'getAttendanceData',
+    getHospitalDirectory:'getHospitalCapacity',
+    logExposure:'logExposure',getExposureLog:'getExposureLog',
+    claimICRole:'claimICRole',releaseICRole:'releaseICRole',getRegisteredIC:'getRegisteredIC',
+    searchPlaces:'searchPlaces',
+    setEOCCallBusy:'__noop__',setEOCCallFree:'__noop__',
+    clearEOCCallByRoom:'__noop__',getEOCCallStatus:'__noop__',
+    getDashboardViewUrl:'__noop__',validateJoinToken:'__noop__',
+    createDashboardViewToken:'__noop__',validateDashboardViewToken:'__noop__',
+    setEOCCoords:'__noop__',updateIncidentLevel:'__noop__',
+    acceptPendingWindReport:'__noop__',generateAndSendSitrep:'__noop__',
+    getFieldMediaReports:'__noop__',getFieldMediaUploadToken:'__noop__',
+    registerFieldMediaFile:'__noop__',uploadFieldMedia:'__noop__',
+    getTierConfigForAgency:'__noop__',checkAgencyLogin_:'__noop__',
+    checkAgencySetupAccess:'__noop__',getPhoneDirectory:'__noop__',
+    savePhoneDirectoryEntry:'__noop__',deletePhoneDirectoryEntry:'__noop__',
+    saveHospitalDirectoryEntry:'__noop__',deleteHospitalDirectoryEntry:'__noop__'
+  };
+  function argsToBody(fn, a) {
+    a = a || [];
+    var m = {
+      checkAppLogin:{inputPass:a[0],deviceId:a[1]},
+      activateEmergency:{evtName:a[0],evtLoc:a[1],evtCoords:a[2],evtPlan:a[3],evtLevel:a[4],evtEOC:a[5],commanderName:a[6],accessRole:a[7],commanderPosition:a[8],windDirectionDeg:a[9],windSpeedMs:a[10],windMode:a[11],agencyId:a[12],eocCoords:a[13]},
+      deactivateEmergency:{commanderName:a[0],accessRole:a[1],agencyId:a[2]},
+      updateResource:{type:a[0],val:a[1]},updateEmerCount:{type:a[0],val:a[1]},
+      submitEmergencyAttendance:{name:a[0],role:a[1],location:a[2],phone:a[3],roleCode:a[4]},
+      getEmergencyStateForAgency:{agencyId:a[0],sheetId:a[1],joinToken:a[2]},
+      getEmergencyStateLiteForAgency:{agencyId:a[0],sheetId:a[1],joinToken:a[2]},
+      getICDashboardOCDataForAgency:{agencyId:a[0],sheetId:a[1],joinToken:a[2]},
+      setICSLead:{roleCode:a[0],roleLabel:a[1],leadName:a[2],agency:a[3],phone:a[4],assignedBy:a[5]},
+      claimICSLead:{roleCode:a[0],roleLabel:a[1],leadName:a[2],agency:a[3],phone:a[4],assignedBy:a[5]},
+      releaseICSLead:{roleCode:a[0]},
+      claimICSCoord:{sectionCode:a[0],sectionLabel:a[1],coordName:a[2],agency:a[3],phone:a[4],assignedBy:a[5]},
+      releaseICSCoord:{sectionCode:a[0],coordName:a[1]},
+      updateMedicalTriage:{red:a[0],yellow:a[1],green:a[2],black:a[3],onsite:a[4],location:a[5],reporter:a[6]},
+      saveZoneMarker:{zoneType:a[0],label:a[1],lat:a[2],lng:a[3],note:a[4],loggedBy:a[5],phone:a[6]},
+      saveZoneConfig:{hotM:a[0],warmM:a[1],coldM:a[2],deconLat:a[3],deconLng:a[4]},
+      addTask:{taskName:a[0],type:a[1],priority:a[2],assignedTo:a[3],location:a[4],note:a[5],loggedBy:a[6]},
+      updateTaskStatus:{taskID:a[0],newStatus:a[1],loggedBy:a[2]},
+      updateHospitalCapacity:{hospitalName:a[0],redCap:a[1],yellowCap:a[2],greenCap:a[3],blackCap:a[4],status:a[5],contact:a[6],loggedBy:a[7]},
+      addPatientTransfer:{patientID:a[0],triageColor:a[1],destinationHospital:a[2],ambulance:a[3],eta:a[4],deconStatus:a[5],note:a[6],loggedBy:a[7]},
+      saveWindReport:{directionDeg:a[0],speedMs:a[1],source:a[2],loggedBy:a[3]},
+      saveERGSelection:a[0]||{},
+      checkInLocation:{name:a[0],role:a[1],type:a[2],lat:a[3],lng:a[4]},
+      addCommanderLog:{msg:a[0],reporter:a[1]},logAccess:{msg:a[0],reporter:a[1]},
+      addRoleNote:{roleCode:a[0],roleLabel:a[1],reporter:a[2],phone:a[3],note:a[4]},
+      getRoleNotes:{limit:a[0]||50},
+      submitSitReport:{situationTag:a[0],detail:a[1],attachmentURL:a[2],loggedBy:a[3]},
+      getBroadcastEventsSince:{since:a[0]},
+      clearEOCCallByRoom:{room:a[0]},
+      saveRoleSitrep:{text:a[0],createdBy:a[1]},
+      markRoleMediaReadForIC:{roleType:a[0],keys:a[1],readBy:a[2]},
+      saveEvacuationPoint:{pointName:a[0],lat:a[1],lng:a[2],leaderName:a[3],evacueeCount:a[4],staffCount:a[5],water:a[6],food:a[7],blanket:a[8],bed:a[9],otherResources:a[10],note:a[11],loggedBy:a[12]},
+      submitFieldCasualtyReport:{totalEstimate:a[0],stillInArea:a[1],evacuatedOrSent:a[2],note:a[3],loggedBy:a[4]},
+      submitSupportRequest:{requestType:a[0],detail:a[1],loggedBy:a[2]},
+      updateSupportRequestStatus:{id:a[0],status:a[1],responseNote:a[2],updatedBy:a[3]},
+      addResourceIncoming:{resourceType:a[0],resourceName:a[1],quantity:a[2],fromAgency:a[3],eta:a[4],status:a[5],note:a[6],loggedBy:a[7],personnelCount:a[8]},
+      saveResourceIncoming:{resourceType:a[0],resourceName:a[1],quantity:a[2],fromAgency:a[3],eta:a[4],status:a[5],note:a[6],loggedBy:a[7],personnelCount:a[8]},
+      addHealthUnit:{unitType:a[0],unitName:a[1],agency:a[2],quantity:a[3],status:a[4],eta:a[5],note:a[6],loggedBy:a[7]},
+      logExposure:{name:a[0],role:a[1],chemical:a[2],unNumber:a[3],durationMin:a[4],ppeLevel:a[5],note:a[6],loggedBy:a[7]},
+      claimICRole:{name:a[0],position:a[1],phone:a[2]},
+      releaseICRole:{name:a[0],accessRole:a[1]},
+      getAttendanceListByRole:{roleCode:a[0]},
+      searchPlaces:{query:a[0]}
+    };
+    return m[fn] || {};
+  }
+  async function callWorker(fn, args, successCb, failureCb) {
+    var action = ACTION_MAP[fn];
+    if (!action) { console.warn('[Bridge] Unknown:', fn); if(failureCb) failureCb({message:'Unknown: '+fn}); return; }
+    if (action === '__noop__') { if(successCb) successCb(null); return; }
+    try {
+      var body = argsToBody(fn, args);
+      var res = await fetch(WORKER_URL+'/?action='+action, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      var data = await res.json();
+      if (data && data.error) { if(failureCb) failureCb({message:data.error}); }
+      else { if(successCb) successCb(data); }
+    } catch(e) { if(failureCb) failureCb({message:e.message}); }
+  }
+  function makeRunner(fn, args) {
+    var sCb=null, fCb=null;
+    var r = {
+      withSuccessHandler:function(cb){sCb=cb;return r;},
+      withFailureHandler:function(cb){fCb=cb;return r;}
+    };
+    return new Proxy(r, {
+      get:function(t,prop) {
+        if(prop in t) return t[prop];
+        return function(){callWorker(prop,arguments,sCb,fCb);};
+      }
+    });
+  }
+  window.google = window.google || {};
+  window.google.script = window.google.script || {};
+  window.google.script.run = new Proxy({}, {
+    get:function(_,fn) {
+      return function() { return makeRunner(fn, arguments); };
+    }
+  });
+  console.log('[Bridge] google.script.run ready');
+})();
+</script>
 </head>
 <body>
 <div id="lineBrowserWarning" style="display:none;position:fixed;inset:0;background:#0f172a;color:white;z-index:999999;font-family:'Prompt','Sarabun',sans-serif;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;">
