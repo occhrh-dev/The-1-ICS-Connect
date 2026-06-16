@@ -714,13 +714,13 @@ var markerHtml = '';
 var circle = null;
 if (l.type === 'Staff') {
 markerHtml = buildDashboardPointMarkerHtml(
-`<div class="c-marker-icon ${bgClass}"><i class="fas ${iconClass}"></i></div>`,
+`<div class="c-marker-icon ${bgClass} dash-live-marker"><i class="fas ${iconClass}"></i></div>`,
 '',
 { iconSize: 30, scale: true }
 );
 } else {
 markerHtml = buildDashboardPointMarkerHtml(
-`<div class="c-marker-icon ${bgClass}"><i class="fas ${iconClass}"></i></div>`,
+`<div class="c-marker-icon ${bgClass} dash-live-marker"><i class="fas ${iconClass}"></i></div>`,
 `<div class="c-marker-label" style="margin-top:0;">${labelText}</div>`,
 { iconSize: 40, scale: true }
 );
