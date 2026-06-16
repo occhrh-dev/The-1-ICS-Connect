@@ -158,6 +158,21 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       if(successCb) successCb({ busy: false, count: 0, calls: [], callerName: '', callerRole: '', roomName: '' });
       return;
     }
+    // หลัง getRoleUpdatesForIC — map fileUrl → previewUrl/url
+    var _origSuccess = successCb;
+    if (action === 'getRoleUpdatesForIC' && successCb) {
+      successCb = function(data) {
+        if (Array.isArray(data)) {
+          data = data.map(function(u) {
+            return Object.assign({}, u, {
+              previewUrl: u.fileUrl || u.previewUrl || u.url || '',
+              url: u.fileUrl || u.url || '',
+            });
+          });
+        }
+        _origSuccess(data);
+      };
+    }
     if (action === '__noop__') { if(successCb) successCb(null); return; }
     try {
       var body = argsToBody(fn, args);
