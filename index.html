@@ -2318,7 +2318,7 @@ map.addControl(new maptilersdk.NavigationControl(), 'top-right');
 map.location = function(loc, animate) {
 if (loc && loc.lon != null && loc.lat != null) {
 var center = [parseFloat(loc.lon), parseFloat(loc.lat)];
-if (animate) map.flyTo({ center: center, zoom: map.getZoom(), essential: true });
+if (animate) map.flyTo({ center: center, zoom: Math.max(map.getZoom(), 15), essential: true });
 else map.setCenter(center);
 return loc;
 }
@@ -2539,7 +2539,9 @@ coords.push([lon + dLon, lat + dLat]);
 }
 return {
 addTo: function(targetMap) {
-if (!targetMap || targetMap.getSource(sourceId)) return;
+if (!targetMap) return;
+var doAdd = function() {
+if (targetMap.getSource(sourceId)) return;
 targetMap.addSource(sourceId, {
 type: 'geojson',
 data: { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] }, properties: {} }
@@ -2564,6 +2566,8 @@ source: sourceId,
 layout: { 'line-join': 'round', 'line-cap': 'round' },
 paint: { 'line-color': paint.lineColor || '#e11d48', 'line-width': paint.lineWidth || 5, 'line-opacity': paint.lineOpacity == null ? 1 : paint.lineOpacity }
 });
+};
+if (targetMap.loaded && targetMap.loaded()) { doAdd(); } else { targetMap.once('load', doAdd); }
 },
 remove: function() {
 try { if (map.getLayer(sourceId + '-line')) map.removeLayer(sourceId + '-line'); } catch(e) {}
