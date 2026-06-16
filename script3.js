@@ -802,11 +802,10 @@ async function updateWeather(lat, lng) {
 if (!lat || !lng) return;
 var stateWind = (window._lastEmergState && window._lastEmergState.wind) ? window._lastEmergState.wind : null;
 if (stateWind && stateWind.directionDeg !== null && stateWind.directionDeg !== '' && !isNaN(Number(stateWind.directionDeg))) {
-applyWindDisplay(Number(stateWind.directionDeg), Number(stateWind.speed) || 0, stateWind.source || 'OC', stateWind.updatedBy || '');
+var windSpeed = Number(stateWind.speedMs || stateWind.speed || stateWind.SpeedMs) || 0;
+applyWindDisplay(Number(stateWind.directionDeg), windSpeed, stateWind.source || 'OC', stateWind.updatedBy || stateWind.UpdatedBy || '');
 return;
 }
-applyWindWaitingDisplay();
-return;
 try {
 const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lng + '&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=ms';
 const response = await fetch(url);
@@ -818,11 +817,10 @@ const destDeg = (meteoDeg + 180) % 360;
 const directions = ['เหนือ', 'ตะวันออกเฉียงเหนือ', 'ตะวันออก', 'ตะวันออกเฉียงใต้', 'ใต้', 'ตะวันตกเฉียงใต้', 'ตะวันตก', 'ตะวันตกเฉียงเหนือ'];
 const dirIndex = Math.round(destDeg / 45) % 8;
 const dirName = directions[dirIndex];
-document.getElementById('weather_info').innerText = dirName + ' ' + speed + ' m/s';
-document.getElementById('wind_arrow').style.transform = 'rotate(' + destDeg + 'deg)';
+applyWindDisplay(destDeg, speed, 'auto', '');
 }
 } catch (error) {
-document.getElementById('weather_info').innerText = "ไม่สามารถดึงข้อมูลได้";
+applyWindWaitingDisplay();
 }
 }
 var eocStartTime = null;
