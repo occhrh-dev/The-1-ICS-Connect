@@ -156,26 +156,31 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       else { if(successCb) successCb(data); }
     } catch(e) { if(failureCb) failureCb({message:e.message}); }
   }
-  function makeRunner(fn, args) {
-    var sCb=null, fCb=null;
-    var r = {
-      withSuccessHandler:function(cb){sCb=cb;return r;},
-      withFailureHandler:function(cb){fCb=cb;return r;}
-    };
-    return new Proxy(r, {
-      get:function(t,prop) {
-        if(prop in t) return t[prop];
-        return function(){callWorker(prop,arguments,sCb,fCb);};
+  // Runner object ที่รองรับทุก pattern:
+  // 1. google.script.run.fnName(args)
+  // 2. google.script.run.withSuccessHandler(cb).fnName(args)
+  // 3. google.script.run.withFailureHandler(cb).withSuccessHandler(cb).fnName(args)
+  function createGSRProxy(sCb, fCb) {
+    var handler = {
+      get: function(_, prop) {
+        if (prop === 'withSuccessHandler') {
+          return function(cb) { return createGSRProxy(cb, fCb); };
+        }
+        if (prop === 'withFailureHandler') {
+          return function(cb) { return createGSRProxy(sCb, cb); };
+        }
+        // prop คือชื่อ function จริง เช่น getEmergencyStateForAgency
+        return function() {
+          var args = Array.prototype.slice.call(arguments);
+          callWorker(prop, args, sCb, fCb);
+        };
       }
-    });
+    };
+    return new Proxy({}, handler);
   }
   window.google = window.google || {};
   window.google.script = window.google.script || {};
-  window.google.script.run = new Proxy({}, {
-    get:function(_,fn) {
-      return function() { return makeRunner(fn, arguments); };
-    }
-  });
+  window.google.script.run = createGSRProxy(null, null);
   console.log('[Bridge] google.script.run ready');
 })();
 </script>
