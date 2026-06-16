@@ -2297,12 +2297,13 @@ function initLongdoMap() {
 if (map) return;
 if (typeof maptilersdk === 'undefined') return;
 maptilersdk.config.apiKey = MAPTILER_API_KEY;
+window._pickerMapStyle = 'satellite';
 var startPos = { lon: 101.28, lat: 12.68 };
 map = new maptilersdk.Map({
 container: 'map',
-style: maptilersdk.MapStyle.STREETS,
+style: maptilersdk.MapStyle.HYBRID || 'https://api.maptiler.com/maps/hybrid/style.json?key=' + encodeURIComponent(MAPTILER_API_KEY),
 center: [startPos.lon, startPos.lat],
-zoom: 12,
+zoom: 16,
 geolocate: false
 });
 map.addControl(new maptilersdk.NavigationControl(), 'top-right');
