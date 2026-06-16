@@ -4006,7 +4006,7 @@ leadBadge +
 coordBadges +
 '<div style="font-size:15px;color:#334155;margin-top:6px;">จาก/หน่วยงาน: ' + (p.role || '-') + '</div>' +
 '<div style="font-size:15px;color:#334155;">สถานะ: ' + (p.location === 'Logged In' ? '<span style="color:#16a34a;font-weight:700;">● พร้อมปฏิบัติงาน</span>' : (p.location || '-')) + '</div>' +
-'<div style="font-size:15px;color:#334155;">เวลารายงานตัว: <b>' + (p.time || '-') + '</b></div>' +
+'<div style="font-size:15px;color:#334155;">เวลารายงานตัว: <b>' + (p.time ? p.time.replace('T',' ').substring(0,19).split('+')[0].split('.')[0].slice(-8) : '-') + '</b></div>' +
 '<div style="font-size:15px;color:#334155;">โทร: ' + (p.phone || '-') + '</div>' +
 noteHtml +
 mediaHtml +
