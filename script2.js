@@ -1881,7 +1881,7 @@ return type === 'icp' || type.indexOf('command') !== -1 || label.indexOf('comman
 function buildOCSupportAlertDetail(reqs) {
 return (reqs || []).map(function(r) {
 var status = String(r.status || 'pending').trim().toLowerCase();
-var rowIndex = parseInt(r.id, 10) || parseInt(r.rowIndex, 10) || 0;
+var rowIndex = parseInt(r.id, 10) || parseInt((r.id||r.rowIndex), 10) || 0;
 var statusText = status === 'supported' ? 'การดำเนินการเสร็จสิ้น' :
 status === 'acknowledged' ? 'รอการดำเนินการ' : 'รอ IC รับทราบ';
 var statusColor = status === 'supported' ? '#16a34a' : status === 'acknowledged' ? '#d97706' : '#dc2626';
@@ -2267,7 +2267,7 @@ return '<div style="border-bottom:1px solid #e8edf3;padding:7px 0;">' +
 if (reqEl) {
 reqEl.innerHTML = state.supportReqs.length ? state.supportReqs.slice(0, 5).map(function(r) {
 var status = String(r.status || 'pending').toLowerCase();
-var rowIndex = parseInt(r.id, 10) || parseInt(r.rowIndex, 10) || 0;
+var rowIndex = parseInt(r.id, 10) || parseInt((r.id||r.rowIndex), 10) || 0;
 var label = status === 'acknowledged' ? 'รอการสนับสนุน' :
 status === 'supported' ? 'ได้รับการสนับสนุนแล้ว' :
 status === 'rejected' ? 'ไม่อนุมัติ' :
@@ -2304,7 +2304,7 @@ setICOCDebugStatus(IC_OC_HARD_VERSION + ' zone=' + state.zoneMarkers.length + ',
 function dedupeOCSupportRequests(reqs) {
 var seen = {};
 return (Array.isArray(reqs) ? reqs : []).filter(function(r) {
-var key = String(r.rowIndex || '').trim();
+var key = String((r.id||r.rowIndex) || '').trim();
 if (!key || key === '0') {
 key = [r.time || '', r.type || '', r.detail || '', r.status || '', r.by || r.loggedBy || ''].join('|');
 }
@@ -2325,7 +2325,7 @@ return;
 }
 var activeReqs = dedupeOCSupportRequests(getActiveOCSupportRequests(supportReqs || window._icSupportReqs || []));
 var reqKey = activeReqs.map(function(r) {
-return [r.rowIndex || '', r.type || '', r.status || 'pending', r.responseNote || ''].join(':');
+return [(r.id||r.rowIndex) || '', r.type || '', r.status || 'pending', r.responseNote || ''].join(':');
 }).join(',');
 var drawKey = zones.map(function(z) {
 return [z.type || z.ZoneType || '', z.label || z.Label || '', z.lat || z.Lat || '', z.lng || z.Lng || '', z.loggedBy || z.by || '', z.phone || z.tel || ''].join('|');
@@ -2383,7 +2383,7 @@ var statusText = status === 'supported' ? 'การดำเนินการ�
 status === 'acknowledged' ? 'รอการดำเนินการ' : 'รอ IC รับทราบ';
 var statusColor = status === 'supported' ? '#16a34a' : status === 'acknowledged' ? '#d97706' : '#dc2626';
 var btn = status === 'pending'
-? '<button onclick="updateOCSupportFromIC(' + parseInt(r.id||r.rowIndex) + ',&quot;acknowledged&quot;)" style="margin-top:4px;background:#dc2626;color:white;border:none;border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer;">รับทราบ</button>'
+? '<button onclick="updateOCSupportFromIC(' + parseInt(r.id||(r.id||r.rowIndex)) + ',&quot;acknowledged&quot;)" style="margin-top:4px;background:#dc2626;color:white;border:none;border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer;">รับทราบ</button>'
 : '';
 var noteHtml = r.responseNote ? '<br><span style="color:#1d4ed8;"><b>IC:</b> ' + roleSafeText(r.responseNote) + '</span>' : '';
 return '<div style="margin-top:6px;padding-top:5px;border-top:1px solid #eee;"><b>' + (r.type || '-') + '</b><br><span>' + (r.detail || '-') + '</span><br><span style="color:' + statusColor + ';">' + statusText + '</span>' + noteHtml + '<br>' + btn + '</div>';
@@ -2479,7 +2479,7 @@ var html = list.map(function(r) {
 var status = String(r.status || 'pending').toLowerCase();
 var sc = statusColor[status] || '#64748b';
 var sl = statusLabel[status] || status;
-var rowIndex = parseInt(r.rowIndex, 10) || 0;
+var rowIndex = parseInt((r.id||r.rowIndex), 10) || 0;
 var btn = (status === 'acknowledged' && rowIndex)
 ? '<button onclick="markOCSupportReceived(' + rowIndex + ')" style="margin-top:6px;background:#16a34a;color:white;border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer;font-weight:bold;">ได้รับการสนับสนุนแล้ว</button>'
 : '';
@@ -2505,7 +2505,7 @@ scheduleOCSupportedNoticeExpiry();
 function updateList(list) {
 if (!Array.isArray(list)) return list;
 return list.map(function(r) {
-if ((parseInt(r.rowIndex, 10) || 0) === rowIndex) {
+if ((parseInt((r.id||r.rowIndex), 10) || 0) === rowIndex) {
 var copy = {};
 Object.keys(r).forEach(function(k) { copy[k] = r[k]; });
 copy.status = status;
