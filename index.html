@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8">
 <base target="_top">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -143,12 +144,12 @@ if (detected) {
 </button>
 </div>
 <button class="btn-login" style="margin-top:10px;" onclick="submitPreIncidentLogin()"><i class="fas fa-lock"></i> เข้าสู่ระบบ</button>
+<button class="btn-login" style="margin-top:10px;background:#0f766e;" onclick="openAgencySetupAccess()"><i class="fas fa-toolbox"></i> ตั้งค่าข้อมูลหน่วยงาน (ทำเนียบ รพ./เบอร์โทร)</button>
 </div>
 <div id="preAdminBox" style="display:none;">
-<p id="preLoginStatus" style="color:#2ecc71;font-weight:bold;">เข้าสู่ระบบแล้ว</p>
+<p id="preLoginStatus" style="color:#2ecc71;font-weight:bold;">เข้าสู่ระบบแล้ว <span id="preAdminTierBadge"></span></p>
 <p>หากเกิดเหตุวิกฤต กดปุ่มด้านล่าง<br>เพื่อเปิดศูนย์ปฏิบัติการ (EOC)</p>
 <button class="btn-boom" onclick="openDeclareForm()"><i class="fas fa-exclamation-triangle"></i> แจ้งเหตุฉุกเฉิน</button>
-<button onclick="openAgencyTierManager()" style="margin-top:10px;background:#1e293b;color:white;border:none;border-radius:8px;padding:10px 16px;cursor:pointer;font-weight:bold;"><i class="fas fa-layer-group"></i> จัดการ Tier หน่วยงาน</button>
 <button onclick="logoutPreIncident()" style="margin-top:12px;border:none;background:none;color:white;text-decoration:underline;cursor:pointer;">ออกจากระบบ</button>
 </div>
 <div id="preViewerBox" style="display:none;">
@@ -224,21 +225,6 @@ if (detected) {
 <div class="org-label">Logistic & Admin Section</div>
 <div class="org-sub">ส่วนสนับสนุน</div>
 </div>
-</div>
-</div>
-</div>
-<div id="modal_AgencyTier" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:60000;align-items:center;justify-content:center;padding:14px;">
-<div style="background:white;border-radius:14px;width:100%;max-width:880px;max-height:92vh;display:flex;flex-direction:column;overflow:hidden;">
-<div style="background:#0f172a;color:white;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;">
-<div><h3 style="margin:0;font-size:1.05rem;"><i class="fas fa-layer-group"></i> จัดการ Tier หน่วยงาน</h3><div style="font-size:0.72rem;opacity:0.8;margin-top:2px;">ระดับสิทธิ์การใช้งานแต่ละหน่วยงาน</div></div>
-<button onclick="closeAgencyTierManager()" style="background:transparent;color:white;border:0;font-size:1.4rem;cursor:pointer;">&times;</button>
-</div>
-<div id="agencyTierLegend" style="background:#f8fafc;padding:10px 18px;border-bottom:1px solid #e2e8f0;font-size:0.78rem;color:#475569;"></div>
-<div id="agencyTierList" style="flex:1;overflow-y:auto;padding:8px 0;">
-<div style="text-align:center;color:#64748b;padding:30px;">กำลังโหลด...</div>
-</div>
-<div style="background:#f8fafc;padding:10px 18px;border-top:1px solid #e2e8f0;text-align:right;">
-<button onclick="closeAgencyTierManager()" style="background:#e2e8f0;color:#1e293b;border:0;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:bold;">ปิด</button>
 </div>
 </div>
 </div>
@@ -362,11 +348,11 @@ if (detected) {
 </div>
 <div id="modal_MapPicker">
 <div class="map-card">
-<div style="padding:10px;background:#eee;display:flex;justify-content:space-between;align-items:center;">
-<span style="font-weight:bold;color:#333;"><i class="fas fa-map-marker-alt"></i> จิ้มเลือกจุดเกิดเหตุ</span>
-<div style="display:flex;gap:6px;align-items:center;">
-<button type="button" id="mapFullscreenBtn" onclick="toggleMapFullscreen()" title="ขยายแผนที่" style="border:none;background:white;color:#334155;border-radius:7px;width:34px;height:30px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.12);"><i class="fas fa-expand"></i></button>
-<button onclick="closeMap()" style="border:none;background:none;font-size:1.2rem;cursor:pointer;">×</button>
+<div style="padding:10px;background:#eee;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+<span id="mapPickerTitle" style="font-weight:bold;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1;"><i class="fas fa-map-marker-alt"></i> จิ้มเลือกจุดเกิดเหตุ</span>
+<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+<button type="button" id="mapFullscreenBtn" onclick="toggleMapFullscreen()" title="ขยายแผนที่" style="border:none;background:white;color:#334155;border-radius:7px;width:34px;height:30px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.12);flex-shrink:0;"><i class="fas fa-expand"></i></button>
+<button onclick="closeMap()" title="ปิด" style="border:none;background:white;color:#334155;font-size:1.1rem;font-weight:bold;border-radius:7px;width:34px;height:30px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.12);flex-shrink:0;line-height:1;">×</button>
 </div>
 </div>
 <div class="map-search-row">
@@ -402,7 +388,7 @@ if (detected) {
 <button id="dashboard_join_link_btn" onclick="showJoinLinkPopup()" style="display:none;background:#16a34a;color:white;border:none;border-radius:6px;padding:6px 12px;margin-right:6px;font-size:0.82rem;font-weight:900;cursor:pointer;align-self:center;white-space:nowrap;">
 <i class="fas fa-share-alt"></i> Join Link จนท.
 </button>
-<button id="dashboard_share_link_btn" data-require-feature="share_link" onclick="copyDashboardViewLink(event)" style="display:none;background:#2563eb;color:white;border:none;border-radius:6px;padding:6px 12px;margin-right:12px;font-size:0.82rem;font-weight:900;cursor:pointer;align-self:center;white-space:nowrap;">
+<button id="dashboard_share_link_btn" data-require-feature="share_link" data-min-tier="2" onclick="copyDashboardViewLink(event)" style="display:none;background:#2563eb;color:white;border:none;border-radius:6px;padding:6px 12px;margin-right:12px;font-size:0.82rem;font-weight:900;cursor:pointer;align-self:center;white-space:nowrap;">
 <i class="fas fa-link"></i> แชร์ลิงก์ดูอย่างเดียว
 </button>
 <button id="dashboard_exit_view_btn" onclick="exitDashboardViewOnlyMode(event)" style="display:none;background:#475569;color:white;border:none;border-radius:6px;padding:6px 12px;margin-right:12px;font-size:0.82rem;font-weight:900;cursor:pointer;align-self:center;white-space:nowrap;">
@@ -452,7 +438,8 @@ if (detected) {
 <i class="fas fa-stopwatch" style="color:#e74c3c;"></i> <span id="eoc_timer">00:00:00</span>
 </div>
 </div>
-<button id="btn_checkin" data-require-feature="live_location" data-min-tier="2" onclick="handleCheckIn()" style="background:#27ae60;color:white;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:0.78rem;font-weight:bold;flex-shrink:0;">
+<!-- 🔕 ปุ่มเช็คอินตำแหน่งสด — ซ่อนไว้ (ไม่ใช้แล้ว เพราะ OC/ICP เป็นผู้ลงจุดบนแผนที่อยู่แล้ว) เอากลับมาได้โดยลบ display:none -->
+<button id="btn_checkin" data-require-feature="live_location" data-min-tier="2" onclick="handleCheckIn()" style="display:none;background:#27ae60;color:white;border:none;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:0.78rem;font-weight:bold;flex-shrink:0;">
 <i class="fas fa-map-marker-alt"></i> เช็คอิน
 </button>
 <div style="width:1px;background:#eee;height:36px;flex-shrink:0;"></div>
@@ -479,7 +466,7 @@ if (detected) {
 <span style="font-size:0.62rem;color:#cbd5e1;">คน</span>
 </div>
 </div>
-<div style="background:#1a1a2e;border:1px solid #2980b9;border-radius:8px;padding:4px 12px;flex-shrink:0;cursor:pointer;" onclick="switchTab('tab_sitrep', document.querySelector('[onclick*=tab_sitrep]'))">
+<div data-require-feature="sitrep" data-min-tier="2" style="background:#1a1a2e;border:1px solid #2980b9;border-radius:8px;padding:4px 12px;flex-shrink:0;cursor:pointer;" onclick="switchTab('tab_sitrep', document.querySelector('[onclick*=tab_sitrep]'))">
 <div style="font-size:0.6rem;color:#7fb3d3;font-weight:bold;">📡 SITREP</div>
 <div style="font-size:0.72rem;color:white;white-space:nowrap;" id="hdr_sitrep_time">— ยังไม่ออก —</div>
 </div>
@@ -506,7 +493,7 @@ if (detected) {
 <button class="eoc-tab active" onclick="switchTab('tab_triage', this)">📊 ผู้บาดเจ็บ</button>
 <button class="eoc-tab" data-require-feature="erg" data-min-tier="2" onclick="_loadERGDatabase_(function(){switchTab('tab_erg', this);})">☢️ ERG</button>
 <button class="eoc-tab" onclick="switchTab('tab_resource', this)">🚒 ทรัพยากร</button>
-<button class="eoc-tab" onclick="switchTab('tab_sitrep', this)">📡 SITREP</button>
+<button class="eoc-tab" data-require-feature="sitrep" data-min-tier="2" onclick="switchTab('tab_sitrep', this)">📡 SITREP</button>
 </div>
 <div id="tab_triage" class="eoc-tab-content active">
 <div style="background:#fff;border:1px solid #f3d2a8;border-left:4px solid #e67e22;border-radius:6px;padding:8px;margin-bottom:8px;">
@@ -854,8 +841,8 @@ if (detected) {
 <div class="oc-action-board">
 <button class="oc-action-btn blue" onclick="openOCZoneActionPopup()"><i class="fas fa-map-location-dot"></i><span>Command Post / จุดปฏิบัติการ</span></button>
 <button class="oc-action-btn primary" onclick="openOCSitrepPopup()"><i class="fas fa-bullhorn"></i><span>รายงานสถานการณ์</span></button>
-<button class="oc-action-btn warn" data-require-feature="casualty_report" data-min-tier="2" onclick="openOCCasualtyPopup()"><i class="fas fa-person-running"></i><span>ยอดผู้บาดเจ็บประมาณการ</span></button>
-<button class="oc-action-btn danger" data-require-feature="support_request" data-min-tier="2" onclick="openOCSupportPopup()"><i class="fas fa-hand-holding-medical"></i><span>ขอสนับสนุน</span></button>
+<button class="oc-action-btn warn" onclick="openOCCasualtyPopup()"><i class="fas fa-person-running"></i><span>ยอดผู้บาดเจ็บประมาณการ</span></button>
+<button class="oc-action-btn danger" onclick="openOCSupportPopup()"><i class="fas fa-hand-holding-medical"></i><span>ขอสนับสนุน</span></button>
 <button class="oc-action-btn green" onclick="openOCWindInput()"><i class="fas fa-wind"></i><span>รายงานทิศทางลม</span></button>
 <button class="oc-action-btn dark" onclick="openOCMediaAttach()"><i class="fas fa-photo-video"></i><span>แนบรูป / วิดีโอ / เสียง</span></button>
 </div>
@@ -885,6 +872,7 @@ if (detected) {
 </div>
 <div>
 <div style="margin-bottom:10px;font-size:14px;font-weight:bold;color:#2c3e50;">จุดปฏิบัติการอื่นในพื้นที่</div>
+<div id="oc_zone_quota" style="margin-bottom:10px;"></div>
 <div id="oc_zone_list"></div>
 <div style="margin-top:10px;background:white;border-radius:8px;padding:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
 <select id="oc_zone_type_sel" style="padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px;">
@@ -947,12 +935,18 @@ if (detected) {
 <i class="fas fa-photo-video"></i> แนบรูป / วิดีโอ / เสียง
 </div>
 <input type="file" id="oc_attach_input" accept="image/*,video/*,audio/*" multiple style="display:none;" onchange="handleAttach(this)">
+<div style="font-size:11px;color:#94a3b8;margin-top:4px;text-align:center;">🎬 วิดีโอแนะนำคลิปสั้น 15–30 วินาที (ไม่เกิน 50 MB) ส่งไว IC เปิดดูทัน</div>
 <div id="oc_attach_preview" style="margin-top:6px;font-size:12px;color:#27ae60;"></div>
+<div style="margin-top:10px;border-top:1px dashed #e2e8f0;padding-top:10px;">
+<div style="font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:6px;"><i class="fas fa-sticky-note" style="color:#16a34a;"></i> Note ถึง IC / EOC <span style="font-weight:normal;color:#94a3b8;font-size:11px;">(ส่งได้ทุกคนในหน่วย)</span></div>
+<textarea id="oc_note_text" rows="2" placeholder="พิมพ์ note เช่น ข้อสังเกต ข้อเสนอ สิ่งที่ต้องประสาน..." style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:10px;font-family:'Prompt',sans-serif;font-size:13px;resize:vertical;"></textarea>
+<button onclick="submitOCNote()" style="margin-top:6px;background:#16a34a;color:white;border:none;border-radius:8px;padding:9px 14px;font-weight:900;width:100%;cursor:pointer;font-size:13px;"><i class="fas fa-paper-plane"></i> ส่ง Note เข้า IC</button>
+</div>
 </div>
 <div style="font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;">ประวัติรายงาน</div>
 <div id="oc_sit_history"></div>
 </div>
-<div id="octab_support" class="oc-tab-content oc-section" data-require-feature="support_request" data-min-tier="2">
+<div id="octab_support" class="oc-tab-content oc-section">
 <div>
 <div class="oc-section-title"><i class="fas fa-hands-helping" style="color:#c0392b;"></i> ขอสนับสนุน</div>
 <select id="oc_req_type" style="display:none;width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;margin-bottom:8px;">
@@ -982,12 +976,6 @@ if (detected) {
 </div>
 <div style="font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;">ประวัติคำขอ</div>
 <div id="oc_req_history"></div>
-</div>
-<div id="octab_safety" class="oc-tab-content oc-section">
-<div>
-<div class="oc-section-title"><i class="fas fa-hard-hat" style="color:#e67e22;"></i> Safety — เจ้าหน้าที่ใน Zone</div>
-<div id="oc_safety_list"></div>
-</div>
 </div>
 </div>
 <div style="padding:10px 16px;border-top:1px solid #e0e0e0;background:white;flex-shrink:0;">
@@ -1082,6 +1070,12 @@ if (detected) {
 <button onclick="document.getElementById('evac_media_input').click()" style="background:white;color:#2980b9;border:1px solid #2980b9;border-radius:6px;padding:9px 14px;font-size:13px;cursor:pointer;font-weight:bold;width:100%;">
 <i class="fas fa-camera"></i> แนบภาพ/วิดีโอจากจุดอพยพ
 </button>
+<div style="font-size:11px;color:#94a3b8;margin-top:4px;text-align:center;">🎬 วิดีโอแนะนำคลิปสั้น 15–30 วินาที (ไม่เกิน 50 MB) ส่งไว IC เปิดดูทัน</div>
+<div style="border-top:1px dashed #e2e8f0;padding-top:8px;">
+<div style="font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:6px;"><i class="fas fa-sticky-note" style="color:#16a34a;"></i> Note ถึง IC / EOC <span style="font-weight:normal;color:#94a3b8;font-size:11px;">(ส่งได้ทุกคนในหน่วย)</span></div>
+<textarea id="evac_note_text" rows="2" placeholder="พิมพ์ note เช่น ข้อสังเกต ข้อเสนอ สิ่งที่ต้องประสาน..." style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:10px;font-family:'Prompt',sans-serif;font-size:13px;resize:vertical;"></textarea>
+<button onclick="submitEvacNote()" style="margin-top:6px;background:#16a34a;color:white;border:none;border-radius:8px;padding:9px 14px;font-weight:900;width:100%;cursor:pointer;font-size:13px;"><i class="fas fa-paper-plane"></i> ส่ง Note เข้า IC</button>
+</div>
 <div class="health-card">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
 <div style="font-size:13px;font-weight:bold;color:#2c3e50;"><i class="fas fa-campground"></i> จุดอพยพที่รายงานแล้ว</div>
@@ -1141,6 +1135,20 @@ if (detected) {
 </div>
 </div>
 </div>
+<div class="health-card">
+<div style="font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;"><i class="fas fa-hand-holding-medical" style="color:#e74c3c;"></i> ขอสนับสนุนจาก IC</div>
+<select id="health_req_type" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:8px;">
+<option value="">— เลือกประเภทที่ขอ —</option>
+<option>ขอรถพยาบาลเพิ่ม</option>
+<option>ขอทีม Decon</option>
+<option>ขอผู้เชี่ยวชาญ</option>
+<option>ขอ Antidote / ยา</option>
+<option>ขอยกระดับแผน</option>
+<option>อื่นๆ</option>
+</select>
+<textarea id="health_req_detail" rows="3" placeholder="รายละเอียดสั้นๆ เช่น ขอรถ ALS 2 คัน สถานที่ปฏิบัติการ ก.ม. 3" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;padding:9px;font-family:'Prompt',sans-serif;font-size:13px;resize:vertical;margin-bottom:8px;"></textarea>
+<button onclick="submitHealthRequest()" style="background:#e74c3c;color:white;border:none;border-radius:8px;padding:10px;font-weight:900;width:100%;cursor:pointer;font-size:13px;"><i class="fas fa-hand-holding-medical"></i> ส่งคำขอสนับสนุน</button>
+</div>
 </div>
 <div id="healthtab_overview" class="health-tab-content">
 <div class="health-card">
@@ -1151,10 +1159,10 @@ if (detected) {
 ยอดประมาณการจาก ICP: รวม 0 ราย
 </div>
 <div class="health-triage-grid">
-<div class="health-tri-box" onclick="openMedicalTriageColorPopup('red')" style="background:#FCEBEB;cursor:pointer;"><div id="health_red" class="health-tri-num" style="color:#A32D2D;">0</div><div class="health-tri-lbl" style="color:#A32D2D;">RED วิกฤต</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('red')" style="margin-top:6px;border:1px solid #f3b8b8;background:white;color:#A32D2D;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
-<div class="health-tri-box" onclick="openMedicalTriageColorPopup('yellow')" style="background:#FAEEDA;cursor:pointer;"><div id="health_yellow" class="health-tri-num" style="color:#854F0B;">0</div><div class="health-tri-lbl" style="color:#854F0B;">YELLOW เร่งด่วน</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('yellow')" style="margin-top:6px;border:1px solid #efd7a6;background:white;color:#854F0B;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
-<div class="health-tri-box" onclick="openMedicalTriageColorPopup('green')" style="background:#EAF3DE;cursor:pointer;"><div id="health_green" class="health-tri-num" style="color:#3B6D11;">0</div><div class="health-tri-lbl" style="color:#3B6D11;">GREEN ฉุกเฉินน้อย</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('green')" style="margin-top:6px;border:1px solid #cfe5b9;background:white;color:#3B6D11;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
-<div class="health-tri-box" onclick="openMedicalTriageColorPopup('black')" style="background:#f1f0ee;cursor:pointer;"><div id="health_black" class="health-tri-num" style="color:#5F5E5A;">0</div><div class="health-tri-lbl" style="color:#5F5E5A;">BLACK เสียชีวิต</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('black')" style="margin-top:6px;border:1px solid #d7d4cf;background:white;color:#5F5E5A;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
+<div class="health-tri-box" data-require-feature="triage" data-min-tier="2" onclick="openMedicalTriageColorPopup('red')" style="background:#FCEBEB;cursor:pointer;"><div id="health_red" class="health-tri-num" style="color:#A32D2D;">0</div><div class="health-tri-lbl" style="color:#A32D2D;">RED วิกฤต</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('red')" style="margin-top:6px;border:1px solid #f3b8b8;background:white;color:#A32D2D;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
+<div class="health-tri-box" data-require-feature="triage" data-min-tier="2" onclick="openMedicalTriageColorPopup('yellow')" style="background:#FAEEDA;cursor:pointer;"><div id="health_yellow" class="health-tri-num" style="color:#854F0B;">0</div><div class="health-tri-lbl" style="color:#854F0B;">YELLOW เร่งด่วน</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('yellow')" style="margin-top:6px;border:1px solid #efd7a6;background:white;color:#854F0B;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
+<div class="health-tri-box" data-require-feature="triage" data-min-tier="2" onclick="openMedicalTriageColorPopup('green')" style="background:#EAF3DE;cursor:pointer;"><div id="health_green" class="health-tri-num" style="color:#3B6D11;">0</div><div class="health-tri-lbl" style="color:#3B6D11;">GREEN ฉุกเฉินน้อย</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('green')" style="margin-top:6px;border:1px solid #cfe5b9;background:white;color:#3B6D11;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
+<div class="health-tri-box" data-require-feature="triage" data-min-tier="2" onclick="openMedicalTriageColorPopup('black')" style="background:#f1f0ee;cursor:pointer;"><div id="health_black" class="health-tri-num" style="color:#5F5E5A;">0</div><div class="health-tri-lbl" style="color:#5F5E5A;">BLACK เสียชีวิต</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('black')" style="margin-top:6px;border:1px solid #d7d4cf;background:white;color:#5F5E5A;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด</button></div>
 </div>
 <div style="margin-top:10px;">
 <div class="contaminated-flag"><i class="fas fa-biohazard"></i> ตรวจผู้ป่วยปนเปื้อนก่อนส่งต่อ รพ. และระบุ “ผ่าน Decon แล้ว/ยังไม่ผ่าน” ทุกครั้ง</div>
@@ -1173,18 +1181,6 @@ if (detected) {
 </div>
 <div id="healthtab_patient" class="health-tab-content" style="display:none;">
 <div class="health-card">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-<div style="font-size:13px;font-weight:bold;color:#2c3e50;"><i class="fas fa-user-heart"></i> ยอดผู้บาดเจ็บยืนยัน/แยกสี</div>
-<button onclick="openUpdateMedicalTriage()" style="background:#185fa5;color:white;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:900;cursor:pointer;"><i class="fas fa-edit"></i> อัพเดตยอด</button>
-</div>
-<div class="health-triage-grid">
-<div class="health-tri-box" onclick="openMedicalTriageColorPopup('red')" style="background:#FCEBEB;cursor:pointer;"><div class="health-tri-num" style="color:#A32D2D;" id="health_red2">0</div><div class="health-tri-lbl" style="color:#A32D2D;">RED วิกฤต</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('red')" style="margin-top:6px;border:1px solid #f3b8b8;background:white;color:#A32D2D;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด รพ.</button></div>
-<div class="health-tri-box" onclick="openMedicalTriageColorPopup('yellow')" style="background:#FAEEDA;cursor:pointer;"><div class="health-tri-num" style="color:#854F0B;" id="health_yellow2">0</div><div class="health-tri-lbl" style="color:#854F0B;">YELLOW เร่งด่วน</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('yellow')" style="margin-top:6px;border:1px solid #efd7a6;background:white;color:#854F0B;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด รพ.</button></div>
-<div class="health-tri-box" onclick="openMedicalTriageColorPopup('green')" style="background:#EAF3DE;cursor:pointer;"><div class="health-tri-num" style="color:#3B6D11;" id="health_green2">0</div><div class="health-tri-lbl" style="color:#3B6D11;">GREEN ฉุกเฉินน้อย</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('green')" style="margin-top:6px;border:1px solid #cfe5b9;background:white;color:#3B6D11;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด รพ.</button></div>
-<div class="health-tri-box" onclick="openMedicalTriageColorPopup('black')" style="background:#f1f0ee;cursor:pointer;"><div class="health-tri-num" style="color:#5F5E5A;" id="health_black2">0</div><div class="health-tri-lbl" style="color:#5F5E5A;">BLACK เสียชีวิต</div><button type="button" onclick="event.stopPropagation();openHealthTriageDetails('black')" style="margin-top:6px;border:1px solid #d7d4cf;background:white;color:#5F5E5A;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:bold;cursor:pointer;">รายละเอียด รพ.</button></div>
-</div>
-</div>
-<div class="health-card">
 <div style="font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:10px;"><i class="fas fa-hospital" style="color:#2980b9;"></i> ส่งต่อผู้ป่วย / รพ.ที่รับ <span style="font-size:10px;background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:8px;font-weight:900;margin-left:4px;">Tier 3+</span></div>
 <button onclick="openAddPatientTransfer()" style="background:#2980b9;color:white;border:none;border-radius:8px;padding:10px;font-weight:900;width:100%;cursor:pointer;font-size:13px;"><i class="fas fa-plus"></i> บันทึกส่งต่อผู้ป่วย</button>
 </div>
@@ -1197,54 +1193,17 @@ if (detected) {
 <button onclick="openAddHealthUnit()" style="background:#16a34a;color:white;border:none;border-radius:8px;padding:10px;font-weight:900;width:100%;cursor:pointer;font-size:13px;"><i class="fas fa-plus"></i> เพิ่มหน่วยสาธารณสุข</button>
 </div>
 </div>
-<div class="health-card">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-<div style="font-size:13px;font-weight:bold;color:#2c3e50;"><i class="fas fa-user-heart"></i> ยอดผู้บาดเจ็บยืนยัน/แยกสี</div>
-<button onclick="openUpdateMedicalTriage()" style="background:#185fa5;color:white;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:900;cursor:pointer;"><i class="fas fa-edit"></i> อัพเดตยอด</button>
-</div>
-</div>
-</div>
-<div id="healthtab_field" class="health-tab-content" style="display:none;">
-<div class="health-card">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-<b style="font-size:0.95rem;color:#c0392b;">🚑 START Triage Protocol</b>
-<button class="mod-btn gray" style="padding:4px 10px;font-size:0.78rem;" onclick="startReset()">↺ รีเซ็ต</button>
-</div>
-<div class="start-progress" id="start_progress">ขั้นตอนที่ 1/4 — เดินได้?</div>
-<div id="start_question_area"></div>
-<div class="start-history" id="start_history"></div>
-<div style="margin-top:10px;border-top:1px solid #e0e0e0;padding-top:10px;">
-<div style="font-size:0.82rem;font-weight:bold;color:#27ae60;margin-bottom:4px;">📊 บันทึกผล Triage ลงระบบ</div>
-<div style="font-size:0.72rem;color:#555;margin-bottom:6px;">กดเมื่อทำ Triage เสร็จแต่ละราย — ระบบจะบวกยอดเข้า Dashboard</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-<button class="mod-btn red" onclick="addTriageCount('red')">+ 1 RED</button>
-<button class="mod-btn" style="background:#d4ac0d;" onclick="addTriageCount('yellow')">+ 1 YELLOW</button>
-<button class="mod-btn green" onclick="addTriageCount('green')">+ 1 GREEN</button>
-<button class="mod-btn" style="background:#34495e;" onclick="addTriageCount('black')">+ 1 BLACK</button>
-</div>
-</div>
-</div>
-<div class="health-card">
-<div style="font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;"><i class="fas fa-hand-holding-medical" style="color:#e74c3c;"></i> ขอสนับสนุนจาก IC</div>
-<select id="health_req_type" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;font-size:13px;margin-bottom:8px;">
-<option value="">— เลือกประเภทที่ขอ —</option>
-<option>ขอรถพยาบาลเพิ่ม</option>
-<option>ขอทีม Decon</option>
-<option>ขอผู้เชี่ยวชาญ</option>
-<option>ขอ Antidote / ยา</option>
-<option>ขอยกระดับแผน</option>
-<option>อื่นๆ</option>
-</select>
-<textarea id="health_req_detail" rows="3" placeholder="รายละเอียดสั้นๆ เช่น ขอรถ ALS 2 คัน สถานที่ปฏิบัติการ ก.ม. 3" style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;padding:9px;font-family:'Prompt',sans-serif;font-size:13px;resize:vertical;margin-bottom:8px;"></textarea>
-<button onclick="submitHealthRequest()" style="background:#e74c3c;color:white;border:none;border-radius:8px;padding:10px;font-weight:900;width:100%;cursor:pointer;font-size:13px;"><i class="fas fa-hand-holding-medical"></i> ส่งคำขอสนับสนุน</button>
-</div>
+<div class="health-card" id="health_hospital_directory_card" style="display:none;">
+<div style="font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:8px;"><i class="fas fa-hospital" style="color:#2980b9;"></i> ทำเนียบโรงพยาบาลในพื้นที่ <span style="font-size:10px;background:#dbeafe;color:#1d4ed8;padding:2px 7px;border-radius:8px;font-weight:900;margin-left:4px;">Tier 3+</span></div>
+<div id="health_hospital_directory_list" style="display:grid;gap:8px;color:#64748b;">กำลังโหลด...</div>
 </div>
 </div>
 <div style="padding:10px 16px;border-top:1px solid #e0e0e0;background:white;flex-shrink:0;">
 <input type="file" id="health_media_input" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt" multiple style="display:none;" onchange="handleGenericFieldMedia(this,'สาธารณสุข/1669',healthCurrentUser || USER_NAME || 'MED')">
-<button onclick="document.getElementById('health_media_input').click()" style="border:1px solid #1a252f;background:#1a252f;border-radius:8px;padding:10px 16px;font-size:13px;cursor:pointer;color:white;font-weight:bold;width:100%;min-height:44px;">
+<button id="health_media_btn" onclick="document.getElementById('health_media_input').click()" style="display:none;border:1px solid #1a252f;background:#1a252f;border-radius:8px;padding:10px 16px;font-size:13px;cursor:pointer;color:white;font-weight:bold;width:100%;min-height:44px;">
 <i class="fas fa-paperclip"></i> แนบรูป / ไฟล์
 </button>
+<div style="font-size:11px;color:#94a3b8;margin-top:4px;text-align:center;">🎬 วิดีโอแนะนำคลิปสั้น 15–30 วินาที (ไม่เกิน 50 MB) ส่งไว IC เปิดดูทัน</div>
 </div>
 </div>
 <div id="modal_AddResource" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
@@ -1321,14 +1280,29 @@ if (detected) {
 <div style="font-weight:900;color:#9a3412;margin-bottom:6px;"><i class="fas fa-bullhorn"></i> SITREP จาก IC</div>
 <div id="role_sitrep_content" style="color:#334155;font-size:14px;">-</div>
 </div>
-<div class="role-mobile-card" style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:14px;box-shadow:0 2px 8px rgba(15,23,42,.08);">
-<div class="role-mobile-action-row" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;">
-<div style="font-size:16px;font-weight:900;color:#0f172a;"><i class="fas fa-photo-video" style="color:#2563eb;"></i> ส่งรูป / วิดีโอ / เสียงเข้า IC</div>
-<button onclick="document.getElementById('role_media_input').click()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:9px 14px;font-weight:900;cursor:pointer;"><i class="fas fa-paperclip"></i> แนบไฟล์</button>
+<div id="role_eoc_nav_card" class="role-mobile-card" style="display:none;background:#eff6ff;border:1px solid #93c5fd;border-left:5px solid #2563eb;border-radius:10px;padding:14px;box-shadow:0 2px 8px rgba(15,23,42,.08);">
+<div style="font-size:16px;font-weight:900;color:#1e3a8a;margin-bottom:10px;"><i class="fas fa-route"></i> นำทาง</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+<div style="background:white;border:1px solid #bfdbfe;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;">
+<div style="font-size:12px;font-weight:bold;color:#1e40af;"><i class="fas fa-building"></i> EOC</div>
+<div id="role_eoc_nav_text" style="font-size:12px;color:#64748b;flex:1;line-height:1.4;">-</div>
+<button onclick="openRoleEOCNavigationLink()" id="role_eoc_open_btn" style="background:#2563eb;color:white;border:none;border-radius:7px;padding:10px 8px;font-weight:900;cursor:pointer;font-family:'Prompt',sans-serif;font-size:14px;width:100%;"><i class="fas fa-location-arrow"></i> นำทาง</button>
+<button onclick="copyCurrentEOCNavigationLink()" id="role_eoc_copy_btn" style="background:#e0f2fe;color:#075985;border:none;border-radius:7px;padding:8px;font-weight:900;cursor:pointer;font-family:'Prompt',sans-serif;font-size:13px;width:100%;"><i class="fas fa-copy"></i> Copy</button>
 </div>
+<div style="background:white;border:1px solid #fca5a5;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;">
+<div style="font-size:12px;font-weight:bold;color:#b91c1c;"><i class="fas fa-fire-alt"></i> จุดเกิดเหตุ</div>
+<div id="role_inc_nav_text" style="font-size:12px;color:#64748b;flex:1;line-height:1.4;">-</div>
+<button onclick="openRoleIncidentNavigationLink()" id="role_inc_open_btn" style="background:#dc2626;color:white;border:none;border-radius:7px;padding:10px 8px;font-weight:900;cursor:pointer;font-family:'Prompt',sans-serif;font-size:14px;width:100%;"><i class="fas fa-location-arrow"></i> นำทาง</button>
+<button onclick="copyCurrentIncidentNavigationLink()" id="role_inc_copy_btn" style="background:#fee2e2;color:#991b1b;border:none;border-radius:7px;padding:8px;font-weight:900;cursor:pointer;font-family:'Prompt',sans-serif;font-size:13px;width:100%;"><i class="fas fa-copy"></i> Copy</button>
+</div>
+</div>
+</div>
+<div class="role-mobile-card" style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:14px;box-shadow:0 2px 8px rgba(15,23,42,.08);">
+<div style="font-size:16px;font-weight:900;color:#0f172a;margin-bottom:6px;"><i class="fas fa-photo-video" style="color:#2563eb;"></i> ส่งรูป / วิดีโอ / เสียงเข้า IC</div>
 <input type="file" id="role_media_input" accept="image/*,video/*,audio/*" multiple style="display:none;" onchange="handleRoleWorkMedia(this)">
 <div id="role_media_status" style="min-height:22px;color:#475569;font-size:13px;">แนบได้หลายไฟล์ ระบบจะส่งไปแสดงในคลังภาพหน้า IC</div>
 <div id="role_media_tier1_note" style="display:none;font-size:0.72rem;color:#92400e;background:#fef3c7;border-radius:5px;padding:4px 8px;margin-top:4px;"></div>
+<button id="role_media_attach_btn" onclick="document.getElementById('role_media_input').click()" style="margin-top:10px;background:#2563eb;color:white;border:none;border-radius:8px;padding:11px 14px;font-weight:900;cursor:pointer;width:100%;font-family:'Prompt',sans-serif;"><i class="fas fa-paperclip"></i> แนบไฟล์</button>
 </div>
 <div class="role-mobile-card" style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;padding:14px;box-shadow:0 2px 8px rgba(15,23,42,.08);">
 <div style="font-size:16px;font-weight:900;color:#0f172a;margin-bottom:10px;"><i class="fas fa-sticky-note" style="color:#16a34a;"></i> Note ส่งเข้า IC</div>
@@ -1381,6 +1355,10 @@ if (detected) {
 </table>
 </div>
 </div>
+</div>
+<div id="role_phone_directory_card" class="role-mobile-card" style="display:none;background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:14px;box-shadow:0 2px 8px rgba(15,23,42,.08);">
+<div style="font-size:15px;font-weight:900;color:#1d4ed8;margin-bottom:10px;"><i class="fas fa-address-book"></i> ทำเนียบเบอร์โทรหน่วยงานภายนอก</div>
+<div id="role_phone_directory_list" style="display:grid;gap:8px;color:#64748b;">กำลังโหลด...</div>
 </div>
 </div>
 </div>
@@ -1467,6 +1445,10 @@ const eocPositions = {
 };
 window.EOC_INITIAL_VIEW_MODE = '<?= viewMode ?>';
 window.EOC_JOIN_TOKEN = '<?= joinToken ?>';
+(function(){
+  var tok = window.EOC_JOIN_TOKEN || (function(){try{return new URLSearchParams(location.search).get('join')||'';}catch(e){return '';}}());
+  if (tok) { window.EOC_JOIN_TOKEN = tok; try { document.body.classList.add('join-link-session'); } catch(e) {} }
+})();
 var map, marker;
 var MAPTILER_API_KEY = 'XOw46Ht6gxyHhSCkLXPf';
 var LONGDO_API_KEY = 'a9974f7cfd12005a30da1344408d8c01';
@@ -1552,6 +1534,7 @@ APP_TIER_CONFIG = res.tierConfig;
 sessionStorage.setItem('EOC_AGENCY_TIER', APP_AGENCY_TIER);
 try { sessionStorage.setItem('EOC_TIER_CONFIG', JSON.stringify(APP_TIER_CONFIG)); } catch(e) {}
 try { applyTierUIRestrictions(); } catch(e) {}
+try { renderPreAdminTierBadge(); } catch(e) {}
 }
 }).withFailureHandler(function(){ window._tierConfigFetching = false; }).getTierConfigForAgency(APP_AGENCY_ID);
 } catch(e) { window._tierConfigFetching = false; }
@@ -1616,6 +1599,78 @@ var badge = document.getElementById('ban_eoc_nav');
 if (!badge) return;
 badge.style.display = (eocCoords && hasFeature('share_link')) ? 'inline' : 'none';
 }
+function _updateDashboardEOCAction_(eocCoords) {
+var hasCoords = !!(eocCoords && String(eocCoords).indexOf(',') !== -1);
+['dash_ban_eoc', 'dash_ban_eoc_inline'].forEach(function(id) {
+var el = document.getElementById(id);
+if (!el) return;
+if (hasCoords) {
+el.style.cursor = 'pointer';
+el.style.textDecoration = 'underline';
+el.style.textDecorationStyle = 'dotted';
+el.title = 'กดเพื่อคัดลอกลิงก์ที่ตั้ง EOC';
+el.onclick = openEOCLocationModal;
+} else {
+el.style.cursor = '';
+el.style.textDecoration = '';
+el.title = '';
+el.onclick = null;
+}
+});
+}
+function getEOCNavigationLink(lat, lng) {
+return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(String(lat || '').trim() + ',' + String(lng || '').trim());
+}
+function getCurrentEOCNavigationInfo() {
+var state = window._lastEmergState || {};
+var eocName = state.evtEOC || '-';
+var eocCoords = String(state.evtEOCCoords || '').trim();
+if (!eocCoords || eocCoords.indexOf(',') === -1) return null;
+var parts = eocCoords.split(',');
+var lat = String(parts[0] || '').trim();
+var lng = String(parts[1] || '').trim();
+if (!lat || !lng) return null;
+var mapsUrl = getEOCNavigationLink(lat, lng);
+return {
+name: eocName,
+coords: lat + ',' + lng,
+url: mapsUrl,
+shareText: 'ที่ตั้ง EOC: ' + eocName + '\n' + mapsUrl
+};
+}
+function copyTextToClipboard(text, done) {
+if (navigator.clipboard && navigator.clipboard.writeText) {
+navigator.clipboard.writeText(text).then(function() { if (done) done(true); }).catch(function() { if (done) done(false); });
+return;
+}
+var ta = document.createElement('textarea');
+ta.value = text;
+ta.style.position = 'fixed';
+ta.style.left = '-9999px';
+document.body.appendChild(ta);
+ta.focus();
+ta.select();
+var ok = false;
+try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+document.body.removeChild(ta);
+if (done) done(ok);
+}
+function copyCurrentEOCNavigationLink() {
+var info = getCurrentEOCNavigationInfo();
+if (!info) {
+Swal.fire({ icon:'info', title:'ยังไม่มีพิกัด EOC', text:'ต้องตั้งพิกัด EOC ก่อนจึงจะออกลิงก์ได้', confirmButtonText:'ปิด' });
+return;
+}
+copyTextToClipboard(info.shareText, function(ok) {
+Swal.fire({
+icon: ok ? 'success' : 'info',
+title: ok ? 'คัดลอกลิงก์แล้ว' : 'คัดลอกอัตโนมัติไม่ได้',
+html: ok ? 'ส่งลิงก์นี้ต่อให้หน่วยงานภายนอกได้เลย' : '<div style="word-break:break-all;text-align:left;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;">' + info.url + '</div>',
+timer: ok ? 1500 : undefined,
+showConfirmButton: !ok
+});
+});
+}
 function openEOCLocationModal() {
 var state = window._lastEmergState || {};
 var eocName = state.evtEOC || '-';
@@ -1626,40 +1681,38 @@ if (!hasFeature('share_link') && !eocCoords) {
 Swal.fire({ icon: 'info', title: '📍 ที่ตั้ง EOC', text: eocName, confirmButtonText: 'ปิด' });
 return;
 }
-// มีพิกัด — แสดง link นำทาง
+// มีพิกัด — แสดง link สำหรับส่งต่อ
 if (eocCoords) {
-var parts = eocCoords.split(',');
-var lat = parts[0], lng = parts[1];
-var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(lat + ',' + lng);
-var shareText = '📍 ที่ตั้ง EOC: ' + eocName + '\n' + mapsUrl;
+var info = getCurrentEOCNavigationInfo();
+var mapsUrl = info ? info.url : '';
+var shareText = info ? info.shareText : '';
 Swal.fire({
 title: '📍 ที่ตั้ง EOC',
 html:
 '<div style="font-size:1rem;font-weight:900;margin-bottom:8px;">' + eocName + '</div>' +
-'<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;margin-bottom:12px;">' +
-'<a href="' + mapsUrl + '" target="_blank" style="color:#16a34a;font-weight:900;font-size:0.95rem;text-decoration:none;">' +
-'<i class="fas fa-route"></i> เปิด Google Maps นำทาง</a></div>' +
-(isAdmin ? '<button type="button" onclick="Swal.close();_changeEOCLocation_()" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:0.82rem;margin-top:4px;"><i class="fas fa-edit"></i> เปลี่ยนตำแหน่ง EOC</button>' : ''),
+'<div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;padding:10px;margin-bottom:10px;text-align:left;word-break:break-all;color:#334155;font-size:0.82rem;">' + mapsUrl + '</div>' +
+'<div style="font-size:0.78rem;color:#64748b;margin-bottom:8px;">คัดลอกลิงก์นี้เพื่อส่งต่อ ผู้รับกดแล้วจะเปิดระบบนำทางไปยัง EOC</div>' +
+((isAdmin && hasFeature('share_link')) ? '<button type="button" onclick="Swal.close();_changeEOCLocation_()" style="background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:0.82rem;margin-top:4px;"><i class="fas fa-edit"></i> เปลี่ยนตำแหน่ง EOC</button>' : ''),
 showConfirmButton: true,
 showCancelButton: hasFeature('share_link'),
-confirmButtonText: '📋 Copy link',
+confirmButtonText: 'คัดลอกลิงก์',
 cancelButtonText: 'ปิด',
 confirmButtonColor: '#16a34a'
 }).then(function(r) {
 if (!r.isConfirmed) return;
-navigator.clipboard && navigator.clipboard.writeText(shareText).then(function() {
-Swal.fire({ icon: 'success', title: 'Copy แล้ว!', text: 'ส่ง link ให้ จนท. นำทางมา EOC ได้เลย', timer: 1800, showConfirmButton: false });
+copyTextToClipboard(shareText, function(ok) {
+Swal.fire({ icon: ok ? 'success' : 'info', title: ok ? 'คัดลอกลิงก์แล้ว' : 'คัดลอกอัตโนมัติไม่ได้', text: ok ? 'ส่งลิงก์นี้ต่อให้หน่วยงานภายนอกได้เลย' : mapsUrl, timer: ok ? 1800 : undefined, showConfirmButton: !ok });
 });
 });
 return;
 }
-// Admin + ยังไม่มีพิกัด
-if (isAdmin) {
+// Admin + ยังไม่มีพิกัด — ตั้งพิกัดได้เฉพาะ Tier 2+ (share_link)
+if (isAdmin && hasFeature('share_link')) {
 Swal.fire({
 icon: 'info',
 title: '📍 ที่ตั้ง EOC',
 html: '<div style="margin-bottom:10px;">ชื่อ: <b>' + eocName + '</b></div>' +
-'<div style="color:#64748b;font-size:0.87rem;">ยังไม่ได้ตั้งพิกัด EOC<br>ตั้งพิกัดแล้วจะให้ จนท. กดนำทางมาได้</div>',
+'<div style="color:#64748b;font-size:0.87rem;">ยังไม่ได้ตั้งพิกัด EOC<br>ตั้งพิกัดแล้วจะออกลิงก์สำหรับส่งต่อได้</div>',
 showCancelButton: true,
 confirmButtonText: '<i class="fas fa-map-marker-alt"></i> ตั้งพิกัด EOC',
 cancelButtonText: 'ไว้ก่อน',
@@ -1674,7 +1727,7 @@ Swal.fire({ icon: 'info', title: '📍 ที่ตั้ง EOC', text: eocName
 function _changeEOCLocation_() {
 // เปิด map picker เพื่อเลือกพิกัด EOC
 window._eocPickerMode = true;
-openDeclareMapPicker();
+openDeclareMapPicker('eoc');
 }
 function _saveEOCCoords_(lat, lng) {
 if (!lat || !lng) return;
@@ -1687,19 +1740,14 @@ _updateEOCNavBadge_(lat + ',' + lng);
 Swal.fire({
 icon: 'success',
 title: 'บันทึกพิกัด EOC แล้ว',
-html: 'ตอนนี้ จนท. สามารถกดที่แถบ "<b>📍 EOC</b>" เพื่อนำทางมาได้แล้ว',
+html: 'ตอนนี้สามารถกดที่แถบ "<b>📍 EOC</b>" เพื่อคัดลอกลิงก์ที่ตั้ง EOC สำหรับส่งต่อได้แล้ว',
 confirmButtonText: 'ตกลง',
 showCancelButton: true,
-cancelButtonText: '📋 Copy Link นำทาง',
+cancelButtonText: 'คัดลอกลิงก์',
 confirmButtonColor: '#16a34a'
 }).then(function(r) {
 if (!r.isConfirmed) {
-var mapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(lat + ',' + lng);
-var state = window._lastEmergState || {};
-var shareText = '📍 ที่ตั้ง EOC: ' + (state.evtEOC || '-') + '\n' + mapsUrl;
-navigator.clipboard && navigator.clipboard.writeText(shareText).then(function() {
-Swal.fire({ icon: 'success', title: 'Copy แล้ว!', timer: 1500, showConfirmButton: false });
-});
+copyCurrentEOCNavigationLink();
 }
 });
 }
@@ -1710,6 +1758,10 @@ Swal.fire('บันทึกไม่สำเร็จ', err && err.message ? 
 .setEOCCoords(lat, lng, APP_ACCESS_ROLE, APP_AGENCY_ID || '');
 }
 
+function renderPreAdminTierBadge() {
+var el = document.getElementById('preAdminTierBadge');
+if (el) el.innerHTML = APP_TIER_CONFIG ? getTierBadgeHTML() : '';
+}
 function getTierBadgeHTML() {
 var tier = getCurrentTier();
 var name = (APP_TIER_CONFIG && APP_TIER_CONFIG.name) || (tier === '1' ? 'พื้นฐาน' : tier === '3' ? 'บัญชาการสูง' : 'ขั้นสูง');
@@ -1718,99 +1770,154 @@ return '<span style="background:' + color + ';color:white;padding:2px 8px;border
 }
 
 // ============================================================
-// 🎚️ Agency Tier Manager (admin only)
+// 🔧 ตั้งค่าข้อมูลหน่วยงาน (ก่อนเข้าสู่ระบบ) — กรอกรหัสครั้งเดียว ระบบ detect tier แล้วเปิดเมนูที่รองรับให้เอง
 // ============================================================
-function openAgencyTierManager() {
-if (APP_ACCESS_ROLE !== 'admin') {
-Swal.fire('ต้องใช้สิทธิ์ Admin', 'เฉพาะ Admin เท่านั้นที่จัดการ Tier ได้', 'warning');
-return;
-}
-var modal = document.getElementById('modal_AgencyTier');
-if (!modal) return;
-modal.style.display = 'flex';
-loadAgencyTierList();
-loadAgencyTierLegend();
-}
-function closeAgencyTierManager() {
-var modal = document.getElementById('modal_AgencyTier');
-if (modal) modal.style.display = 'none';
-}
-function loadAgencyTierLegend() {
-var el = document.getElementById('agencyTierLegend');
-if (!el) return;
-google.script.run
-.withSuccessHandler(function(tiers) {
-if (!Array.isArray(tiers)) { el.innerHTML = ''; return; }
-el.innerHTML = tiers.map(function(t) {
-var color = t.tier === '1' ? '#94a3b8' : t.tier === '3' ? '#dc2626' : '#2563eb';
-var limits = [];
-if (t.maxTasks > 0) limits.push('Task ' + t.maxTasks); else limits.push('Task ∞');
-if (t.maxZones > 0) limits.push('Zone ' + t.maxZones); else limits.push('Zone ∞');
-if (t.maxAccounts > 0) limits.push('บัญชี ' + t.maxAccounts); else limits.push('บัญชี ∞');
-return '<div style="display:inline-block;margin:2px 6px 2px 0;"><span style="background:' + color + ';color:white;padding:2px 8px;border-radius:10px;font-weight:900;">Tier ' + t.tier + '</span> <b>' + t.name + '</b> <span style="color:#64748b;">— ' + t.description + ' (' + limits.join(' · ') + ')</span></div>';
-}).join('<br>');
-})
-.withFailureHandler(function(){ el.innerHTML = ''; })
-.getAllTiersInfo();
-}
-function loadAgencyTierList() {
-var listEl = document.getElementById('agencyTierList');
-if (!listEl) return;
-listEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px;">กำลังโหลด...</div>';
-google.script.run
-.withSuccessHandler(function(agencies) {
-if (!Array.isArray(agencies) || !agencies.length) {
-listEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:30px;">ยังไม่มีหน่วยงานในระบบ</div>';
-return;
-}
-listEl.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;">' +
-'<thead><tr style="background:#f1f5f9;text-align:left;">' +
-'<th style="padding:8px 12px;">รหัส</th>' +
-'<th style="padding:8px 12px;">ชื่อหน่วยงาน</th>' +
-'<th style="padding:8px 12px;">บทบาท</th>' +
-'<th style="padding:8px 12px;">สถานะ</th>' +
-'<th style="padding:8px 12px;">หมดอายุ</th>' +
-'<th style="padding:8px 12px;">เข้าใช้ล่าสุด</th>' +
-'<th style="padding:8px 12px;">Tier</th>' +
-'</tr></thead><tbody>' +
-agencies.map(function(a, i) {
-var statusColor = a.status === 'ACTIVE' ? '#16a34a' : '#ef4444';
-return '<tr style="border-bottom:1px solid #e2e8f0;background:' + (i % 2 ? '#fafafa' : 'white') + ';">' +
-'<td style="padding:8px 12px;font-family:monospace;">' + escapeHtmlSafe_(a.agencyId) + '</td>' +
-'<td style="padding:8px 12px;font-weight:bold;">' + escapeHtmlSafe_(a.agencyName) + '</td>' +
-'<td style="padding:8px 12px;">' + escapeHtmlSafe_(a.role) + '</td>' +
-'<td style="padding:8px 12px;color:' + statusColor + ';font-weight:bold;">' + escapeHtmlSafe_(a.status) + '</td>' +
-'<td style="padding:8px 12px;color:#64748b;">' + escapeHtmlSafe_(a.expiresAt || '-') + '</td>' +
-'<td style="padding:8px 12px;color:#64748b;">' + escapeHtmlSafe_(a.lastLogin || '-') + '</td>' +
-'<td style="padding:8px 12px;">' +
-'<select onchange="changeAgencyTier(\'' + encodeURIComponent(a.agencyId) + '\', this.value)" style="padding:4px 6px;border-radius:6px;border:1px solid #cbd5e1;font-weight:bold;">' +
-['1','2','3'].map(function(t) {
-return '<option value="' + t + '"' + (a.tier === t ? ' selected' : '') + '>Tier ' + t + '</option>';
-}).join('') +
-'</select></td></tr>';
-}).join('') + '</tbody></table>';
-})
-.withFailureHandler(function(err) {
-listEl.innerHTML = '<div style="color:#dc2626;padding:20px;text-align:center;">โหลดรายการไม่สำเร็จ: ' + escapeHtmlSafe_(err && err.message ? err.message : String(err)) + '</div>';
-})
-.listAgenciesForAdmin(APP_ACCESS_ROLE);
-}
-function changeAgencyTier(encodedId, newTier) {
-var agencyId = decodeURIComponent(encodedId);
+function openAgencySetupAccess() {
+Swal.fire({
+title: '🔧 ตั้งค่าข้อมูลหน่วยงาน',
+html: 'กรอกรหัสผ่าน Admin ของหน่วยงาน ระบบจะตรวจสอบสิทธิ์และเปิดเมนูตั้งค่าตาม Tier ของหน่วยงานให้อัตโนมัติ<br><span style="font-size:12px;color:#94a3b8;">(ใช้รหัสเดียวกับที่เข้าสู่ระบบจัดการเหตุฉุกเฉิน)</span>',
+input: 'password',
+inputPlaceholder: 'รหัสผ่าน Admin หน่วยงาน',
+inputAttributes: { autocapitalize: 'off', autocorrect: 'off' },
+showCancelButton: true,
+confirmButtonText: 'ตรวจสอบ',
+cancelButtonText: 'ยกเลิก'
+}).then(function(result) {
+if (!result.isConfirmed) return;
+var pass = result.value || '';
+if (!pass) return;
+Swal.fire({ title: 'กำลังตรวจสอบ...', allowOutsideClick: false, didOpen: function(){ Swal.showLoading(); } });
 google.script.run
 .withSuccessHandler(function(res) {
-if (res && res.ok) {
-Swal.fire({ icon: 'success', title: 'อัปเดต Tier แล้ว', text: agencyId + ' → Tier ' + res.tier, timer: 1500, showConfirmButton: false });
-} else {
-Swal.fire('อัปเดตไม่สำเร็จ', '', 'error');
-loadAgencyTierList();
+if (!res || !res.ok) {
+var msg = (res && res.reason === 'not_admin') ? 'บัญชีนี้ไม่มีสิทธิ์ Admin'
+: (res && res.reason === 'disabled') ? 'หน่วยงานถูกระงับการใช้งาน'
+: (res && res.reason === 'expired') ? 'หน่วยงานหมดอายุการใช้งาน'
+: 'รหัสผ่านไม่ถูกต้อง';
+Swal.fire('ตรวจสอบไม่ผ่าน', msg, 'error');
+return;
 }
+_showAgencySetupMenu_(res);
 })
 .withFailureHandler(function(err) {
-Swal.fire('อัปเดตไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
-loadAgencyTierList();
+Swal.fire('เกิดข้อผิดพลาด', err && err.message ? err.message : String(err), 'error');
 })
-.updateAgencyTier(agencyId, newTier, APP_ACCESS_ROLE);
+.checkAgencySetupAccess(pass);
+});
+}
+function _showAgencySetupMenu_(info) {
+var feats = info.features || {};
+var options = [];
+if (feats.phone_directory) options.push({ kind: 'phone', label: '📞 ทำเนียบเบอร์โทรหน่วยงานภายนอก (Liaison)', color: '#1d4ed8' });
+if (feats.hospital_directory) options.push({ kind: 'hospital', label: '🏥 ทำเนียบโรงพยาบาลในพื้นที่ (MED)', color: '#16a34a' });
+if (!options.length) {
+Swal.fire('ยังไม่มีเมนูตั้งค่าสำหรับ Tier นี้', 'Tier ' + info.tier + ' ของหน่วยงาน ' + escapeHtmlSafe_(info.agencyName || info.agencyId) + ' ยังไม่รองรับฟีเจอร์ทำเนียบ', 'info');
+return;
+}
+var encodedId = encodeURIComponent(info.agencyId || '');
+var html = '<div style="text-align:left;font-size:13px;color:#64748b;margin-bottom:10px;">หน่วยงาน <b>' + escapeHtmlSafe_(info.agencyName || info.agencyId) + '</b> · Tier ' + escapeHtmlSafe_(info.tier) + '</div>' +
+options.map(function(o) {
+return '<button onclick="_openAgencySetupDirectory_(\'' + o.kind + '\',\'' + encodedId + '\')" style="display:block;width:100%;margin-bottom:8px;background:' + o.color + ';color:white;border:none;border-radius:8px;padding:10px 14px;font-weight:700;cursor:pointer;text-align:left;">' + o.label + '</button>';
+}).join('');
+Swal.fire({ title: '🔧 เลือกเมนูที่จะตั้งค่า', html: html, showConfirmButton: false, showCloseButton: true });
+}
+function _openAgencySetupDirectory_(kind, encodedAgencyId) {
+Swal.close();
+_loadAndShowDirectory_(kind, { agencyId: decodeURIComponent(encodedAgencyId), accessRole: 'admin' });
+}
+// ============================================================
+// 📞 จัดการทำเนียบเบอร์โทรหน่วยงานภายนอก (Liaison, Tier 2+)
+// ============================================================
+function openPhoneDirectoryManager() {
+if (APP_ACCESS_ROLE !== 'admin') { Swal.fire('ต้องใช้สิทธิ์ Admin', 'เฉพาะ Admin เท่านั้นที่จัดการได้', 'warning'); return; }
+if (!requireFeature('phone_directory', 'ทำเนียบเบอร์โทรหน่วยงานภายนอก')) return;
+_loadAndShowDirectory_('phone', { agencyId: APP_AGENCY_ID || '', accessRole: APP_ACCESS_ROLE });
+}
+function openHospitalDirectoryManager() {
+if (APP_ACCESS_ROLE !== 'admin') { Swal.fire('ต้องใช้สิทธิ์ Admin', 'เฉพาะ Admin เท่านั้นที่จัดการได้', 'warning'); return; }
+if (!requireFeature('hospital_directory', 'ทำเนียบโรงพยาบาลในพื้นที่')) return;
+_loadAndShowDirectory_('hospital', { agencyId: APP_AGENCY_ID || '', accessRole: APP_ACCESS_ROLE });
+}
+// 🔧 บริบทปัจจุบันของหน้าต่างทำเนียบ (รองรับทั้งโหมด login ปกติ และโหมดตั้งค่าก่อนเข้าเหตุ)
+var _dirCtx = { agencyId: '', accessRole: '' };
+function _loadAndShowDirectory_(kind, ctx) {
+_dirCtx = ctx || _dirCtx;
+var getter = kind === 'phone' ? 'getPhoneDirectory' : 'getHospitalDirectory';
+google.script.run
+.withSuccessHandler(function(list) { _renderDirectoryModal_(kind, list || []); })
+.withFailureHandler(function(err) { Swal.fire('โหลดไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
+[getter](_dirCtx.agencyId || '');
+}
+function _renderDirectoryModal_(kind, list) {
+var isPhone = kind === 'phone';
+var title = isPhone ? '📞 ทำเนียบเบอร์โทรหน่วยงานภายนอก' : '🏥 ทำเนียบโรงพยาบาลในพื้นที่';
+var rows = (list || []).map(function(e) {
+if (isPhone) {
+return '<tr style="border-bottom:1px solid #e2e8f0;">' +
+'<td style="padding:6px;">' + escapeHtmlSafe_(e.category || '-') + '</td>' +
+'<td style="padding:6px;font-weight:bold;">' + escapeHtmlSafe_(e.name) + '</td>' +
+'<td style="padding:6px;">' + escapeHtmlSafe_(e.phone) + '</td>' +
+'<td style="padding:6px;text-align:right;"><button onclick="_deleteDirectoryEntry_(\'phone\',\'' + e.id + '\')" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;"><i class="fas fa-trash"></i></button></td></tr>';
+}
+return '<tr style="border-bottom:1px solid #e2e8f0;">' +
+'<td style="padding:6px;font-weight:bold;">' + escapeHtmlSafe_(e.name) + '</td>' +
+'<td style="padding:6px;">' + escapeHtmlSafe_(e.acceptTypes || '-') + '</td>' +
+'<td style="padding:6px;">' + escapeHtmlSafe_(e.phone || '-') + '</td>' +
+'<td style="padding:6px;text-align:right;"><button onclick="_deleteDirectoryEntry_(\'hospital\',\'' + e.id + '\')" style="background:#fee2e2;color:#b91c1c;border:none;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;"><i class="fas fa-trash"></i></button></td></tr>';
+}).join('');
+var theadCols = isPhone
+? '<th style="padding:6px;text-align:left;">หมวดหมู่</th><th style="padding:6px;text-align:left;">ชื่อหน่วยงาน</th><th style="padding:6px;text-align:left;">เบอร์โทร</th><th></th>'
+: '<th style="padding:6px;text-align:left;">ชื่อโรงพยาบาล</th><th style="padding:6px;text-align:left;">รับผู้ป่วยประเภท</th><th style="padding:6px;text-align:left;">เบอร์โทร</th><th></th>';
+var inputStyle = 'width:100%;box-sizing:border-box;padding:8px;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:6px;font-family:Prompt,sans-serif;';
+var phoneCategories = ['หน่วยดับเพลิง', 'โรงพยาบาล', 'ตำรวจ', 'ปภ.จังหวัด', 'หน่วยกู้ภัย', 'อื่นๆ'];
+var hospitalAcceptTypes = ['อุบัติเหตุ', 'สารเคมี', 'ไฟไหม้', 'ผู้ป่วยวิกฤต', 'อื่นๆ'];
+var categoryOptions = (isPhone ? phoneCategories : hospitalAcceptTypes).map(function(c) {
+return '<option value="' + escapeHtmlSafe_(c) + '">' + escapeHtmlSafe_(c) + '</option>';
+}).join('');
+var categorySelect = '<select id="dir_input_category" style="' + inputStyle + '">' + categoryOptions + '</select>';
+var formFields = isPhone
+? categorySelect +
+'<input id="dir_input_name" placeholder="ชื่อหน่วยงาน" style="' + inputStyle + '">' +
+'<input id="dir_input_phone" placeholder="เบอร์โทร" style="' + inputStyle + '">'
+: '<input id="dir_input_name" placeholder="ชื่อโรงพยาบาล" style="' + inputStyle + '">' +
+categorySelect +
+'<input id="dir_input_phone" placeholder="เบอร์โทร (ไม่บังคับ)" style="' + inputStyle + '">';
+var html = '<div style="text-align:left;">' +
+'<div style="font-size:13px;color:#64748b;margin-bottom:10px;">รายการทั้งหมด ' + (list || []).length + ' รายการ</div>' +
+'<div style="max-height:240px;overflow-y:auto;margin-bottom:14px;">' +
+'<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+'<thead><tr style="background:#f1f5f9;">' + theadCols + '</tr></thead><tbody>' + (rows || '<tr><td colspan="4" style="padding:12px;text-align:center;color:#94a3b8;">ยังไม่มีข้อมูล</td></tr>') + '</tbody></table>' +
+'</div>' +
+'<div style="border-top:1px solid #e2e8f0;padding-top:10px;">' +
+'<div style="font-weight:900;color:#0f172a;margin-bottom:8px;">➕ เพิ่มรายการใหม่</div>' +
+formFields +
+'<button onclick="_submitDirectoryEntry_(\'' + kind + '\')" style="background:#2563eb;color:white;border:none;border-radius:6px;padding:6px 14px;font-weight:700;font-size:13px;cursor:pointer;"><i class="fas fa-plus"></i> เพิ่ม</button>' +
+'</div></div>';
+Swal.fire({ title: title, html: html, width: '720px', showConfirmButton: true, confirmButtonText: 'ปิด' });
+}
+function _submitDirectoryEntry_(kind) {
+var name = (document.getElementById('dir_input_name') || {}).value || '';
+var phone = (document.getElementById('dir_input_phone') || {}).value || '';
+var category = (document.getElementById('dir_input_category') || {}).value || '';
+var setter = kind === 'phone' ? 'savePhoneDirectoryEntry' : 'saveHospitalDirectoryEntry';
+var entry = kind === 'phone' ? { name: name, phone: phone, category: category } : { name: name, acceptTypes: category, phone: phone };
+google.script.run
+.withSuccessHandler(function(res) {
+Swal.fire({ icon:'success', title:'เพิ่มรายการแล้ว', timer:1100, showConfirmButton:false })
+.then(function(){ _loadAndShowDirectory_(kind); });
+})
+.withFailureHandler(function(err) { Swal.fire('เพิ่มไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
+[setter](_dirCtx.agencyId || '', entry, _dirCtx.accessRole);
+}
+function _deleteDirectoryEntry_(kind, id) {
+var deleter = kind === 'phone' ? 'deletePhoneDirectoryEntry' : 'deleteHospitalDirectoryEntry';
+Swal.fire({ title:'ลบรายการนี้?', icon:'warning', showCancelButton:true, confirmButtonText:'ลบ', cancelButtonText:'ยกเลิก', confirmButtonColor:'#dc2626' }).then(function(r) {
+if (!r.isConfirmed) return;
+google.script.run
+.withSuccessHandler(function(){ _loadAndShowDirectory_(kind); })
+.withFailureHandler(function(err) { Swal.fire('ลบไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
+[deleter](_dirCtx.agencyId || '', id, _dirCtx.accessRole);
+});
 }
 function escapeHtmlSafe_(s) {
 return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
@@ -1905,6 +2012,7 @@ if (!loginBox || !adminBox || !viewerBox) return;
 loginBox.style.display = APP_ACCESS_ROLE ? 'none' : 'block';
 adminBox.style.display = APP_ACCESS_ROLE === 'admin' ? 'block' : 'none';
 viewerBox.style.display = APP_ACCESS_ROLE === 'viewer' ? 'block' : 'none';
+if (APP_ACCESS_ROLE === 'admin') { try { renderPreAdminTierBadge(); } catch(e) {} }
 }
 function togglePreLoginPassword() {
 var input = document.getElementById('preLoginPass');
@@ -2037,6 +2145,13 @@ map.on('load', function() {
 if (window._placeSearchResults && window._placeSearchResults.length) {
 drawPickerSearchMarkers(window._placeSearchResults);
 }
+renderPickerMapContext(true);
+});
+map.on('styledata', function() {
+renderPickerMapContext(true);
+});
+map.on('idle', function() {
+renderPickerMapContext(false);
 });
 }
 function setPickerMapStyle(mode) {
@@ -2053,10 +2168,15 @@ satBtn.style.background = isSat ? '#2563eb' : 'white';
 satBtn.style.color = isSat ? 'white' : '#334155';
 satBtn.style.borderColor = isSat ? '#2563eb' : '#cbd5e1';
 }
+// 🔧 ใช้ Hybrid (ดาวเทียม + ป้ายชื่อสถานที่/ถนน) แทน Satellite ล้วน — ช่วยระบุตำแหน่งได้เร็วขึ้นโดยไม่ต้องสลับโหมด
 var style = window._pickerMapStyle === 'satellite'
-? (maptilersdk.MapStyle.SATELLITE || 'https://api.maptiler.com/maps/satellite/style.json?key=' + encodeURIComponent(MAPTILER_API_KEY))
+? (maptilersdk.MapStyle.HYBRID || 'https://api.maptiler.com/maps/hybrid/style.json?key=' + encodeURIComponent(MAPTILER_API_KEY))
 : maptilersdk.MapStyle.STREETS;
 map.setStyle(style);
+// 🔧 ป้ายชื่อสถานที่สำคัญ (รพ./วัด/โรงเรียน) ใน MapTiler จะเริ่มแสดงเมื่อซูมลึกพอ (~16+) จึงซูมเข้าให้อัตโนมัติเมื่อสลับเป็นโหมดดาวเทียม
+if (window._pickerMapStyle === 'satellite' && map.getZoom() < 16) {
+map.easeTo({ zoom: 16 });
+}
 map.once('styledata', function() {
 if (marker && tempLat && tempLng) {
 try { marker.addTo(map); } catch(e) {}
@@ -2076,7 +2196,8 @@ lat: parseFloat(location.lat)
 };
 if (isNaN(loc.lon) || isNaN(loc.lat)) return;
 if (marker) map.Overlays.remove(marker);
-marker = new maptilersdk.Marker({ draggable: !mapPickLockToCurrent, color: '#ef4444' })
+var markerColor = mapPickerMode === 'eoc' ? '#2563eb' : '#ef4444';
+marker = new maptilersdk.Marker({ draggable: !mapPickLockToCurrent, color: markerColor })
 .setLngLat([loc.lon, loc.lat])
 .addTo(map);
 if (!mapPickLockToCurrent) {
@@ -2088,8 +2209,9 @@ placeMarker({ lon: p.lng, lat: p.lat });
 map.location(loc, true);
 tempLat = loc.lat.toFixed(6);
 tempLng = loc.lon.toFixed(6);
-var distText = mapPickerMode === 'zone' ? getPickerDistanceText(loc) : '';
-document.getElementById('selectedCoordText').innerText = `พิกัด: ${tempLat}, ${tempLng}${distText ? ' | ' + distText : ''}`;
+var distText = (mapPickerMode === 'zone' || mapPickerMode === 'eoc') ? getPickerDistanceText(loc) : '';
+var coordLabel = mapPickerMode === 'eoc' ? 'พิกัด EOC' : 'พิกัด';
+document.getElementById('selectedCoordText').innerText = `${coordLabel}: ${tempLat}, ${tempLng}${distText ? ' | ' + distText : ''}`;
 if (mapPickerMode === 'zone') updatePickerDistanceHint(loc);
 }
 function _parseDMS(str) {
@@ -2228,14 +2350,23 @@ source: sourceId,
 paint: { 'fill-color': paint.fillColor || '#e11d48', 'fill-opacity': paint.fillOpacity == null ? 0.14 : paint.fillOpacity }
 });
 targetMap.addLayer({
+id: sourceId + '-halo',
+type: 'line',
+source: sourceId,
+layout: { 'line-join': 'round', 'line-cap': 'round' },
+paint: { 'line-color': paint.haloColor || '#ffffff', 'line-width': paint.haloWidth || 10, 'line-opacity': paint.haloOpacity == null ? 0.92 : paint.haloOpacity }
+});
+targetMap.addLayer({
 id: sourceId + '-line',
 type: 'line',
 source: sourceId,
-paint: { 'line-color': paint.lineColor || '#e11d48', 'line-width': paint.lineWidth || 2 }
+layout: { 'line-join': 'round', 'line-cap': 'round' },
+paint: { 'line-color': paint.lineColor || '#e11d48', 'line-width': paint.lineWidth || 5, 'line-opacity': paint.lineOpacity == null ? 1 : paint.lineOpacity }
 });
 },
 remove: function() {
 try { if (map.getLayer(sourceId + '-line')) map.removeLayer(sourceId + '-line'); } catch(e) {}
+try { if (map.getLayer(sourceId + '-halo')) map.removeLayer(sourceId + '-halo'); } catch(e) {}
 try { if (map.getLayer(sourceId + '-fill')) map.removeLayer(sourceId + '-fill'); } catch(e) {}
 try { if (map.getSource(sourceId)) map.removeSource(sourceId); } catch(e) {}
 }
@@ -2278,14 +2409,39 @@ if (!map || typeof maptilersdk === 'undefined') return;
 clearPickerErgOverlays();
 if (mapPickerMode !== 'zone') return;
 var incident = getIncidentLngLat();
-var erg = window._lastERGState || {};
-var isoM = Number(erg.isoM || erg.sm_iso || 0) || 0;
-if (!incident || !isoM) return;
+var erg = getPickerERGState();
+var isoM = Number(erg.isoM || erg.sm_iso || erg.isolation_m || 0) || 0;
+var protM = getPickerERGProtectiveMeters(erg);
+if (!incident || (!isoM && !protM)) return;
+if (protM && protM > isoM) {
+var protCircle = makePickerCircleOverlay('erg-prot', incident, protM, {
+lineWidth: 5,
+lineColor: '#8e44ad',
+fillColor: '#8e44ad',
+fillOpacity: 0.18,
+lineOpacity: 1,
+haloWidth: 11,
+haloOpacity: 0.95
+});
+map.Overlays.add(protCircle);
+pickerErgOverlays.push(protCircle);
+var protLabelPoint = { lon: incident.lon + (protM / 111320), lat: incident.lat };
+var protLabel = makePickerHtmlMarker(protLabelPoint,
+'<div style="background:#fff;color:#7e22ce;border:2px solid #8e44ad;border-radius:10px;padding:2px 8px;font-weight:bold;font-size:11px;white-space:nowrap;">เฝ้าระวัง ' + protM + ' m</div>',
+{ offset: { x: 0, y: 0 } }
+);
+map.Overlays.add(protLabel);
+pickerErgOverlays.push(protLabel);
+}
+if (!isoM) return;
 var circle = makePickerCircleOverlay('erg', incident, isoM, {
-lineWidth: 2,
+lineWidth: 5,
 lineColor: '#e11d48',
 fillColor: '#e11d48',
-fillOpacity: 0.14
+fillOpacity: 0.20,
+lineOpacity: 1,
+haloWidth: 11,
+haloOpacity: 0.95
 });
 map.Overlays.add(circle);
 pickerErgOverlays.push(circle);
@@ -2297,17 +2453,94 @@ var label = makePickerHtmlMarker(labelPoint,
 map.Overlays.add(label);
 pickerErgOverlays.push(label);
 }
+function getPickerERGState() {
+var erg = window._lastERGState || {};
+if ((!erg || (!erg.isoM && !erg.sm_iso && !erg.dayM && !erg.nightM)) && window._lastOCState && window._lastOCState.ergState) {
+erg = window._lastOCState.ergState || {};
+window._lastERGState = erg;
+}
+return erg || {};
+}
+function getPickerERGProtectiveMeters(erg) {
+erg = erg || {};
+var timeKey = getPickerERGTimeKey();
+var preferred = timeKey === 'nte'
+? Number(erg.nightM || erg.night_prot_m || erg.sm_nte || erg.lg_nte || 0)
+: Number(erg.dayM || erg.day_prot_m || erg.sm_dy || erg.lg_dy || 0);
+if (isFinite(preferred) && preferred > 0) return preferred;
+var vals = [
+Number(erg.protM || 0),
+Number(erg.protectM || 0),
+Number(erg.protectiveM || 0),
+Number(erg.dayM || erg.day_prot_m || 0),
+Number(erg.nightM || erg.night_prot_m || 0),
+Number(erg.sm_dy || 0),
+Number(erg.sm_nte || 0),
+Number(erg.lg_dy || 0),
+Number(erg.lg_nte || 0)
+].filter(function(v) { return isFinite(v) && v > 0; });
+return vals.length ? Math.max.apply(null, vals) : 0;
+}
+function getPickerERGTimeKey() {
+if (typeof _timeOfDay !== 'undefined' && (_timeOfDay === 'dy' || _timeOfDay === 'nte')) return _timeOfDay;
+var h = new Date().getHours();
+return (h >= 6 && h < 18) ? 'dy' : 'nte';
+}
+function fetchPickerERGStateIfNeeded() {
+if (mapPickerMode !== 'zone') return;
+var erg = getPickerERGState();
+if ((erg.isoM || erg.sm_iso || erg.dayM || erg.nightM) || window._pickerERGStateLoading) return;
+if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+window._pickerERGStateLoading = true;
+google.script.run
+.withSuccessHandler(function(state) {
+window._pickerERGStateLoading = false;
+window._lastERGState = state || window._lastERGState || {};
+renderPickerMapContext(true);
+})
+.withFailureHandler(function() {
+window._pickerERGStateLoading = false;
+})
+.getERGState();
+}
 function showIncidentOnPickerMap() {
 if (!map || typeof maptilersdk === 'undefined') return;
-if (mapPickerMode !== 'zone') return;
+if (mapPickerMode !== 'zone' && mapPickerMode !== 'eoc') return;
 var incident = getIncidentLngLat();
 if (!incident) return;
-if (pickerIncidentMarker) map.Overlays.remove(pickerIncidentMarker);
+if (pickerIncidentMarker && pickerIncidentMarker.setLngLat) {
+pickerIncidentMarker.setLngLat([incident.lon, incident.lat]);
+return;
+}
 pickerIncidentMarker = makePickerHtmlMarker(incident,
 '<div style="width:28px;height:28px;border-radius:50%;background:#e74c3c;color:white;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.35);"><i class="fas fa-fire" style="font-size:13px;"></i></div>',
 { offset: { x: 0, y: 0 } }
 );
 map.Overlays.add(pickerIncidentMarker);
+}
+function renderPickerMapContext(includeHeavyContext) {
+if (!map) return;
+if (mapPickerMode === 'zone' || mapPickerMode === 'eoc') {
+showIncidentOnPickerMap();
+}
+if (includeHeavyContext && mapPickerMode === 'zone') {
+showERGOnPickerMap();
+renderExistingZoneMarkersOnPickerMap((window._lastOCState && window._lastOCState.zoneMarkers) || window._icZoneMarkers || []);
+fetchPickerERGStateIfNeeded();
+}
+if (!tempLat && !tempLng) {
+var initial = mapPickerMode === 'eoc' ? getEOCFormLngLat() : getDeclareIncidentFormLngLat();
+if (initial) {
+placeMarker(initial);
+if (map.zoom) map.zoom(16, true);
+} else {
+var incident = getIncidentLngLat() || getDeclareIncidentFormLngLat();
+if (incident && map) {
+map.location(incident, true);
+if (map.zoom) map.zoom(14, true);
+}
+}
+}
 }
 function framePickerSelectionWithIncident() {
 if (!map || !tempLat || !tempLng) return;
@@ -2322,6 +2555,65 @@ lat: (incident.lat + selected.lat) / 2
 var diff = Math.max(Math.abs(incident.lon - selected.lon), Math.abs(incident.lat - selected.lat));
 map.location(center, true);
 if (map.zoom) map.zoom(diff > 0.05 ? 11 : diff > 0.02 ? 12 : 14, true);
+}
+function getEOCFormLngLat() {
+var latEl = document.getElementById('swal-eoc-lat');
+var lngEl = document.getElementById('swal-eoc-lng');
+var lat = parseFloat(latEl && latEl.value);
+var lng = parseFloat(lngEl && lngEl.value);
+if (isNaN(lat) || isNaN(lng)) return null;
+return { lon: lng, lat: lat };
+}
+function getDeclareIncidentFormLngLat() {
+var latEl = document.getElementById('hidden-lat');
+var lngEl = document.getElementById('hidden-lng');
+var lat = parseFloat(latEl && latEl.value);
+var lng = parseFloat(lngEl && lngEl.value);
+if (isNaN(lat) || isNaN(lng)) return null;
+return { lon: lng, lat: lat };
+}
+function configureMapPickerUI() {
+var isEOC = mapPickerMode === 'eoc';
+var title = document.getElementById('mapPickerTitle');
+var input = document.getElementById('placeSearchInput');
+var coordInput = document.getElementById('coordPasteInput');
+var selected = document.getElementById('selectedCoordText');
+var result = document.getElementById('placeSearchResult');
+if (title) title.innerHTML = isEOC
+? '<i class="fas fa-location-dot"></i> จิ้มเลือกที่ตั้ง EOC'
+: '<i class="fas fa-map-marker-alt"></i> จิ้มเลือกจุดเกิดเหตุ';
+if (input) input.placeholder = isEOC ? 'ค้นหาที่ตั้ง EOC...' : 'ค้นหาสถานที่ในไทย...';
+if (coordInput) coordInput.placeholder = isEOC ? 'วาง Google Maps link หรือ lat,lon ของ EOC' : 'วาง Google Maps link หรือ lat,lon เช่น 12.866,101.141';
+if (selected) selected.innerText = isEOC ? 'ยังไม่ได้เลือกพิกัด EOC' : 'ยังไม่ได้เลือกพิกัด';
+if (result) result.innerHTML = '';
+}
+function resetPickerSelection() {
+tempLat = "";
+tempLng = "";
+if (marker && map) {
+try { map.Overlays.remove(marker); } catch(e) {}
+}
+marker = null;
+}
+function configureMapPickerUI() {
+var isEOC = mapPickerMode === 'eoc';
+var ctx = window._mapPickerContext || {};
+var title = document.getElementById('mapPickerTitle');
+var input = document.getElementById('placeSearchInput');
+var coordInput = document.getElementById('coordPasteInput');
+var selected = document.getElementById('selectedCoordText');
+var result = document.getElementById('placeSearchResult');
+var titleHtml = ctx.titleHtml || (isEOC
+? '<i class="fas fa-location-dot"></i> เลือกที่ตั้ง EOC'
+: '<i class="fas fa-map-marker-alt"></i> เลือกจุดเกิดเหตุ');
+var searchPlaceholder = ctx.searchPlaceholder || (isEOC ? 'ค้นหาที่ตั้ง EOC...' : 'ค้นหาสถานที่ในไทย...');
+var coordPlaceholder = ctx.coordPlaceholder || (isEOC ? 'วาง Google Maps link หรือ lat,lon ของ EOC' : 'วาง Google Maps link หรือ lat,lon เช่น 12.866,101.141');
+var selectedText = ctx.selectedText || (isEOC ? 'ยังไม่ได้เลือกพิกัด EOC' : 'ยังไม่ได้เลือกพิกัด');
+if (title) title.innerHTML = titleHtml;
+if (input) input.placeholder = searchPlaceholder;
+if (coordInput) coordInput.placeholder = coordPlaceholder;
+if (selected) selected.innerText = selectedText;
+if (result) result.innerHTML = '';
 }
 function safeMapText(value) {
 return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
@@ -2769,15 +3061,30 @@ return;
 }
 _doClientSearch(keyword, resultEl);
 }
-function openDeclareMapPicker() {
-mapPickerMode = 'declare';
+function openDeclareMapPicker(purpose) {
+mapPickerMode = purpose === 'eoc' ? 'eoc' : 'declare';
+if (mapPickerMode === 'eoc' && !window._eocPickerMode) window._eocFormPickerMode = true;
+if (mapPickerMode !== 'eoc') window._eocFormPickerMode = false;
+window._mapPickerContext = mapPickerMode === 'eoc' ? {
+titleHtml: '<i class="fas fa-location-dot"></i> เลือกที่ตั้ง EOC',
+searchPlaceholder: 'ค้นหาที่ตั้ง EOC...',
+coordPlaceholder: 'วาง Google Maps link หรือ lat,lon ของ EOC',
+selectedText: 'ยังไม่ได้เลือกพิกัด EOC'
+} : {
+titleHtml: '<i class="fas fa-map-marker-alt"></i> เลือกจุดเกิดเหตุ',
+searchPlaceholder: 'ค้นหาสถานที่เกิดเหตุ...',
+coordPlaceholder: 'วาง Google Maps link หรือ lat,lon จุดเกิดเหตุ',
+selectedText: 'ยังไม่ได้เลือกพิกัดจุดเกิดเหตุ'
+};
 window._zonePickerCallback = null;
 mapPickLockToCurrent = false;
+resetPickerSelection();
 openMap();
 }
 function openMap() {
 var mapModal = document.getElementById('modal_MapPicker');
-mapPickerMode = (typeof window._zonePickerCallback === 'function') ? 'zone' : 'declare';
+mapPickerMode = (typeof window._zonePickerCallback === 'function') ? 'zone' : ((window._eocFormPickerMode || window._eocPickerMode) ? 'eoc' : 'declare');
+configureMapPickerUI();
 var hint = document.getElementById('pickerDistanceHint');
 if (hint) hint.style.display = 'none';
 if (mapPickerMode !== 'zone') {
@@ -2796,24 +3103,10 @@ _loadLongdoScript_(function() { initLongdoMap(); });
 }
 setTimeout(function() {
 if (map && map.resize) map.resize();
-function drawPickerContext() {
-if (mapPickerMode === 'zone') {
-showIncidentOnPickerMap();
-showERGOnPickerMap();
-showExistingZoneMarkersOnPickerMap();
-}
-if (!tempLat && !tempLng) {
-var incident = getIncidentLngLat();
-if (incident && map) {
-map.location(incident, true);
-if (map.zoom) map.zoom(14, true);
-}
-}
-}
 if (map && map.loaded && !map.loaded()) {
-map.once('load', drawPickerContext);
+map.once('load', function() { renderPickerMapContext(true); });
 } else {
-drawPickerContext();
+renderPickerMapContext(true);
 }
 }, 100);
 }
@@ -2827,6 +3120,10 @@ mapPickerMode = 'declare';
 clearPickerSearchMarkers();
 clearPickerErgOverlays();
 clearPickerZoneOverlays();
+if (pickerIncidentMarker && map) {
+try { map.Overlays.remove(pickerIncidentMarker); } catch(e) {}
+pickerIncidentMarker = null;
+}
 var hint = document.getElementById('pickerDistanceHint');
 if (hint) hint.style.display = 'none';
 }
@@ -3111,6 +3408,7 @@ document.getElementById('dash_ban_eoc').innerText = d.evtEOC || '-';
 if (document.getElementById('dash_ban_eoc_inline')) {
 document.getElementById('dash_ban_eoc_inline').innerText = d.evtEOC || '-';
 }
+try { _updateDashboardEOCAction_(d.evtEOCCoords || ''); } catch(e) {}
 updateDashboardUserInfo();
 if (d.evtCoords) {
 if (!dashMap) {
@@ -3119,11 +3417,13 @@ if (window._icZoneMarkers && window._icZoneMarkers.length) {
 drawOCZoneMarkersOnICMap(window._icZoneMarkers, window._icSupportReqs || []);
 drawOCSupportRequestAlertsOnMap(window._icZoneMarkers, window._icSupportReqs || []);
 }
+if (typeof refreshDashboardERGZone === 'function') refreshDashboardERGZone();
 updateLiveMarkers();
 refreshICOCFeedsDirect();
 });
 } else {
 updateIncidentMarker(d.evtCoords);
+if (typeof refreshDashboardERGZone === 'function') refreshDashboardERGZone();
 setTimeout(function() {
 updateLiveMarkers();
 refreshICOCFeedsDirect();
@@ -3265,6 +3565,7 @@ Planning: 'ส่วนอำนวยการ'
 return labels[sectionCode] || sectionCode || '';
 }
 function isCoordSection(roleCode) {
+if (roleCode === 'EVAC_POINT' && parseInt(getCurrentTier(), 10) < 2) return false; // 🔒 Tier 1: จุดอพยพมีได้แค่ 1 จุด → ไม่ต้องมีผู้ประสาน มีแค่หัวหน้าจุด
 return ['JIC','Liaison','Planning','OSC','MED','EVAC_POINT'].indexOf(roleCode) !== -1;
 }
 function isSameLeadPerson(lead, name, phone) {
@@ -3507,6 +3808,31 @@ return false;
 return false;
 }
 }
+// 📱 ตรวจ in-app browser (LINE/FB/IG/Messenger) — GAS web app มักใช้งานไม่ได้ในนั้น
+// ลิงก์ที่ระบบสร้างมี openExternalBrowser=1 ให้ LINE เด้งออกเองแล้ว แถบนี้คือ fallback
+// สำหรับลิงก์เก่า/ลิงก์ที่คนพิมพ์ส่งต่อเอง และแอปที่ไม่มี param แบบ LINE
+(function detectInAppBrowser() {
+var ua = navigator.userAgent || '';
+var isLine = /\bLine\//i.test(ua);
+var isFB = /FBAN|FBAV|FB_IAB/i.test(ua);
+var isIG = /Instagram/i.test(ua);
+if (!isLine && !isFB && !isIG) return;
+var appName = isLine ? 'LINE' : (isIG ? 'Instagram' : 'Facebook');
+var howTo = isLine
+? 'แตะเมนู <b>⋮</b> มุมขวาล่าง แล้วเลือก <b>"เปิดด้วยเบราว์เซอร์อื่น"</b>'
+: 'แตะเมนู <b>⋯</b> มุมขวาบน แล้วเลือก <b>"เปิดในเบราว์เซอร์"</b>';
+function showBanner() {
+if (document.getElementById('inapp_browser_warn')) return;
+var div = document.createElement('div');
+div.id = 'inapp_browser_warn';
+div.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#fef3c7;border-bottom:2px solid #f59e0b;color:#92400e;padding:10px 38px 10px 14px;font-size:13px;font-weight:700;font-family:Prompt,sans-serif;line-height:1.5;';
+div.innerHTML = '⚠️ กำลังเปิดผ่านแอป ' + appName + ' ซึ่งอาจใช้งานระบบไม่ได้ — ' + howTo +
+'<button onclick="document.getElementById(\'inapp_browser_warn\').remove()" style="position:absolute;right:8px;top:8px;background:none;border:none;color:#92400e;font-size:16px;cursor:pointer;font-weight:900;">✕</button>';
+document.body.appendChild(div);
+}
+if (document.body) showBanner();
+else document.addEventListener('DOMContentLoaded', showBanner);
+})();
 function getDashboardViewShareLink() {
 if (window.EOC_DASHBOARD_VIEW_URL) return window.EOC_DASHBOARD_VIEW_URL;
 var url = new URL(window.location.href);
@@ -3514,6 +3840,7 @@ if (url.pathname.indexOf('/userCodeAppPanel') !== -1 || url.hostname.indexOf('go
 return '';
 }
 url.searchParams.set('view', 'dashboard');
+url.searchParams.set('openExternalBrowser', '1'); // 📱 กัน LINE in-app browser — LINE จะเด้งไปเปิดเบราว์เซอร์จริงให้
 return url.toString();
 }
 function copyTextToClipboardOrShow(link) {
@@ -3578,14 +3905,16 @@ if (!url) {
 Swal.fire({ icon: 'warning', title: 'ยังไม่มี Join Link', text: 'ระบบยังไม่สร้าง Join Link — กรุณาปิดและเปิดเหตุใหม่', confirmButtonText: 'ปิด' });
 return;
 }
+window._currentJoinUrl = url; // ให้ปุ่มโหลด/แชร์ QR ใช้ลิงก์เดียวกัน
 var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(url);
 Swal.fire({
 title: '🔗 Join Link สำหรับ จนท.',
 html:
 '<div style="font-size:0.82rem;color:#475569;margin-bottom:10px;">ส่ง link นี้ให้ จนท. ทุกคน — กดลิงก์เข้าได้เลย <b>ไม่ต้อง login</b></div>' +
 '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:10px;font-size:0.75rem;word-break:break-all;color:#334155;text-align:left;margin-bottom:10px;">' + url + '</div>' +
-'<img src="' + qrUrl + '" style="width:150px;height:150px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:10px;" alt="QR Code"/>' +
-'<div style="font-size:0.78rem;color:#64748b;">สแกน QR หรือ copy link ได้เลย</div>',
+'<img src="' + qrUrl + '" style="width:150px;height:150px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:6px;" alt="QR Code"/>' +
+'<div style="font-size:0.78rem;color:#64748b;">สแกน QR หรือ copy link ได้เลย</div>' +
+(typeof _joinQrButtonsHtml_ === 'function' ? _joinQrButtonsHtml_() : ''),
 showCancelButton: true,
 confirmButtonText: '📋 คัดลอก Link',
 cancelButtonText: 'ปิด',
@@ -3623,9 +3952,20 @@ if (serverLink) copyTextToClipboardOrShow(serverLink);
 else Swal.fire('สร้างลิงก์ไม่ได้', 'กรุณาเปิดจาก URL ของ Web App /exec แล้วลองอีกครั้ง', 'warning');
 })
 .withFailureHandler(function(err) {
-Swal.fire('สร้างลิงก์ไม่ได้', err && err.message ? err.message : String(err), 'error');
+var msg = err && err.message ? err.message : String(err);
+if (msg.indexOf('Tier 1') !== -1 || msg.indexOf('share_link') !== -1 || msg.indexOf('แชร์ลิงก์') !== -1) {
+  Swal.fire({
+    icon: 'info',
+    title: '🔒 ฟีเจอร์นี้ไม่รองรับ',
+    html: 'ฟีเจอร์ <b>แชร์ลิงก์ดูแดชบอร์ดอย่างเดียว (ระดับ 2+)</b> ไม่รองรับใน Tier 1' +
+      '<br><br>กรุณาติดต่อผู้ดูแลระบบเพื่ออัปเกรดแพ็กเกจ',
+    confirmButtonText: 'รับทราบ'
+  });
+  return;
+}
+Swal.fire('สร้างลิงก์ไม่ได้', msg, 'error');
 })
-.createDashboardViewToken();
+.createDashboardViewToken(APP_AGENCY_ID || '');
 }
 function isDashboardViewOnlyMode() {
 // Join link user ที่เข้า IC → ใช้ IC Limited Mode แทน View Only Mode
@@ -3645,11 +3985,40 @@ var msg = result && result.reason === 'already_used'
 : result && result.reason === 'expired'
 ? 'ลิงก์หมดอายุแล้ว (8 ชั่วโมง) — Admin ต้องสร้างลิงก์ใหม่'
 : 'ลิงก์ไม่ถูกต้อง';
-Swal.fire({icon:'error',title:'เข้าไม่ได้',text:msg,confirmButtonText:'ปิด'})
-.then(function(){window.location.href=window.location.pathname;});
+Swal.fire({icon:'error',title:'เข้าไม่ได้',text:msg,confirmButtonText:'ปิด'});
+return;
 }
+
+APP_ACCESS_ROLE = 'viewer';
+APP_AGENCY_ID = result.agencyId || APP_AGENCY_ID || '';
+APP_AGENCY_SHEET_ID = result.sheetId || APP_AGENCY_SHEET_ID || '';
+if (result.tier) APP_AGENCY_TIER = result.tier;
+if (result.tierConfig) APP_TIER_CONFIG = result.tierConfig;
+
+try { sessionStorage.setItem('EOC_ACCESS_ROLE', 'viewer'); } catch(e) {}
+try { if (APP_AGENCY_ID) sessionStorage.setItem('EOC_AGENCY_ID', APP_AGENCY_ID); } catch(e) {}
+
+TEMP_ROLE = 'IC';
+TEMP_ROLE_LABEL = 'Dashboard View';
+currentRole = 'IC';
+USER_NAME = 'Viewer';
+currentUserName = USER_NAME;
+window.currentUserPhone = '';
+
+hideNonDashboardScenesForDashboard();
+document.getElementById('scene_OrgChart').style.display = 'none';
+document.getElementById('scene_Dashboard').style.display = 'flex';
+if (document.body) document.body.classList.add('dashboard-active');
+
+applyDashboardReadOnlyLock();
+updateDashboardUserInfo();
+setupUserUI();
+loadEmergencyStateLiteForDashboard();
+fetchData();
 })
-.withFailureHandler(function(){})
+.withFailureHandler(function(err){
+Swal.fire('เข้าไม่ได้', err && err.message ? err.message : String(err), 'error');
+})
 .validateDashboardViewToken(token);
 }
 function isDashboardViewerAllowedTarget(target) {
@@ -3694,11 +4063,163 @@ event.stopPropagation();
 if (event.stopImmediatePropagation) event.stopImmediatePropagation();
 showDashboardViewOnlyWarning();
 }
+function clearDashboardSceneLocks() {
+if (document.body) {
+document.body.classList.remove('dashboard-active');
+document.body.classList.remove('admin-warroom-active');
+}
+['scene_RoleWork', 'scene_OC', 'scene_Health', 'scene_EvacPoint'].forEach(function(id) {
+var el = document.getElementById(id);
+if (!el) return;
+el.style.display = 'none';
+el.setAttribute('aria-hidden', 'true');
+});
+}
+function setHealthMediaFooterVisible(visible) {
+var btn = document.getElementById('health_media_btn');
+if (!btn) return;
+btn.style.display = visible ? '' : 'none';
+}
+function hideNonDashboardScenesForDashboard() {
+['scene_RoleWork', 'scene_OC', 'scene_Health', 'scene_EvacPoint'].forEach(function(id) {
+var el = document.getElementById(id);
+if (!el) return;
+el.style.setProperty('display', 'none', 'important');
+el.setAttribute('aria-hidden', 'true');
+});
+}
+function isJoinDashboardMobileProfile() {
+if (APP_ACCESS_ROLE === 'admin' && currentRole === 'IC') return false;
+return !!(window.EOC_JOIN_TOKEN || window._isICLimitedMode || isDashboardViewOnlyMode());
+}
+function applyDashboardScreenProfile() {
+var dash = document.getElementById('scene_Dashboard');
+if (!dash) return;
+var mobile = isJoinDashboardMobileProfile();
+dash.classList.toggle('dashboard-join-mobile', mobile);
+dash.classList.toggle('dashboard-admin-warroom', !mobile && APP_ACCESS_ROLE === 'admin' && currentRole === 'IC');
+if (document.body) {
+document.body.classList.toggle('dashboard-active', dash.style.display !== 'none');
+document.body.classList.toggle('admin-warroom-active', !mobile && APP_ACCESS_ROLE === 'admin' && currentRole === 'IC');
+if (!mobile && APP_ACCESS_ROLE === 'admin' && currentRole === 'IC') document.body.classList.remove('join-link-session');
+}
+var header = dash.children && dash.children[0] ? dash.children[0] : null;
+var tabs = dash.children && dash.children[1] ? dash.children[1] : null;
+var grid = dash.querySelector('.ic-grid');
+if (mobile) {
+dash.style.height = 'auto';
+dash.style.minHeight = '100dvh';
+dash.style.overflowY = 'auto';
+dash.style.background = '#dfe8ef';
+if (header) {
+header.style.boxSizing = 'border-box';
+header.style.width = '100%';
+header.style.maxWidth = '920px';
+header.style.margin = '0 auto';
+header.style.height = 'auto';
+header.style.minHeight = '0';
+header.style.padding = '8px 10px';
+header.style.gap = '7px';
+header.style.flexWrap = 'wrap';
+}
+if (tabs) {
+tabs.style.boxSizing = 'border-box';
+tabs.style.width = '100%';
+tabs.style.maxWidth = '920px';
+tabs.style.margin = '0 auto';
+tabs.style.overflowX = 'auto';
+tabs.style.flexWrap = 'nowrap';
+tabs.style.padding = '5px 10px';
+tabs.style.gap = '8px';
+}
+if (grid) {
+grid.style.boxSizing = 'border-box';
+grid.style.width = '100%';
+grid.style.maxWidth = '920px';
+grid.style.margin = '0 auto';
+grid.style.display = 'grid';
+grid.style.gridTemplateColumns = '1fr';
+grid.style.gridTemplateRows = 'auto';
+grid.style.height = 'auto';
+grid.style.minHeight = '0';
+grid.style.overflow = 'visible';
+grid.style.padding = '8px 8px 18px';
+grid.style.gap = '8px';
+Array.prototype.forEach.call(grid.children, function(panel) {
+panel.style.gridColumn = '1 / -1';
+panel.style.height = 'auto';
+panel.style.minHeight = '0';
+panel.style.borderRadius = '10px';
+});
+if (grid.children[1]) grid.children[1].style.order = '-1';
+}
+var map = document.getElementById('dash_map_canvas');
+if (map) {
+map.style.height = 'min(52vh, 380px)';
+map.style.minHeight = '220px';
+}
+} else {
+dash.classList.remove('dashboard-join-mobile');
+dash.style.height = '';
+dash.style.minHeight = '';
+dash.style.overflowY = '';
+dash.style.background = '';
+if (header) {
+header.style.boxSizing = '';
+header.style.width = '';
+header.style.maxWidth = '';
+header.style.margin = '';
+header.style.height = '';
+header.style.minHeight = '';
+header.style.padding = '';
+header.style.gap = '';
+header.style.flexWrap = '';
+}
+if (tabs) {
+tabs.style.boxSizing = '';
+tabs.style.width = '';
+tabs.style.maxWidth = '';
+tabs.style.margin = '';
+tabs.style.overflowX = '';
+tabs.style.flexWrap = '';
+tabs.style.padding = '';
+tabs.style.gap = '';
+}
+if (grid) {
+grid.style.boxSizing = '';
+grid.style.width = '';
+grid.style.maxWidth = '';
+grid.style.margin = '';
+grid.style.display = '';
+grid.style.gridTemplateColumns = '';
+grid.style.gridTemplateRows = '';
+grid.style.height = '';
+grid.style.minHeight = '';
+grid.style.overflow = '';
+grid.style.padding = '';
+grid.style.gap = '';
+Array.prototype.forEach.call(grid.children, function(panel) {
+panel.style.gridColumn = '';
+panel.style.height = '';
+panel.style.minHeight = '';
+panel.style.borderRadius = '';
+panel.style.order = '';
+});
+}
+var mapReset = document.getElementById('dash_map_canvas');
+if (mapReset) {
+mapReset.style.height = '';
+mapReset.style.minHeight = '';
+}
+}
+}
 function applyDashboardReadOnlyLock() {
 var dash = document.getElementById('scene_Dashboard');
 if (!dash) return;
 var readOnly = isDashboardViewOnlyMode();
 dash.classList.toggle('dashboard-view-only', readOnly);
+dash.classList.toggle('dashboard-join-mobile', readOnly || !!window._isICLimitedMode);
+applyDashboardScreenProfile();
 var badge = document.getElementById('dashboard_view_only_badge');
 if (badge) badge.style.display = readOnly ? 'inline-flex' : 'none';
 dash.querySelectorAll('input, select, textarea').forEach(function(el) {
@@ -3717,9 +4238,9 @@ document.addEventListener('click', enforceDashboardViewOnlyGuard, true);
 document.addEventListener('submit', enforceDashboardViewOnlyGuard, true);
 function _roleCodeToFeature_(roleCode) {
 var map = {
-'IC':'role_ic','OSC':'role_oc','OC':'role_oc','Field':'role_field',
+'IC':'role_ic','OSC':'role_oc','OC':'role_oc',
 'JIC':'role_jic','Liaison':'role_liaison','Specialist':'role_specialist',
-'Logistics':'role_logistics','Planning':'role_planning','Finance':'role_finance',
+'Logistics':'role_logistics','Planning':'role_planning',
 'MED':'role_med','EVAC_POINT':'role_evac_point'
 };
 return map[roleCode] || null;
@@ -3839,6 +4360,9 @@ document.getElementById('staffNameInput').focus();
 // ============================================================
 function applyICLimitedMode(isLimited) {
   window._isICLimitedMode = isLimited;
+  var dash = document.getElementById('scene_Dashboard');
+  if (dash) dash.classList.toggle('dashboard-ic-mobile', !!isLimited);
+  applyDashboardScreenProfile();
   if (isLimited) {
     window._icLoggedIn = true;
     window._icLoginName = USER_NAME;
@@ -3985,6 +4509,15 @@ function closeOpsMenu() {
 document.getElementById('modal_OpsMenu').style.display = 'none';
 }
 function selectOpsTeam(roleCode, roleName) {
+// 🔒 Tier 1: EVAC เข้าได้แค่คนเดียว (เพราะกำหนดจุดอพยพได้แค่ 1 จุด)
+if (roleCode === 'EVAC_POINT' && parseInt(getCurrentTier(), 10) < 2) {
+var existingLead = (ICS_LEADS || {})['EVAC_POINT'] || {};
+var myName = (document.getElementById('staffNameInput') || {}).value || currentUserName || USER_NAME || '';
+if (existingLead.name && !isSameLeadPerson(existingLead, myName.trim(), '')) {
+Swal.fire({ icon:'info', title:'EVAC เข้าได้คนเดียว', text:'Tier ปัจจุบันกำหนดจุดอพยพได้แค่ 1 จุด — มี "' + existingLead.name + '" ปฏิบัติหน้าที่อยู่แล้ว', confirmButtonText:'เข้าใจแล้ว' });
+return;
+}
+}
 closeOpsMenu();
 TEMP_ROLE = roleCode;
 currentRole = roleCode;
@@ -4015,6 +4548,10 @@ return Swal.fire('ข้อมูลไม่ครบ', 'กรุณาเล�
 USER_NAME = name;
 currentUserName = name;
 window.currentUserPhone = phone;
+// 🔒 รีเซ็ตสถานะหัวหน้า/ผู้ประสานทุกครั้งที่ login ใหม่ — กันค่า true ค้างจากบทบาทก่อนหน้าในแท็บเดิม
+// (ถ้าเป็นหัวหน้า/ผู้ประสานจริง โค้ดด้านล่างจะตั้งกลับให้เองจากการติ๊ก checkbox หรือชื่อตรงกับทะเบียน)
+IS_LEAD = false;
+IS_COORD = false;
 var _loginSwal = Swal.fire({ title:'กำลังเข้าระบบ...', timer:800, showConfirmButton:false, didOpen:function(){ Swal.showLoading(); } });
 TEMP_ROLE_LABEL = specificRole;
 function continueLoginAfterLead() {
@@ -4144,9 +4681,106 @@ Planning: { title:'ส่วนอำนวยการ (Planning)', icon:'📋'
 Logistics: { title:'ส่วนสนับสนุน (Logistics)', icon:'🚛', color:'#f1c40f' }
 }[roleCode] || { title:'หน้าการ์ดงาน', icon:'📌', color:'#2563eb' };
 }
+function normalizeRoleWorkCodeForEOC(roleCode) {
+var raw = String(roleCode || '').trim();
+var low = raw.toLowerCase();
+if (raw === 'Logistics' || low === 'logistics' || low === 'log' || raw.indexOf('สนับสนุน') !== -1) return 'Logistics';
+if (raw === 'Specialist' || low === 'specialist' || raw.indexOf('เชี่ยวชาญ') !== -1 || raw.indexOf('ที่ปรึกษา') !== -1) return 'Specialist';
+return raw;
+}
+function shouldShowRoleEOCNavigation(roleCode) {
+var code = normalizeRoleWorkCodeForEOC(roleCode || currentRole || TEMP_ROLE);
+// 🔒 ลิงก์นำทาง EOC ในการ์ดงาน — แสดงเฉพาะ Tier 3 เท่านั้น (T1 ใช้ไม่ได้, T2 ใช้ได้แต่ไม่โชว์ในการ์ดงาน)
+if (parseInt(getCurrentTier(), 10) < 3) return false;
+return isRoleWorkCardRole(code);
+}
+function getCurrentIncidentNavigationInfo() {
+var state = window._lastEmergState || {};
+var incCoords = String(state.evtCoords || '').trim();
+if (!incCoords || incCoords.indexOf(',') === -1) return null;
+var parts = incCoords.split(',');
+var lat = String(parts[0] || '').trim();
+var lng = String(parts[1] || '').trim();
+if (!lat || !lng) return null;
+var name = state.evtLoc || state.evtName || 'จุดเกิดเหตุ';
+var mapsUrl = getEOCNavigationLink(lat, lng);
+return { name: name, coords: lat + ',' + lng, url: mapsUrl };
+}
+function openRoleIncidentNavigationLink() {
+var info = getCurrentIncidentNavigationInfo();
+if (!info) { Swal.fire({ icon:'info', title:'ยังไม่มีพิกัดจุดเกิดเหตุ', text:'ต้องตั้งพิกัดเหตุการณ์ก่อนจึงจะเปิดนำทางได้', confirmButtonText:'ปิด' }); return; }
+window.open(info.url, '_blank');
+}
+function copyCurrentIncidentNavigationLink() {
+var info = getCurrentIncidentNavigationInfo();
+if (!info) { Swal.fire({ icon:'info', title:'ยังไม่มีพิกัดจุดเกิดเหตุ', confirmButtonText:'ปิด' }); return; }
+var shareText = 'จุดเกิดเหตุ: ' + info.name + '\n' + info.url;
+copyTextToClipboard(shareText, function(ok) {
+Swal.fire({ icon: ok ? 'success' : 'error', title: ok ? 'Copy แล้ว!' : 'Copy ไม่สำเร็จ', timer: 1200, showConfirmButton: false });
+});
+}
+function updateRoleEOCNavigationCard(roleCode) {
+var card = document.getElementById('role_eoc_nav_card');
+if (!card) return;
+roleCode = normalizeRoleWorkCodeForEOC(roleCode || currentRole || TEMP_ROLE);
+if (!shouldShowRoleEOCNavigation(roleCode)) { card.style.display = 'none'; return; }
+card.style.display = 'block';
+// — Tier 3 gate —
+var hasNav = typeof hasFeature === 'function' && hasFeature('role_navigation');
+var existingLock = card.querySelector('.role-nav-tier-lock');
+if (!hasNav) {
+if (!existingLock) {
+var lockDiv = document.createElement('div');
+lockDiv.className = 'role-nav-tier-lock';
+lockDiv.style.cssText = 'position:absolute;inset:0;background:rgba(15,23,42,0.72);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;z-index:10;';
+lockDiv.innerHTML = '<div style="font-size:28px;">🔒</div><div style="color:white;font-weight:900;font-size:14px;">ระบบนำทาง</div><div style="background:#dc2626;color:white;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:900;">Tier 3 เท่านั้น</div>';
+card.style.position = 'relative';
+card.appendChild(lockDiv);
+}
+return;
+}
+if (existingLock) existingLock.remove();
+// — EOC side —
+var eocInfo = getCurrentEOCNavigationInfo();
+var eocText = document.getElementById('role_eoc_nav_text');
+var eocOpenBtn = document.getElementById('role_eoc_open_btn');
+var eocCopyBtn = document.getElementById('role_eoc_copy_btn');
+if (!eocInfo) {
+if (eocText) eocText.textContent = 'ยังไม่มีพิกัด EOC';
+if (eocOpenBtn) { eocOpenBtn.disabled = true; eocOpenBtn.style.opacity = '0.45'; }
+if (eocCopyBtn) { eocCopyBtn.disabled = true; eocCopyBtn.style.opacity = '0.45'; }
+} else {
+if (eocText) eocText.textContent = (eocInfo.name || '-');
+if (eocOpenBtn) { eocOpenBtn.disabled = false; eocOpenBtn.style.opacity = ''; }
+if (eocCopyBtn) { eocCopyBtn.disabled = false; eocCopyBtn.style.opacity = ''; }
+}
+// — Incident side —
+var incInfo = getCurrentIncidentNavigationInfo();
+var incText = document.getElementById('role_inc_nav_text');
+var incOpenBtn = document.getElementById('role_inc_open_btn');
+var incCopyBtn = document.getElementById('role_inc_copy_btn');
+if (!incInfo) {
+if (incText) incText.textContent = 'ยังไม่มีพิกัดจุดเกิดเหตุ';
+if (incOpenBtn) { incOpenBtn.disabled = true; incOpenBtn.style.opacity = '0.45'; }
+if (incCopyBtn) { incCopyBtn.disabled = true; incCopyBtn.style.opacity = '0.45'; }
+} else {
+if (incText) incText.textContent = (incInfo.name || '-');
+if (incOpenBtn) { incOpenBtn.disabled = false; incOpenBtn.style.opacity = ''; }
+if (incCopyBtn) { incCopyBtn.disabled = false; incCopyBtn.style.opacity = ''; }
+}
+}
+function openRoleEOCNavigationLink() {
+var info = getCurrentEOCNavigationInfo();
+if (!info) {
+Swal.fire({ icon:'info', title:'ยังไม่มีพิกัด EOC', text:'ต้องตั้งพิกัด EOC ก่อนจึงจะเปิดนำทางได้', confirmButtonText:'ปิด' });
+return;
+}
+window.open(info.url, '_blank');
+}
 function enterRoleWorkScene(roleCode) {
 roleCode = roleCode || currentRole || TEMP_ROLE;
 var meta = getRoleWorkMeta(roleCode);
+clearDashboardSceneLocks();
 document.getElementById('modal_Pin').style.display = 'none';
 document.getElementById('scene_OrgChart').style.display = 'none';
 document.getElementById('scene_Dashboard').style.display = 'none';
@@ -4154,17 +4788,22 @@ document.getElementById('scene_OC').style.display = 'none';
 document.getElementById('scene_Health').style.display = 'none';
 document.getElementById('scene_EvacPoint').style.display = 'none';
 var scene = document.getElementById('scene_RoleWork');
-if (scene) scene.style.display = 'flex';
+if (scene) {
+scene.style.removeProperty('display');
+scene.style.display = 'flex';
+scene.removeAttribute('aria-hidden');
+}
 var icon = document.getElementById('role_work_icon');
 if (icon) { icon.textContent = meta.icon; icon.style.background = meta.color; }
 if (document.getElementById('role_work_title')) document.getElementById('role_work_title').textContent = meta.title;
 if (document.getElementById('role_work_user')) document.getElementById('role_work_user').textContent = USER_NAME || '-';
 if (document.getElementById('role_work_role_label')) document.getElementById('role_work_role_label').textContent = TEMP_ROLE_LABEL || '-';
 applyRoleWorkHeader(window._lastEmergState || {}, {});
+updateRoleEOCNavigationCard(roleCode);
 // 🎚️ แสดง note Tier 1 สำหรับ media upload
 (function() {
 var note = document.getElementById('role_media_tier1_note');
-var btn = document.querySelector('#scene_RoleWork button[onclick*="role_media_input"]');
+var btn = document.getElementById('role_media_attach_btn') || document.querySelector('#scene_RoleWork button[onclick*="role_media_input"]');
 var inp = document.getElementById('role_media_input');
 if (!note) return;
 var noMedia = typeof hasFeature === 'function' && !hasFeature('media_upload');
@@ -4175,8 +4814,8 @@ note.textContent = '🔒 Tier 1: ส่งได้เฉพาะ Note | แน
 if (btn) { btn.style.opacity = '0.45'; btn.style.pointerEvents = 'none'; }
 } else if (noMedia && isOSCRole) {
 note.style.display = 'block';
-note.textContent = '📷 Tier 1: ส่งรูปได้สูงสุด 5 รูป (ไม่รองรับวิดีโอ)';
-if (btn) { btn.title = 'ส่งรูปได้สูงสุด 5 รูป'; }
+note.textContent = '📷 Tier 1: ส่งรูปได้สูงสุด 5 รูปต่อ 1 เหตุการณ์ (ไม่รองรับวิดีโอ)';
+if (btn) { btn.title = 'ส่งรูปได้สูงสุด 5 รูปต่อ 1 เหตุการณ์'; }
 if (inp) inp.setAttribute('accept', 'image/*');
 } else {
 note.style.display = 'none';
@@ -4185,12 +4824,18 @@ if (inp) inp.setAttribute('accept', 'image/*,video/*,audio/*');
 }
 })();
 var isOpsRole = ['OSC','MED','EVAC_POINT'].indexOf(roleCode) !== -1;
-if (isOpsRole && !IS_LEAD) {
+// 🔒 read-only เฉพาะคนที่ไม่ใช่ทั้งหัวหน้าและผู้ประสาน (ทั้งสองสถานะมีสิทธิ์เพิ่มข้อมูล)
+if (isOpsRole && !IS_LEAD && !IS_COORD) {
 _applyRoleWorkReadOnly();
 } else {
 _applyRoleWorkFull();
 }
 refreshRoleWorkHeaderDirect();
+if (isRoleWorkCardRole(roleCode)) {
+var _sb = document.getElementById('role_sitrep_box');
+var _sc = document.getElementById('role_sitrep_content');
+if (_sb && _sc) { _sb.style.display = 'block'; _sc.innerHTML = '<div style="color:#aaa;font-style:italic;text-align:center;padding:6px 0;font-size:14px;">กำลังโหลด SITREP...</div>'; }
+}
 refreshRoleSitrepDirect();
 refreshRoleWorkState(roleCode);
 startRoleBroadcastPolling(roleCode);
@@ -4198,8 +4843,46 @@ startRoleBroadcastPolling(roleCode);
   var card = document.getElementById('role_exposure_card');
   if (!card) return;
   var exposureRoles = ['OSC', 'Logistics'];
-  card.style.display = exposureRoles.indexOf(roleCode) !== -1 ? 'block' : 'none';
+  var showExposure = exposureRoles.indexOf(roleCode) !== -1 && (typeof hasFeature === 'function' ? hasFeature('exposure_log') : false);
+  card.style.display = showExposure ? 'block' : 'none';
 })();
+(function() {
+  var card = document.getElementById('role_phone_directory_card');
+  if (!card) return;
+  var showDirectory = roleCode === 'Liaison' && (typeof hasFeature === 'function' ? hasFeature('phone_directory') : false);
+  card.style.display = showDirectory ? 'block' : 'none';
+  if (showDirectory) loadPhoneDirectoryForRoleCard();
+})();
+}
+function renderPhoneDirectoryListForRoleCard(list) {
+var box = document.getElementById('role_phone_directory_list');
+if (!box) return;
+list = list || [];
+if (!list.length) { box.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:8px;">ยังไม่มีข้อมูลเบอร์โทร — ติดต่อแอดมินเพื่อเพิ่มรายการ</div>'; return; }
+var byCat = {};
+list.forEach(function(e) {
+var cat = e.category || 'อื่นๆ';
+if (!byCat[cat]) byCat[cat] = [];
+byCat[cat].push(e);
+});
+var html = '';
+Object.keys(byCat).forEach(function(cat) {
+html += '<div style="font-size:12px;font-weight:900;color:#1d4ed8;margin-top:6px;">' + roleSafeText(cat) + '</div>';
+byCat[cat].forEach(function(e) {
+html += '<a href="tel:' + roleSafeText(e.phone) + '" style="display:flex;justify-content:space-between;align-items:center;background:white;border:1px solid #bfdbfe;border-radius:8px;padding:8px 12px;text-decoration:none;">' +
+'<span style="color:#0f172a;font-weight:700;font-size:13px;">' + roleSafeText(e.name) + '</span>' +
+'<span style="color:#2563eb;font-weight:900;font-size:13px;"><i class="fas fa-phone"></i> ' + roleSafeText(e.phone) + '</span>' +
+'</a>';
+});
+});
+box.innerHTML = html;
+}
+function loadPhoneDirectoryForRoleCard() {
+if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+google.script.run
+.withSuccessHandler(function(list) { renderPhoneDirectoryListForRoleCard(list || []); })
+.withFailureHandler(function() { renderPhoneDirectoryListForRoleCard([]); })
+.getPhoneDirectory(APP_AGENCY_ID || '');
 }
 function _applyRoleWorkReadOnly() {
 var banner = document.getElementById('role_readonly_banner');
@@ -4208,15 +4891,12 @@ var scene = document.getElementById('scene_RoleWork');
 banner = document.createElement('div');
 banner.id = 'role_readonly_banner';
 banner.style.cssText = 'background:#fef3c7;border:1px solid #f59e0b;border-radius:0;padding:10px 16px;font-size:13px;color:#92400e;font-weight:700;flex-shrink:0;display:flex;align-items:center;gap:10px;';
-banner.innerHTML = '<i class="fas fa-lock" style="font-size:16px;"></i><span>คุณไม่ได้เป็นหัวหน้าหน่วย — ดูข้อมูลได้อย่างเดียว ใช้ปุ่ม <b>แนบไฟล์</b> ส่งรูปเข้า IC ได้</span>';
+banner.innerHTML = '<i class="fas fa-lock" style="font-size:16px;"></i><span>คุณไม่ได้เป็นหัวหน้า/ผู้ประสานหน่วยนี้ — แก้ข้อมูลไม่ได้ แต่ส่ง <b>Note</b> และ <b>แนบไฟล์</b> เข้า IC ได้</span>';
 var infoBar = scene.querySelector('.role-mobile-info');
 if (infoBar && infoBar.nextSibling) infoBar.parentNode.insertBefore(banner, infoBar.nextSibling);
 else scene.appendChild(banner);
 }
-var noteText = document.getElementById('role_note_text');
-var noteBtn = document.querySelector('#scene_RoleWork button[onclick="submitRoleWorkNote()"]');
-if (noteText) { noteText.disabled = true; noteText.style.opacity = '0.4'; noteText.placeholder = 'ไม่สามารถใช้งานได้ (เฉพาะหัวหน้าเท่านั้น)'; }
-if (noteBtn) { noteBtn.disabled = true; noteBtn.style.opacity = '0.4'; noteBtn.style.pointerEvents = 'none'; }
+// 📝 Note เปิดให้ทุกคนในกล่องตามสเปค — read-only ล็อกเฉพาะส่วนแก้ข้อมูล
 }
 function _applyRoleWorkFull() {
 var banner = document.getElementById('role_readonly_banner');
@@ -4299,7 +4979,13 @@ var sitContent = document.getElementById('role_sitrep_content');
 if (!sitBox || !sitContent) return;
 var text = sit && (sit.text || sit.Text) ? String(sit.text || sit.Text) : '';
 if (!text.trim()) {
+var _rc = currentRole || TEMP_ROLE || '';
+if (isRoleWorkCardRole(_rc)) {
+sitBox.style.display = 'block';
+sitContent.innerHTML = '<div style="color:#aaa;font-style:italic;text-align:center;padding:6px 0;font-size:14px;">IC ยังไม่ได้ออก SITREP</div>';
+} else {
 sitBox.style.display = 'none';
+}
 return;
 }
 sitBox.style.display = 'block';
@@ -4327,7 +5013,11 @@ google.script.run
 function refreshRoleWorkHeaderDirect() {
 if (typeof google === 'undefined' || !google.script || !google.script.run) return;
 google.script.run
-.withSuccessHandler(function(es) { applyRoleWorkHeader(es || {}, {}); })
+.withSuccessHandler(function(es) {
+window._lastEmergState = es || window._lastEmergState || {};
+applyRoleWorkHeader(es || {}, {});
+updateRoleEOCNavigationCard(currentRole || TEMP_ROLE);
+})
 .withFailureHandler(function(err) { })
 .getEmergencyStateForAgency(APP_AGENCY_ID || '', APP_AGENCY_SHEET_ID || '', getActiveJoinToken());
 }
@@ -4339,6 +5029,8 @@ state = state || {};
 var es = state.emergState || {};
 var erg = state.ergState || {};
 applyRoleWorkHeader(es, erg);
+window._lastEmergState = es || window._lastEmergState || {};
+updateRoleEOCNavigationCard(roleCode);
 var sit = state.roleSitrep || null;
 if (state.roleSitrep) {
 renderRoleSitrep(state.roleSitrep);
@@ -4495,28 +5187,12 @@ var isOSC = (role === 'OSC' || role === 'OC');
 if (typeof hasFeature === 'function' && !hasFeature('media_upload')) {
 if (!isOSC) {
 // ทุก role ยกเว้น OSC → block ทั้งหมด
-Swal.fire({ icon:'info', title:'🔒 แนบไฟล์ใช้ได้ Tier 2 ขึ้นไป', text:'Tier 1 สามารถส่งได้เฉพาะ Note ข้อความ\nยกเว้นหน่วยบัญชาการ ณ จุดเกิดเหตุ (OSC) ส่งรูปได้ไม่เกิน 5 รูป', confirmButtonText:'รับทราบ' });
+Swal.fire({ icon:'info', title:'🔒 แนบไฟล์ใช้ได้ Tier 2 ขึ้นไป', text:'Tier 1 สามารถส่งได้เฉพาะ Note ข้อความ\nยกเว้นหน่วยบัญชาการ ณ จุดเกิดเหตุ (OSC) ส่งรูปได้ไม่เกิน 5 รูปต่อ 1 เหตุการณ์', confirmButtonText:'รับทราบ' });
 input.value = '';
 return;
 }
-// OSC — รูปได้ ≤5, วิดีโอไม่ได้
-var validImages = files.filter(function(f) { return f.type.startsWith('image/'); });
-var hasVideo = files.some(function(f) { return f.type.startsWith('video/') || f.type.startsWith('audio/'); });
-if (hasVideo) {
-Swal.fire({ icon:'warning', title:'ส่งได้เฉพาะรูปภาพ', text:'Tier 1 ไม่รองรับวิดีโอ/เสียง กรุณาเลือกเฉพาะรูปภาพ', confirmButtonText:'ตกลง' });
-input.value = '';
-return;
-}
-if (validImages.length > 5) {
-Swal.fire({ icon:'warning', title:'รูปเกิน 5 รูป', text:'Tier 1 ส่งรูปได้สูงสุด 5 รูปต่อครั้ง', confirmButtonText:'ตกลง' });
-input.value = '';
-return;
-}
-if (files.length !== validImages.length) {
-Swal.fire({ icon:'warning', title:'ส่งได้เฉพาะรูปภาพ', text:'Tier 1 ไม่รองรับไฟล์ประเภทอื่น', confirmButtonText:'ตกลง' });
-input.value = '';
-return;
-}
+// OSC — เฉพาะรูปภาพ โควต้าสะสม 5 รูปต่อ 1 เหตุการณ์ (เช็ครวมที่ helper)
+if (typeof _tier1CheckMediaFiles_ === 'function' && !_tier1CheckMediaFiles_(input, files, role)) return;
 }
 
 var status = document.getElementById('role_media_status');
@@ -4576,6 +5252,7 @@ if (inline) inline.innerText = text;
 function enterDashboard() {
 var selectedRole = TEMP_ROLE || currentRole;
 currentRole = selectedRole;
+clearDashboardSceneLocks();
 if (!(APP_ACCESS_ROLE === 'viewer' && selectedRole === 'IC')) {
 saveLastRoleSession();
 }
@@ -4585,7 +5262,11 @@ document.getElementById('scene_Dashboard').style.display = 'none';
 document.getElementById('scene_OC').style.display = 'none';
 document.getElementById('scene_Health').style.display = 'none';
 document.getElementById('scene_EvacPoint').style.display = 'none';
-if (document.getElementById('scene_RoleWork')) document.getElementById('scene_RoleWork').style.display = 'none';
+var roleSceneForDashboard = document.getElementById('scene_RoleWork');
+if (roleSceneForDashboard) {
+roleSceneForDashboard.style.setProperty('display', 'none', 'important');
+roleSceneForDashboard.setAttribute('aria-hidden', 'true');
+}
 if (isHealthRole(selectedRole)) {
 releaseAdminDashboardLock();
 enterHealthScene(currentUserName);
@@ -4622,7 +5303,9 @@ currentRole = '';
 TEMP_ROLE = '';
 return;
 }
+hideNonDashboardScenesForDashboard();
 document.getElementById('scene_Dashboard').style.display = 'flex';
+if (document.body) document.body.classList.add('dashboard-active');
 var shareBtn = document.getElementById('dashboard_share_link_btn');
 if (shareBtn) shareBtn.style.display = APP_ACCESS_ROLE === 'admin' ? 'inline-flex' : 'none';
 // แสดงปุ่ม Join Link เฉพาะ admin
@@ -4658,7 +5341,7 @@ if (dash && dash.style.display === 'flex') fetchData();
 }
 });
 }
-startEOCCallStatusPoll();
+if (APP_ACCESS_ROLE === 'admin') startEOCCallStatusPoll();
 }
 function finishDashboardFetch() {
 if (window._dashboardFetchFailsafe) {
@@ -4707,6 +5390,7 @@ window._icOCZoneOverlayRecords = {};
 window._icOCZoneOverlays = [];
 window._icOCZoneCircles = [];
 removeLongdoOverlay(dashMap, dashMarker); dashMarker = null;
+removeLongdoOverlay(dashMap, dashEOCMarker); dashEOCMarker = null;
 removeLongdoOverlay(dashMap, zoneLabelMarker); zoneLabelMarker = null;
 removeLongdoOverlay(dashMap, hatchedOverlay); hatchedOverlay = null;
 removeLongdoOverlay(dashMap, radarCircle); radarCircle = null;
@@ -4755,6 +5439,7 @@ document.getElementById('dash_ban_eoc').innerText = d.evtEOC;
 if (document.getElementById('dash_ban_eoc_inline')) {
 document.getElementById('dash_ban_eoc_inline').innerText = d.evtEOC || '-';
 }
+try { _updateDashboardEOCAction_(d.evtEOCCoords || ''); } catch(e) {}
 if (d.evtCoords) {
 if (!dashMap) {
 initDashMap(d.evtCoords).then(function() {
@@ -4913,8 +5598,8 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }).getLogData();
 }
 </script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-script/script3.js" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-script/script2.js" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260609_1345" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260609_1345" charset="UTF-8" defer></script>
 <style>
 @keyframes eocCallPulse {
 0%,100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.7); }
@@ -4930,6 +5615,7 @@ var _eocCallPollTimer = null;
 var _eocCallRole = '';
 var _eocCallUser = '';
 var _eocIsEOCSide = false;
+var _currentCallRoomName = null;
 function getEOCCallCallerIdentity() {
 function isVisible(id) {
 var el = document.getElementById(id);
@@ -4951,34 +5637,31 @@ return { name: window.currentUserName || USER_NAME || 'ไม่ระบุ', r
 }
 function startCallEOC() {
 if (typeof google === 'undefined' || !google.script) return;
-// 🎚️ Tier 1 — ไม่มีระบบโทร
 if (typeof hasFeature === 'function' && !hasFeature('eoc_video_call')) {
 Swal.fire({ icon:'info', title:'🔒 ระบบโทร EOC ใช้ได้ Tier 2 ขึ้นไป', text:'กรุณาติดต่อผู้ดูแลระบบเพื่ออัปเกรดแพ็กเกจ', confirmButtonText:'รับทราบ' });
 return;
 }
+var maxCalls = (APP_TIER_CONFIG && APP_TIER_CONFIG.maxConcurrentCalls > 0) ? APP_TIER_CONFIG.maxConcurrentCalls : 2;
 google.script.run
 .withSuccessHandler(function(status) {
-if (status.busy) {
-Swal.fire({
-icon: 'warning',
-title: 'สายไม่ว่าง',
-html: 'EOC กำลังรับสายของ <b>' + (status.callerName || '...') + '</b> อยู่<br>กรุณารอสักครู่',
-confirmButtonText: 'ตกลง'
-});
+if (status.count >= maxCalls) {
+Swal.fire({ icon:'warning', title:'สายเต็ม (' + status.count + '/' + maxCalls + ')', html:'EOC กำลังรับสาย ' + status.count + ' สายพร้อมกันอยู่<br>กรุณารอสักครู่', confirmButtonText:'ตกลง' });
 return;
 }
 var caller = getEOCCallCallerIdentity();
-var callerName = caller.name;
-var callerRole = caller.role;
 google.script.run
 .withSuccessHandler(function(res) {
-if (!res || !res.ok) return;
-_eocCallUser = callerName;
-_eocCallRole = callerRole;
+if (!res || !res.ok) {
+if (res && res.full) Swal.fire({ icon:'warning', title:'สายเต็ม (' + res.count + '/' + res.maxCalls + ')', text:'มีสายอื่นโทรเข้าพร้อมกัน กรุณารอสักครู่', confirmButtonText:'ตกลง' });
+return;
+}
+_eocCallUser = caller.name;
+_eocCallRole = caller.role;
 _eocIsEOCSide = false;
-openJitsiModal(res.roomName, callerName + ' (' + callerRole + ')');
+_currentCallRoomName = res.roomName;
+openJitsiModal(res.roomName, caller.name + ' (' + caller.role + ')');
 })
-.setEOCCallBusy(callerName, callerRole);
+.setEOCCallBusy(caller.name, caller.role, maxCalls);
 })
 .getEOCCallStatus();
 }
@@ -4995,25 +5678,36 @@ var incomingBar = document.getElementById('eoc_incoming_call_bar');
 var activeBar = document.getElementById('eoc_call_status_bar');
 var modal = document.getElementById('modal_EOCCall');
 var isModalOpen = modal && modal.style.display === 'flex';
-if (status.busy && !isModalOpen) {
+var calls = status.calls || (status.busy ? [{ callerName: status.callerName, callerRole: status.callerRole, roomName: status.roomName }] : []);
+var count = calls.length;
+// unanswered calls = calls that aren't the current open room
+var unanswered = isModalOpen ? calls.filter(function(c){ return c.roomName !== _currentCallRoomName; }) : calls;
+if (count > 0 && !isModalOpen) {
 if (incomingBar) {
 incomingBar.style.display = 'block';
-document.getElementById('eoc_incoming_caller').innerText =
-(status.callerName || '?') + ' [' + (status.callerRole || '-') + ']';
+var callerEl = document.getElementById('eoc_incoming_caller');
+if (callerEl) callerEl.innerText = count === 1 ? ((calls[0].callerName || '?') + ' [' + (calls[0].callerRole || '-') + ']') : ('📞 ' + count + ' สายรอรับ');
 }
 if (activeBar) activeBar.style.display = 'none';
 _playCallRingtone();
-} else if (status.busy && isModalOpen) {
-if (incomingBar) incomingBar.style.display = 'none';
+} else if (isModalOpen) {
+if (incomingBar) {
+if (unanswered.length > 0) {
+incomingBar.style.display = 'block';
+var callerEl2 = document.getElementById('eoc_incoming_caller');
+if (callerEl2) callerEl2.innerText = unanswered.length === 1 ? ((unanswered[0].callerName || '?') + ' [' + (unanswered[0].callerRole || '-') + '] (รอสาย)') : (unanswered.length + ' สายรอเพิ่ม');
+} else { incomingBar.style.display = 'none'; }
+}
 if (activeBar) {
 activeBar.style.display = 'block';
-document.getElementById('eoc_active_caller').innerText =
-(status.callerName || '?') + ' [' + (status.callerRole || '-') + ']';
+var activeEl = document.getElementById('eoc_active_caller');
+if (activeEl) { var cur = calls.find(function(c){ return c.roomName === _currentCallRoomName; }) || calls[0] || {}; activeEl.innerText = (cur.callerName || '?') + ' [' + (cur.callerRole || '-') + ']'; }
 }
 } else {
 if (incomingBar) incomingBar.style.display = 'none';
 if (activeBar) activeBar.style.display = 'none';
 if (modal) modal.style.display = 'none';
+_currentCallRoomName = null;
 _stopCallRingtone();
 }
 })
@@ -5021,28 +5715,40 @@ _stopCallRingtone();
 .getEOCCallStatus();
 _eocCallPollTimer = setTimeout(_pollEOCCallStatus, 8000);
 }
-function answerEOCCall() {
+function answerEOCCall(roomNameOpt) {
 if (APP_ACCESS_ROLE !== 'admin') return;
 if (typeof google === 'undefined' || !google.script) return;
 google.script.run
 .withSuccessHandler(function(status) {
-if (!status.busy) return;
+var calls = status.calls || (status.busy ? [{ callerName: status.callerName, callerRole: status.callerRole, roomName: status.roomName }] : []);
+if (calls.length === 0) return;
+// ถ้ามีหลายสายและไม่ได้ระบุ room → แสดงรายการให้เลือก
+if (calls.length > 1 && !roomNameOpt) {
+var html = calls.map(function(c, i) {
+return '<button onclick="Swal.close();answerEOCCall(\'' + c.roomName + '\')" style="display:block;width:100%;margin-bottom:6px;padding:10px 12px;background:#1e3a8a;color:white;border:none;border-radius:8px;font-family:Prompt,sans-serif;font-weight:900;cursor:pointer;text-align:left;font-size:14px;">' +
+'<i class="fas fa-phone" style="color:#4ade80;margin-right:6px;"></i>' + (c.callerName || '?') + ' [' + (c.callerRole || '-') + ']</button>';
+}).join('');
+Swal.fire({ title: '📞 เลือกสายที่จะรับ', html: html, showConfirmButton: false, showCloseButton: true });
+return;
+}
+var target = roomNameOpt ? calls.find(function(c){ return c.roomName === roomNameOpt; }) : calls[0];
+if (!target) return;
 document.getElementById('eoc_incoming_call_bar').style.display = 'none';
 _stopCallRingtone();
+_currentCallRoomName = target.roomName;
 var modal = document.getElementById('modal_EOCCall');
 if (modal) modal.style.display = 'flex';
-document.getElementById('eoc_call_room_label').innerText =
-status.callerName + ' [' + status.callerRole + ']';
-var displayName = window.currentUserName || USER_NAME || 'User';
-var url = 'https://meet.jit.si/' + encodeURIComponent(status.roomName) +
-'#userInfo.displayName=' + encodeURIComponent(displayName) +
-'&config.prejoinPageEnabled=false' +
-'&config.disableDeepLinking=true' +
-'&config.startWithAudioMuted=false' +
-'&config.startWithVideoMuted=false';
-window.open(url, 'EOCCall_' + status.roomName, 'width=900,height=650');
+document.getElementById('eoc_call_room_label').innerText = target.callerName + ' [' + target.callerRole + ']';
+openJitsiModal(target.roomName, target.callerName + ' [' + target.callerRole + ']');
 })
 .getEOCCallStatus();
+}
+function openVideoCallModal(roomUrl, label) {
+var modal = document.getElementById('modal_EOCCall');
+if (modal) { modal.style.display = 'flex'; }
+if (document.getElementById('eoc_call_room_label')) document.getElementById('eoc_call_room_label').innerText = label || roomUrl;
+var win = window.open(roomUrl, 'EOCCall_' + Date.now(), 'width=900,height=650');
+if (!win) Swal.fire({ icon:'warning', title:'Popup ถูกบล็อก', text:'กรุณาอนุญาต popup แล้วลองใหม่', confirmButtonText:'ตกลง' });
 }
 function openJitsiModal(roomName, label) {
 var displayName = window.currentUserName || USER_NAME || 'User';
@@ -5069,8 +5775,14 @@ function endEOCCall() {
 var modal = document.getElementById('modal_EOCCall');
 if (modal) modal.style.display = 'none';
 _stopCallRingtone();
+var room = _currentCallRoomName;
+_currentCallRoomName = null;
 if (typeof google !== 'undefined' && google.script) {
+if (room) {
+google.script.run.clearEOCCallByRoom(room);
+} else {
 google.script.run.setEOCCallFree();
+}
 }
 }
 var _ringtoneInterval = null;
