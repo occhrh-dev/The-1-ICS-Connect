@@ -5483,7 +5483,7 @@ function() { refreshRoleWorkState(currentRole || TEMP_ROLE); }
 }
 function getDashboardUserInfoText() {
 var state = window._lastEmergState || {};
-var name = (state.registeredICName || '').trim() || state.commanderName || (TEMP_ROLE === 'IC' ? USER_NAME : 'ยังไม่มี IC');
+var name = (state.registeredICName || '').trim() || 'ยังไม่มี IC';
 var position = state.commanderPosition || '';
 var suffix = position || (TEMP_ROLE === 'IC' && TEMP_ROLE_LABEL === 'ผู้บัญชาการเหตุการณ์' ? '' : TEMP_ROLE_LABEL);
 return name + (suffix ? ' (' + suffix + ')' : '');
