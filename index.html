@@ -4095,28 +4095,17 @@ confirmButtonText: '📋 คัดลอก Link',
 cancelButtonText: 'ปิด',
 confirmButtonColor: '#16a34a',
 didOpen: function() {
+// auto-select ใน input
+setTimeout(function() {
 var inp = document.getElementById('join_link_input');
-if (inp) { inp.select(); document.execCommand('copy'); }
-}
+if (inp) inp.select();
+}, 100);
+},
+preDeny: function() { return false; }
 }).then(function(r) {
-if (!r.isConfirmed) return;
-var inp = document.getElementById('join_link_input');
-if (inp) {
-inp.select();
-var ok = document.execCommand('copy');
-if (ok) {
-Swal.fire({ icon: 'success', title: 'คัดลอกแล้ว!', timer: 1200, showConfirmButton: false });
-return;
-}
-}
-if (navigator.clipboard && navigator.clipboard.writeText) {
-navigator.clipboard.writeText(url).then(function() {
-Swal.fire({ icon: 'success', title: 'คัดลอกแล้ว!', timer: 1200, showConfirmButton: false });
-}).catch(function() {
-prompt('คัดลอก link นี้:', url);
-});
-} else {
-prompt('คัดลอก link นี้:', url);
+// ทุกกรณี — เปิด prompt ให้ user copy เอง
+if (r.isConfirmed || r.isDismissed) {
+if (r.isConfirmed) prompt('คัดลอก link นี้ (Ctrl+A แล้ว Ctrl+C):', url);
 }
 });
 }
