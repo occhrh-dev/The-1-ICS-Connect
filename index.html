@@ -2620,13 +2620,13 @@ var protM = getPickerERGProtectiveMeters(erg);
 if (!incident || (!isoM && !protM)) return;
 if (protM && protM > isoM) {
 var protCircle = makePickerCircleOverlay('erg-prot', incident, protM, {
-lineWidth: 5,
+lineWidth: 2,
 lineColor: '#8e44ad',
 fillColor: '#8e44ad',
 fillOpacity: 0.18,
 lineOpacity: 1,
-haloWidth: 11,
-haloOpacity: 0.95
+haloWidth: 5,
+haloOpacity: 0.85
 });
 map.Overlays.add(protCircle);
 pickerErgOverlays.push(protCircle);
@@ -2640,13 +2640,13 @@ pickerErgOverlays.push(protLabel);
 }
 if (!isoM) return;
 var circle = makePickerCircleOverlay('erg', incident, isoM, {
-lineWidth: 5,
+lineWidth: 2,
 lineColor: '#e11d48',
 fillColor: '#e11d48',
 fillOpacity: 0.20,
 lineOpacity: 1,
-haloWidth: 11,
-haloOpacity: 0.95
+haloWidth: 5,
+haloOpacity: 0.85
 });
 map.Overlays.add(circle);
 pickerErgOverlays.push(circle);
@@ -2741,8 +2741,14 @@ if (map.zoom) map.zoom(16, true);
 } else {
 var incident = getIncidentLngLat() || getDeclareIncidentFormLngLat();
 if (incident && map) {
+var doFly = function() {
 map.location(incident, true);
-if (map.zoom) map.zoom(14, true);
+if (map.zoom) map.zoom(16, true);
+};
+var rawMap = map._maptiler || map;
+if (rawMap && rawMap.loaded && rawMap.loaded()) { doFly(); }
+else if (rawMap && rawMap.once) { rawMap.once('load', doFly); }
+else { doFly(); }
 }
 }
 }
