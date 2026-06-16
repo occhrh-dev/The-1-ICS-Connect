@@ -54,14 +54,72 @@ const ACTION_MAP = {
   getOCState:                   'getOCState',
   getICDashboardOCData:         'getOCState',
   getBroadcastEventsSince:      'getBroadcastEvents',
-  // EOC Call — ยังไม่ implement ใน Worker, return dummy
+  // Agency variants — map ไปหา function เดียวกัน
+  getEmergencyStateForAgency:      'getEmergencyState',
+  getEmergencyStateLiteForAgency:  'getEmergencyStateLite',
+  getICDashboardOCDataForAgency:   'getOCState',
+  // Role / Sitrep
+  getLatestRoleSitrep:          'getLatestRoleSitrep',
+  saveRoleSitrep:               'saveRoleSitrep',
+  getRoleWorkState:             'getRoleWorkState',
+  getRoleUpdatesForIC:          'getRoleUpdatesForIC',
+  markRoleMediaReadForIC:       'markRoleMediaReadForIC',
+  getRoleMediaReadKeys:         'getRoleMediaReadKeys',
+  // Evacuation
+  getEvacuationPoints:          'getEvacuationPoints',
+  saveEvacuationPoint:          'saveEvacuationPoint',
+  getEvacuationState:           'getEvacuationState',
+  // Casualty
+  submitFieldCasualtyReport:    'submitFieldCasualtyReport',
+  getFieldCasualtyReports:      'getFieldCasualtyReports',
+  getLatestFieldCasualtyReport: 'getLatestFieldCasualtyReport',
+  // Support Request
+  submitSupportRequest:         'submitSupportRequest',
+  getSupportRequests:           'getSupportRequests',
+  updateSupportRequestStatus:   'updateSupportRequestStatus',
+  // Resource Incoming
+  addResourceIncoming:          'addResourceIncoming',
+  saveResourceIncoming:         'addResourceIncoming',
+  getResourceIncoming:          'getResourceIncoming',
+  addResourceAdjustment:        'addResourceAdjustment',
+  updateResourceStatus:         'updateResourceStatus',
+  // Health
+  getHealthState:               'getHealthState',
+  addHealthUnit:                'addHealthUnit',
+  getHealthUnits:               'getHealthUnits',
+  // Attendance
+  getAttendanceCountsDirect:    'getAttendanceCountsDirect',
+  getAttendanceListByRole:      'getAttendanceListByRole',
+  getStaffAttendanceDashboard:  'getAttendanceData',
+  // Hospital Directory
+  getHospitalDirectory:         'getHospitalCapacity',
+  // Exposure
+  logExposure:                  'logExposure',
+  getExposureLog:               'getExposureLog',
+  // Media / Upload
+  getFieldMediaReports:         '__noop__',
+  getFieldMediaUploadToken:     '__noop__',
+  registerFieldMediaFile:       '__noop__',
+  uploadFieldMedia:             '__noop__',
+  // Sitrep generate
+  generateAndSendSitrep:        '__noop__',
+  // IC Role
+  claimICRole:                  'claimICRole',
+  releaseICRole:                 'releaseICRole',
+  getRegisteredIC:              'getRegisteredIC',
+  // EOC Call — noop
   setEOCCallBusy:               '__noop__',
   setEOCCallFree:               '__noop__',
   clearEOCCallByRoom:           '__noop__',
   getEOCCallStatus:             '__noop__',
-  // ฟังก์ชันอื่นที่ไม่จำเป็น
+  // Misc noop
   getDashboardViewUrl:          '__noop__',
   validateJoinToken:            '__noop__',
+  createDashboardViewToken:     '__noop__',
+  validateDashboardViewToken:   '__noop__',
+  setEOCCoords:                 '__noop__',
+  updateIncidentLevel:          '__noop__',
+  acceptPendingWindReport:      '__noop__',
 };
 
 // แปลง arguments array → body object ตาม function
@@ -134,6 +192,45 @@ function argsToBody(fnName, args) {
       return { since: a[0] };
     case 'clearEOCCallByRoom':
       return { room: a[0] };
+    case 'getEmergencyStateForAgency':
+    case 'getEmergencyStateLiteForAgency':
+      return { agencyId: a[0], sheetId: a[1], joinToken: a[2] };
+    case 'saveRoleSitrep':
+      return { text: a[0], createdBy: a[1] };
+    case 'markRoleMediaReadForIC':
+      return { roleType: a[0], keys: a[1], readBy: a[2] };
+    case 'saveEvacuationPoint':
+      return { pointName: a[0], lat: a[1], lng: a[2], leaderName: a[3],
+               evacueeCount: a[4], staffCount: a[5], water: a[6],
+               food: a[7], blanket: a[8], bed: a[9],
+               otherResources: a[10], note: a[11], loggedBy: a[12] };
+    case 'submitFieldCasualtyReport':
+      return { totalEstimate: a[0], stillInArea: a[1], evacuatedOrSent: a[2],
+               note: a[3], loggedBy: a[4] };
+    case 'submitSupportRequest':
+      return { requestType: a[0], detail: a[1], loggedBy: a[2] };
+    case 'updateSupportRequestStatus':
+      return { id: a[0], status: a[1], responseNote: a[2], updatedBy: a[3] };
+    case 'addResourceIncoming':
+    case 'saveResourceIncoming':
+      return { resourceType: a[0], resourceName: a[1], quantity: a[2],
+               fromAgency: a[3], eta: a[4], status: a[5],
+               note: a[6], loggedBy: a[7], personnelCount: a[8] };
+    case 'updateResourceStatus':
+      return { id: a[0], status: a[1], loggedBy: a[2] };
+    case 'addHealthUnit':
+      return { unitType: a[0], unitName: a[1], agency: a[2],
+               quantity: a[3], status: a[4], eta: a[5],
+               note: a[6], loggedBy: a[7] };
+    case 'logExposure':
+      return { name: a[0], role: a[1], chemical: a[2], unNumber: a[3],
+               durationMin: a[4], ppeLevel: a[5], note: a[6], loggedBy: a[7] };
+    case 'claimICRole':
+      return { name: a[0], position: a[1], phone: a[2] };
+    case 'releaseICRole':
+      return { name: a[0], accessRole: a[1] };
+    case 'getAttendanceListByRole':
+      return { roleCode: a[0] };
     default:
       return {};
   }
