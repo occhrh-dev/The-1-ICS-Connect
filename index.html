@@ -577,8 +577,8 @@ if (detected) {
 <div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">เหตุการณ์</div>
 <div id="dash_ban_name" style="font-size:1rem;font-weight:bold;color:white;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis;">-</div>
 </div>
-<div style="display:flex;flex-direction:column;justify-content:center;padding:0 20px;border-right:1px solid rgba(255,255,255,0.15);">
-<div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">สถานที่</div>
+<div style="display:flex;flex-direction:column;justify-content:center;padding:0 20px;border-right:1px solid rgba(255,255,255,0.15);cursor:pointer;" onclick="openIncidentLocationModal()" title="กดเพื่อดูพิกัด+นำทางจุดเกิดเหตุ">
+<div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">📍 สถานที่</div>
 <div id="dash_ban_loc" style="font-size:0.9rem;color:white;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;">-</div>
 </div>
 <div style="display:flex;flex-direction:column;justify-content:center;padding:0 20px;border-right:1px solid rgba(255,255,255,0.15);">
@@ -590,8 +590,8 @@ if (detected) {
 </button>
 </div>
 </div>
-<div style="display:none;flex-direction:column;justify-content:center;padding:0 0 0 20px;">
-<div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">ที่ตั้ง EOC</div>
+<div style="display:flex;flex-direction:column;justify-content:center;padding:0 0 0 20px;cursor:pointer;" onclick="openEOCLocationModal()" title="กดเพื่อดูพิกัด+นำทาง EOC">
+<div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">📍 ที่ตั้ง EOC</div>
 <div id="dash_ban_eoc" style="font-size:0.9rem;color:white;white-space:nowrap;">-</div>
 </div>
 <div style="display:flex;flex-direction:column;justify-content:center;padding:0 0 0 20px;flex:1;">
