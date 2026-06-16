@@ -2024,34 +2024,28 @@ if (!pending) return '';
 return [pending.directionDeg, pending.speed, pending.updatedAt, pending.updatedBy].join('|');
 }
 function checkPendingOCWind(wind) {
-if (!wind || !wind.pending) return;
-var pending = wind.pending;
-var key = getPendingWindKey(pending);
+// ถ้า OC/ICP ส่งทิศทางลมมา (source=OC) และยังไม่เคยถามรอบนี้
+if (!wind || wind.source !== 'OC' || !wind.directionDeg || wind.directionDeg === '') return;
+var key = (wind.directionDeg || '') + '|' + (wind.speedMs || wind.speed || '') + '|' + (wind.updatedAt || '');
 if (!key || window._lastPromptedOCWindKey === key) return;
+// ถ้าเป็น IC/Admin dashboard เท่านั้นที่ถาม
+if (!document.getElementById('scene_Dashboard') || document.getElementById('scene_Dashboard').style.display === 'none') return;
 window._lastPromptedOCWindKey = key;
-var msg = 'OC ส่งทิศทางลมมา: ' + windDirectionName(pending.directionDeg) + ' ' + Number(pending.speed || 0).toFixed(1) + ' m/s';
-if (pending.updatedBy) msg += '<br>โดย ' + roleSafeText(pending.updatedBy);
+var speedVal = Number(wind.speedMs || wind.speed || 0).toFixed(1);
+var msg = 'OC/ICP รายงานทิศทางลม: <b>' + windDirectionName(Number(wind.directionDeg)) + ' ' + speedVal + ' m/s</b>';
+if (wind.updatedBy) msg += '<br><span style="color:#64748b;font-size:0.85em;">โดย ' + roleSafeText(wind.updatedBy) + '</span>';
 Swal.fire({
 icon: 'info',
-title: 'มีทิศทางลมจาก OC',
-html: msg + '<br><br>ต้องการเลือกใช้ข้อมูลนี้บน Dashboard หรือไม่',
+title: '🌬️ มีทิศทางลมจาก OC/ICP',
+html: msg + '<br><br>ต้องการใช้ข้อมูลนี้แสดงบน Dashboard หรือไม่',
 showCancelButton: true,
-confirmButtonText: 'เลือกใช้',
-cancelButtonText: 'ยังไม่ใช้',
+confirmButtonText: 'ใช้เลย',
+cancelButtonText: 'ใช้อัตโนมัติต่อไป',
 confirmButtonColor: '#185fa5'
 }).then(function(r) {
 if (!r.isConfirmed) return;
-google.script.run
-.withSuccessHandler(function(newWind) {
-window._lastEmergState = window._lastEmergState || {};
-window._lastEmergState.wind = newWind;
-applyWindDisplay(newWind.directionDeg, newWind.speed, newWind.source, newWind.updatedBy);
-Swal.fire({ icon:'success', title:'ใช้ทิศทางลมจาก OC แล้ว', timer:1200, showConfirmButton:false });
-})
-.withFailureHandler(function(err) {
-Swal.fire('เลือกใช้ไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
-})
-.acceptPendingWindReport(USER_NAME || currentUserName || 'IC');
+applyWindDisplay(Number(wind.directionDeg), Number(wind.speedMs || wind.speed || 0), wind.source || 'OC', wind.updatedBy || '');
+Swal.fire({ icon:'success', title:'ใช้ทิศทางลมจาก OC/ICP แล้ว', timer:1200, showConfirmButton:false });
 });
 }
 function openWindInputModal() {
