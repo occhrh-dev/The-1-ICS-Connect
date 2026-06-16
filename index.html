@@ -3174,7 +3174,7 @@ closeMap();
 Swal.fire('ยังไม่ได้เลือก','กรุณาจิ้มจุดบนแผนที่','warning');
 }
 }
-window.onload = function() {
+window._eocOnloadFn = function() {
 try { applyTierUIRestrictions(); } catch(e) {}
 try {
   var cached = JSON.parse(localStorage.getItem('eoc_last_state') || 'null');
@@ -5601,6 +5601,15 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 </script>
 
 <script src="https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260609_1345" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260609_1345" charset="UTF-8" defer></script>
+<script defer>
+// รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
+window.addEventListener('load', function() {
+  if (typeof window._eocOnloadFn === 'function') {
+    window._eocOnloadFn();
+  }
+});
+</script>
 <style>
 @keyframes eocCallPulse {
 0%,100% { box-shadow: 0 0 0 0 rgba(22,163,74,0.7); }
