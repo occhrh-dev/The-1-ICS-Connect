@@ -3314,12 +3314,13 @@ _loadLongdoScript_(function() { initLongdoMap(); });
 }
 setTimeout(function() {
 if (map && map.resize) map.resize();
-if (map && map.loaded && !map.loaded()) {
-map.once('load', function() { renderPickerMapContext(true); });
+var rawMap = map && (map._maptiler || map);
+if (rawMap && rawMap.loaded && !rawMap.loaded()) {
+rawMap.once('idle', function() { renderPickerMapContext(true); });
 } else {
 renderPickerMapContext(true);
 }
-}, 100);
+}, 300);
 }
 function closeMap() {
 var mapModal = document.getElementById('modal_MapPicker');
