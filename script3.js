@@ -424,9 +424,8 @@ if (typeof maptilersdk === 'undefined') {
 return;
 }
 maptilersdk.config.apiKey = MAPTILER_API_KEY;
-var initialDashStyle = window._dashboardMapStyle === 'satellite'
-? (maptilersdk.MapStyle.SATELLITE || 'https://api.maptiler.com/maps/satellite/style.json?key=' + encodeURIComponent(MAPTILER_API_KEY))
-: maptilersdk.MapStyle.STREETS;
+window._dashboardMapStyle = 'satellite';
+var initialDashStyle = maptilersdk.MapStyle.SATELLITE || 'https://api.maptiler.com/maps/satellite/style.json?key=' + encodeURIComponent(MAPTILER_API_KEY);
 var mapObj = new maptilersdk.Map({
 container: 'dash_map_canvas',
 style: initialDashStyle,
@@ -439,6 +438,9 @@ dashMap = makeDashboardMapAdapter(mapObj);
 mapObj.on('load', function() {
 if (dashMap && dashMap.resize) dashMap.resize();
 updateDashboardMarkerScale();
+if (incidentCenter.lat && incidentCenter.lng) {
+mapObj.flyTo({ center: [incidentCenter.lng, incidentCenter.lat], zoom: 16, duration: 1000 });
+}
 });
 mapObj.on('zoom', updateDashboardMarkerScale);
 mapObj.on('zoomend', updateDashboardMarkerScale);
