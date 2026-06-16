@@ -3443,10 +3443,8 @@ var joinHtml = joinUrl
   '<div style="background:white;border-radius:7px;padding:8px;font-size:0.78rem;word-break:break-all;color:#334155;border:1px solid #e2e8f0;margin-bottom:8px;">' + joinUrl + '</div>' +
   '<div style="text-align:center;"><img src="' + _joinQrUrl_(joinUrl, 300) + '" style="width:160px;height:160px;border-radius:8px;border:1px solid #c7d2fe;background:white;padding:6px;" alt="QR Join Link"/></div>' +
   '<div style="text-align:center;margin-top:6px;">' +
-  '<button type="button" onclick="' +
-    'navigator.clipboard && navigator.clipboard.writeText(' + JSON.stringify(joinUrl) + ')' +
-    '.then(function(){ this.innerText=\'คัดลอกแล้ว ✓\'; }.bind(this)).catch(function(){});' +
-  '" style="background:#2563eb;color:white;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-weight:900;font-size:0.85rem;">📋 คัดลอก Join Link</button>' +
+  '<button type="button" onclick="(function(btn){var url='+JSON.stringify(joinUrl)+';if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(url).then(function(){btn.innerText=\'คัดลอกแล้ว ✓\';}).catch(function(){prompt(\'คัดลอก link:\',url);});}else{prompt(\'คัดลอก link:\',url);}}).call(this,this)' +
+  '" style="background:#2563eb;color:white;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-weight:900;font-size:0.85rem;">📋 คัดลอก Join Link</button>\' +'
   '</div>' +
   _joinQrButtonsHtml_() +
   '</div>'
