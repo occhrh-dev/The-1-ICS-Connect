@@ -1675,7 +1675,7 @@ return true;
 // 🎚️ Tier helpers (frontend)
 // ============================================================
 function getCurrentTier() {
-return String(APP_AGENCY_TIER || '2');
+return '3'; // TODO: restore tier system after 19 Jun
 }
 function applyIncidentTierFromState(state) {
 // ถ้า state มี tier จาก agency ของ join token → apply
@@ -1696,28 +1696,7 @@ if (!token) return;
 try { sessionStorage.setItem('EOC_JOIN_TOKEN_SESSION', token); } catch(e) {}
 }
 function hasFeature(featureName) {
-// Tier = สิทธิ์ของหน่วยงาน — admin ก็อยู่ภายใต้ tier ของหน่วยงานตัวเอง
-// ถ้า tier config หาย แต่มี agencyId → ดึงจาก server ทันที (async, ครั้งแรกอาจ false)
-if (!APP_TIER_CONFIG || !APP_TIER_CONFIG.features) {
-if (APP_AGENCY_ID && !window._tierConfigFetching) {
-window._tierConfigFetching = true;
-try {
-google.script.run.withSuccessHandler(function(res) {
-window._tierConfigFetching = false;
-if (res && res.tierConfig) {
-APP_AGENCY_TIER = res.tier || '2';
-APP_TIER_CONFIG = res.tierConfig;
-sessionStorage.setItem('EOC_AGENCY_TIER', APP_AGENCY_TIER);
-try { sessionStorage.setItem('EOC_TIER_CONFIG', JSON.stringify(APP_TIER_CONFIG)); } catch(e) {}
-try { applyTierUIRestrictions(); } catch(e) {}
-try { renderPreAdminTierBadge(); } catch(e) {}
-}
-}).withFailureHandler(function(){ window._tierConfigFetching = false; }).getTierConfigForAgency(APP_AGENCY_ID);
-} catch(e) { window._tierConfigFetching = false; }
-}
-return true; // ครั้งแรกถ้ายังไม่มี config — ให้ผ่านก่อน (จะ refresh และ apply ใหม่ใน 1-2 วินาที)
-}
-return !!APP_TIER_CONFIG.features[featureName];
+return true; // TODO: restore tier system after 19 Jun
 }
 function requireFeature(featureName, featureLabel) {
 if (hasFeature(featureName)) return true;
