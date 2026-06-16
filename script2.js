@@ -2321,7 +2321,7 @@ var lng = parseFloat(z.lng || z.Lng);
 var type = z.type || z.ZoneType || '-';
 var label = z.label || z.Label || type;
 var isICP = type === 'ICP';
-var displayType = isICP ? 'Command Post' : type;
+var displayType = isICP ? 'ICP' : type;
 var ocName = z.loggedBy || z.by || z.ocName || '-';
 var ocPhone = normalizeThaiPhone(z.phone || z.tel || findPhoneForStaffName(ocName) || '');
 if (!ocPhone) ocPhone = '-';
@@ -2345,7 +2345,7 @@ ocPhone
 ].join('|');
 var zoneSignature = zoneKey + '|' + (isICP ? reqKey : '');
 var existing = oldRecords[zoneKey];
-var iconSize = isICP ? 42 : 36;
+var iconSize = isICP ? 34 : 36;
 var labelTop = visual.y + (iconSize / 2) + 5;
 var html = '<div style="position:relative;width:0;height:0;overflow:visible;pointer-events:auto;">' +
 (reqs.length ? '<div style="position:absolute;left:' + (visual.x + 24) + 'px;top:' + (visual.y - 34) + 'px;transform:translateX(-50%) scale(var(--dash-marker-scale,1));transform-origin:bottom center;background:' + alertColor + ';color:white;border:3px solid white;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.55);white-space:nowrap;z-index:3;">' + alertText + '</div>' : '') +
