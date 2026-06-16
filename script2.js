@@ -1361,8 +1361,19 @@ renderOCCasualtyCompare(latest, emergState);
 function renderOCCasualtyCompare(fieldLatest, emergState) {
 var box = document.getElementById('oc_casualty_compare');
 if (!box) return;
-box.style.display = 'none';
-box.innerHTML = '';
+if (!fieldLatest) { box.style.display = 'none'; box.innerHTML = ''; return; }
+box.style.display = 'block';
+var t = fieldLatest.timestamp ? fieldLatest.timestamp.replace('T',' ').slice(0,16) : '';
+box.innerHTML =
+'<div style="background:#fff3e0;border:1px solid #f97316;border-radius:7px;padding:8px 10px;font-size:12px;">' +
+'<div style="font-weight:900;color:#c2410c;margin-bottom:4px;">📤 ยอดที่ส่งล่าสุด' + (t ? ' (' + t + ')' : '') + '</div>' +
+'<div style="display:flex;gap:12px;">' +
+'<span>รวม: <b>' + (fieldLatest.totalEstimate || 0) + '</b></span>' +
+'<span>อยู่ในพื้นที่: <b>' + (fieldLatest.stillInArea || 0) + '</b></span>' +
+'<span>ออกแล้ว: <b>' + (fieldLatest.evacuatedOrSent || 0) + '</b></span>' +
+'</div>' +
+(fieldLatest.note ? '<div style="color:#555;margin-top:3px;">หมายเหตุ: ' + fieldLatest.note + '</div>' : '') +
+'</div>';
 }
 function submitFieldCasualty() {
 if (typeof requireFeature === 'function' && !requireFeature('casualty_report', 'ยอดผู้บาดเจ็บประมาณการ (ระดับ 2+)')) return;
