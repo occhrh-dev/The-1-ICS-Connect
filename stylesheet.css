@@ -15,3 +15,23 @@
 #scene_Dashboard[style*="--dash-other-display: none"] .dash-zone-marker {
   display: none !important;
 }
+
+/* ===== Dashboard marker auto-scale with zoom ===== */
+#scene_Dashboard .maptilergl-marker > div,
+#scene_Dashboard .maplibregl-marker > div {
+  transform: scale(var(--dash-marker-scale, 1));
+  transform-origin: bottom center;
+  transition: transform 0.15s ease-out;
+}
+/* ซ่อน label เมื่อ zoom < 12 */
+#scene_Dashboard[style*="--dash-label-display:none"] .c-marker-label,
+#scene_Dashboard[style*="--dash-label-display: none"] .c-marker-label {
+  display: none !important;
+}
+/* ซ่อนหมุดรอง (live/zone) เมื่อ zoom < 10 */
+#scene_Dashboard[style*="--dash-other-display:none"] .dash-live-marker,
+#scene_Dashboard[style*="--dash-other-display:none"] .dash-zone-marker,
+#scene_Dashboard[style*="--dash-other-display: none"] .dash-live-marker,
+#scene_Dashboard[style*="--dash-other-display: none"] .dash-zone-marker {
+  display: none !important;
+}
