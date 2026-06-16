@@ -3444,8 +3444,7 @@ var joinHtml = joinUrl
   '<div style="text-align:center;"><img src="' + _joinQrUrl_(joinUrl, 300) + '" style="width:160px;height:160px;border-radius:8px;border:1px solid #c7d2fe;background:white;padding:6px;" alt="QR Join Link"/></div>' +
   '<div style="text-align:center;margin-top:6px;">' +
   '<button type="button" onclick="(function(btn){var url='+JSON.stringify(joinUrl)+';if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(url).then(function(){btn.innerText=\'คัดลอกแล้ว ✓\';}).catch(function(){prompt(\'คัดลอก link:\',url);});}else{prompt(\'คัดลอก link:\',url);}}).call(this,this)' +
-  '" style="background:#2563eb;color:white;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-weight:900;font-size:0.85rem;">📋 คัดลอก Join Link</button>\' +'
-  '</div>' +
+  '" style="background:#2563eb;color:white;border:none;border-radius:7px;padding:7px 16px;cursor:pointer;font-weight:900;font-size:0.85rem;">📋 คัดลอก Join Link</button>' +
   _joinQrButtonsHtml_() +
   '</div>'
 : '<div style="background:#fef3c7;border-radius:8px;padding:10px;color:#92400e;font-size:0.85rem;">ยังไม่สามารถสร้าง Join Link ได้ — ตรวจสอบว่า PUBLIC_APP_URL ตั้งค่าแล้ว</div>';
