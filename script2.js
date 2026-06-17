@@ -3140,10 +3140,12 @@ google.script.run.withSuccessHandler(function(list) {
 list = list || [];
 // แสดงเฉพาะรูปจาก OC/ICP, MED, EVAC เท่านั้น
 list = list.filter(function(item) {
-var src = String(item.source || item.roleCode || '').trim().toUpperCase();
-return src === 'OC/ICP' || src === 'OSC' || src === 'OC' ||
-       src === 'MED' ||
-       src === 'EVAC' || src === 'EVAC_POINT';
+var src = String(item.source || item.roleCode || '').trim();
+var srcUp = src.toUpperCase();
+var isOC = srcUp === 'OC/ICP' || srcUp === 'OSC' || srcUp === 'OC';
+var isMED = srcUp === 'MED' || src.indexOf('สาธารณสุข') !== -1 || src.indexOf('1669') !== -1 || src.indexOf('EMS') !== -1;
+var isEVAC = srcUp === 'EVAC' || srcUp === 'EVAC_POINT' || src.indexOf('อพยพ') !== -1;
+return isOC || isMED || isEVAC;
 });
 var latest = list[0] || null;
 var latestId = getFieldMediaId(latest);
