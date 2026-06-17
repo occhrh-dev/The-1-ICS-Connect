@@ -3138,26 +3138,13 @@ function refreshFieldMediaReports() {
 if (typeof google === 'undefined' || !google.script || !google.script.run) return;
 google.script.run.withSuccessHandler(function(list) {
 list = list || [];
-// แสดงรูปจากทุก role รวม OC/ICP, JIC, Liaison ฯลฯ
-// ไม่ filter ออก
-// 🔒 Tier 1: รับภาพหน้างานจาก OC/ICP, MED, จุดอพยพ — แสดงสูงสุดแหล่งละ 5 ไฟล์
-if (typeof hasFeature === 'function' && !hasFeature('media_upload')) {
-var t1SourceKey = function(item) {
-var raw = String(item.source || item.roleCode || '').trim();
-var src = raw.toUpperCase();
-if (src === 'OSC' || src === 'OC' || src.indexOf('OC/ICP') !== -1) return 'OC';
-if (raw.indexOf('สาธารณสุข') !== -1 || src === 'MED') return 'MED';
-if (raw.indexOf('จุดอพยพ') !== -1 || src === 'EVAC') return 'EVAC';
-return '';
-};
-var t1Counts = {};
+// แสดงเฉพาะรูปจาก OC/ICP, MED, EVAC เท่านั้น
 list = list.filter(function(item) {
-var key = t1SourceKey(item);
-if (!key) return false;
-t1Counts[key] = (t1Counts[key] || 0) + 1;
-return t1Counts[key] <= 5;
+var src = String(item.source || item.roleCode || '').trim().toUpperCase();
+return src === 'OC/ICP' || src === 'OSC' || src === 'OC' ||
+       src === 'MED' ||
+       src === 'EVAC' || src === 'EVAC_POINT';
 });
-}
 var latest = list[0] || null;
 var latestId = getFieldMediaId(latest);
 var seenId = window._lastSeenFieldMediaId;
