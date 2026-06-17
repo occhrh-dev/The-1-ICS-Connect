@@ -112,7 +112,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       claimICSCoord:{sectionCode:a[0],sectionLabel:a[1],coordName:a[2],agency:a[3],phone:a[4],assignedBy:a[5]},
       releaseICSCoord:{sectionCode:a[0],coordName:a[1]},
       updateMedicalTriage:{red:a[0],yellow:a[1],green:a[2],black:a[3],onsite:a[4],location:a[5],reporter:a[6]},
-      addMedicalTriageRows:(function(color,entries,reporter){var body={red:0,yellow:0,green:0,black:0,onsite:0,location:'',reporter:reporter||''};var total=0;var hospitals=[];(entries||[]).forEach(function(e){total+=parseInt(e.count)||0;if(e.hospital)hospitals.push((e.count||0)+' @ '+e.hospital);});body[(color||'').toLowerCase()]=total;body.onsite=total;body.location=hospitals.join(', ');return body;})(a[0],a[1],a[2]),
+      addMedicalTriageRows:(function(color,entries,reporter){var body={red:0,yellow:0,green:0,black:0,onsite:0,location:'',reporter:reporter||''};var total=0;var hospitals=[];(Array.isArray(entries)?entries:[]).forEach(function(e){if(!e)return;total+=parseInt(e.count)||0;if(e.hospital)hospitals.push((e.count||0)+' @ '+e.hospital);});body[(color||'').toLowerCase()]=total;body.onsite=total;body.location=hospitals.join(', ');return body;})(a[0],a[1],a[2]),
       saveZoneMarker:{zoneType:a[0],label:a[1],lat:a[2],lng:a[3],note:a[4],loggedBy:a[5],phone:a[6]},
       saveZoneConfig:{hotM:a[0],warmM:a[1],coldM:a[2],deconLat:a[3],deconLng:a[4]},
       addTask:{taskName:a[0],type:a[1],priority:a[2],assignedTo:a[3],location:a[4],note:a[5],loggedBy:a[6]},
