@@ -2200,6 +2200,7 @@ Swal.fire('Dashboard ถูกเปิดจากแท็บอื่น', '�
 releaseAdminDashboardLock();
 document.getElementById('scene_Dashboard').style.display = 'none';
 document.getElementById('scene_OrgChart').style.display = 'flex';
+if (typeof checkSystemStatus === 'function') checkSystemStatus();
 currentRole = '';
 TEMP_ROLE = '';
 }
@@ -3467,6 +3468,7 @@ document.getElementById('scene_OC').style.display = 'none';
 document.getElementById('scene_Health').style.display = 'none';
 document.getElementById('scene_EvacPoint').style.display = 'none';
 document.getElementById('scene_OrgChart').style.display = 'flex';
+if (typeof checkSystemStatus === 'function') checkSystemStatus();
 document.getElementById('ban_name').innerText = data.evtName;
 document.getElementById('ban_status').innerText = data.evtPlan;
 document.getElementById('ban_eoc').innerText = data.evtEOC;
@@ -3546,6 +3548,7 @@ document.getElementById('scene_OC').style.display = 'none';
 document.getElementById('scene_Health').style.display = 'none';
 document.getElementById('scene_EvacPoint').style.display = 'none';
 document.getElementById('scene_OrgChart').style.display = 'flex';
+if (typeof checkSystemStatus === 'function') checkSystemStatus();
 document.getElementById('ban_name').innerText = data.evtName || '-';
 document.getElementById('ban_status').innerText = data.evtPlan || '-';
 document.getElementById('ban_eoc').innerText = data.evtEOC || '-';
@@ -4001,6 +4004,7 @@ IS_LEAD = false;
 IS_COORD = false;
 document.getElementById('scene_Dashboard').style.display = 'none';
 document.getElementById('scene_OrgChart').style.display = 'flex';
+if (typeof checkSystemStatus === 'function') checkSystemStatus();
 var exitBtn = document.getElementById('dashboard_exit_view_btn');
 if (exitBtn) exitBtn.style.display = 'none';
 applyDashboardReadOnlyLock();
@@ -4697,6 +4701,7 @@ function exitICRole() {
     // กลับ OrgChart
     document.getElementById('scene_Dashboard').style.display = 'none';
     document.getElementById('scene_OrgChart').style.display = 'flex';
+    if (typeof checkSystemStatus === 'function') checkSystemStatus();
     applyICLimitedMode(false);
   });
 }
@@ -4866,6 +4871,7 @@ Swal.fire('รายงานตัวไม่สำเร็จ', err && err.m
 }
 function showGeneralRoleReportScreen(roleCode) {
 document.getElementById('scene_OrgChart').style.display = 'flex';
+if (typeof checkSystemStatus === 'function') checkSystemStatus();
 Swal.fire({
 title: TEMP_ROLE_LABEL || roleCode,
 html: '<div style="text-align:left;line-height:1.7;">' +
@@ -5166,6 +5172,7 @@ stopRoleBroadcastPolling();
 var scene = document.getElementById('scene_RoleWork');
 if (scene) scene.style.display = 'none';
 document.getElementById('scene_OrgChart').style.display = 'flex';
+if (typeof checkSystemStatus === 'function') checkSystemStatus();
 }
 function setRoleHeaderText(id, value, allowClear) {
 var el = document.getElementById(id);
@@ -5546,6 +5553,7 @@ return;
 }
 if (!acquireAdminDashboardLock()) {
 document.getElementById('scene_OrgChart').style.display = 'flex';
+if (typeof checkSystemStatus === 'function') checkSystemStatus();
 currentRole = '';
 TEMP_ROLE = '';
 return;
