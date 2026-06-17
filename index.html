@@ -3958,9 +3958,9 @@ phone: document.getElementById('ics_lead_phone').value.trim()
 }).then(function(r) {
 if (!r.isConfirmed) return;
 google.script.run
-.withSuccessHandler(function(leads) {
-renderICSLeads(leads);
+.withSuccessHandler(function() {
 Swal.fire({ icon:'success', title:'บันทึกหัวหน้าแล้ว', timer:1200, showConfirmButton:false });
+if (typeof refreshICSLeads === 'function') refreshICSLeads();
 })
 .withFailureHandler(function(err) {
 Swal.fire('บันทึกไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
@@ -4823,8 +4823,8 @@ var wantsCoord = sectionCode && isCoordSection(TEMP_ROLE) && coordCheck && !coor
 if (alreadyCoord) IS_COORD = true;
 if (wantsLead) {
 google.script.run
-.withSuccessHandler(function(leads) {
-renderICSLeads(leads || {});
+.withSuccessHandler(function() {
+if (typeof refreshICSLeads === 'function') refreshICSLeads();
 IS_LEAD = true;
 if (wantsCoord) {
 google.script.run
@@ -4844,7 +4844,7 @@ return;
 if (currentLead.name && isSameLeadPerson(currentLead, name, phone)) {
 IS_LEAD = true;
 google.script.run
-.withSuccessHandler(function(leads) { renderICSLeads(leads || {}); continueLoginAfterLead(); })
+.withSuccessHandler(function() { if (typeof refreshICSLeads === 'function') refreshICSLeads(); continueLoginAfterLead(); })
 .withFailureHandler(function(err) { Swal.fire('เอาเครื่องหมายหัวหน้าออกไม่ได้', err && err.message ? err.message : String(err), 'warning'); })
 .releaseICSLead(sectionCode, name, phone);
 return;
