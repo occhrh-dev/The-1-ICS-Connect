@@ -196,7 +196,7 @@ document.getElementById('health_evtName').textContent = evtName;
 document.getElementById('health_evtLoc').textContent = evtLoc;
 var healthCommanderEl = document.getElementById('health_evtCommander');
 if (healthCommanderEl) {
-var hcName = es.commanderName || es.commander || es.incidentCommander || es.incident_commander || es.icName || es.IC_Name || fallbackCommander || '-';
+var hcName = (es.registeredICName || '').trim() || 'ยังไม่มี IC';
 healthCommanderEl.textContent = (es.commanderPosition ? es.commanderPosition + ' ' : '') + hcName;
 }
 var triage = es.triage || {};
@@ -686,7 +686,7 @@ var fallbackEvtLoc = document.getElementById('ban_loc') ? document.getElementByI
 var fallbackCommander = document.getElementById('org_ic_name') ? document.getElementById('org_ic_name').textContent : '';
 var evtName = es.evtName || es.incidentName || es.IncidentName || fallbackEvtName || '-';
 var evtLoc = es.evtLoc || es.incidentLocation || es.IncidentLocation || fallbackEvtLoc || '-';
-var commander = es.commanderName || es.commander || es.incidentCommander || es.incident_commander || es.icName || es.IC_Name || fallbackCommander || '-';
+var commander = (es.registeredICName || '').trim() || 'ยังไม่มี IC';
 if (document.getElementById('evac_evtName')) document.getElementById('evac_evtName').textContent = evtName;
 if (document.getElementById('evac_evtLoc')) document.getElementById('evac_evtLoc').textContent = evtLoc;
 if (document.getElementById('evac_evtCommander')) document.getElementById('evac_evtCommander').textContent = (es.commanderPosition ? es.commanderPosition + ' ' : '') + commander;
@@ -969,7 +969,7 @@ var nameEl = document.getElementById('oc_evtName');
 var locEl = document.getElementById('oc_evtLoc');
 var planEl = document.getElementById('oc_evtPlan');
 var commanderEl = document.getElementById('oc_evtCommander');
-var commanderName = es.commanderName || es.commander || es.incidentCommander || es.incident_commander || es.icName || es.IC_Name || '-';
+var commanderName = (es.registeredICName || '').trim() || 'ยังไม่มี IC';
 var commanderPosition = es.commanderPosition || '';
 if (nameEl) nameEl.textContent = es.evtName || es.name || '-';
 if (locEl) locEl.textContent = es.evtLoc || es.location || '-';
