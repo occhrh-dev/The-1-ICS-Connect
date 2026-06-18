@@ -2472,12 +2472,14 @@ resultEl.innerHTML = '<div style="padding:8px 12px;color:#334155;background:#f8f
 function getIncidentLngLat() {
 var state = window._lastEmergState || ((window._lastOCState && window._lastOCState.emergState) ? window._lastOCState.emergState : {});
 var coords = state.evtCoords || '';
-if (!coords || coords.indexOf(',') === -1) return null;
+if (coords && coords.indexOf(',') !== -1) {
 var parts = coords.split(',');
 var lat = parseFloat(parts[0]);
 var lng = parseFloat(parts[1]);
-if (isNaN(lat) || isNaN(lng)) return null;
-return { lon: lng, lat: lat };
+if (!isNaN(lat) && !isNaN(lng)) return { lon: lng, lat: lat };
+}
+// ยังไม่มีเหตุ active (อยู่ในฟอร์มแจ้งเหตุ) — ใช้พิกัดที่กรอกไว้ในฟอร์มแทน
+return getDeclareIncidentFormLngLat();
 }
 function distanceMetersBetween(aLat, aLng, bLat, bLng) {
 var R = 6371000;
