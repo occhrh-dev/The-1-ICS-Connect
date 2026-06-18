@@ -35,3 +35,20 @@
 #scene_Dashboard[style*="--dash-other-display: none"] .dash-zone-marker {
   display: none !important;
 }
+
+/* ===== Tablet support (641-1024px) for Admin Dashboard header bar — wrap instead of overflow, no hiding content ===== */
+@media (max-width:1024px) and (min-width:641px){
+#scene_Dashboard > div:first-child{
+flex-wrap:wrap !important;
+padding:6px 14px !important;
+gap:8px !important;
+row-gap:6px !important;
+}
+#scene_Dashboard > div:nth-child(2){
+overflow-x:auto !important;
+flex-wrap:nowrap !important;
+padding:6px 14px !important;
+gap:10px !important;
+-webkit-overflow-scrolling:touch;
+}
+}
