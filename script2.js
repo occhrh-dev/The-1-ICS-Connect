@@ -3174,6 +3174,92 @@ setFieldMediaNotifyState(false);
 }
 }).getFieldMediaReports(30);
 }
+function normalizeFieldMediaReport(item) {
+item = item || {};
+var fileUrl = item.url || item.fileUrl || item.file_url || item.directUrl || item.previewUrl || '';
+var fileId = item.fileId || item.file_id || '';
+var fileName = item.fileName || item.file_name || '-';
+var mimeType = item.mimeType || item.mime_type || '';
+var timestamp = item.timestamp || item.created_at || item.time || '';
+return Object.assign({}, item, {
+rowIndex: item.rowIndex || item.id || '',
+time: item.time || timestamp || '',
+source: item.source || item.roleCode || '-',
+reporter: item.reporter || '-',
+fileName: fileName,
+mimeType: mimeType,
+url: fileUrl,
+fileUrl: fileUrl,
+fileId: fileId,
+directUrl: item.directUrl || fileUrl,
+thumbUrl: item.thumbUrl || fileUrl,
+previewUrl: item.previewUrl || fileUrl
+});
+}
+function applyFieldMediaReports(list) {
+list = (list || []).map(normalizeFieldMediaReport);
+list = list.filter(function(item) {
+var src = String(item.source || item.roleCode || '').trim();
+var srcUp = src.toUpperCase();
+var isOC = srcUp === 'OC/ICP' || srcUp === 'OSC' || srcUp === 'OC';
+var isMED = srcUp === 'MED' || src.indexOf('à¸ªà¸²à¸˜à¸²à¸£à¸“à¸ªà¸¸à¸‚') !== -1 || src.indexOf('1669') !== -1 || src.indexOf('EMS') !== -1;
+var isEVAC = srcUp === 'EVAC' || srcUp === 'EVAC_POINT' || src.indexOf('à¸­à¸žà¸¢à¸ž') !== -1;
+return isOC || isMED || isEVAC;
+});
+var latest = list[0] || null;
+var latestId = getFieldMediaId(latest);
+var seenId = window._lastSeenFieldMediaId;
+if (!seenId) {
+try { seenId = sessionStorage.getItem('lastSeenFieldMediaId') || ''; } catch (e) { seenId = ''; }
+}
+var hadPriorMedia = !!seenId;
+window._fieldMediaReports = list;
+renderLatestFieldMedia(window._fieldMediaReports);
+if (latestId && hadPriorMedia && latestId !== seenId) {
+setFieldMediaNotifyState(true);
+if (window._lastNotifiedFieldMediaId !== latestId) {
+window._lastNotifiedFieldMediaId = latestId;
+if (typeof Swal !== 'undefined') {
+Swal.mixin({ toast:true, position:'top-end', showConfirmButton:false, timer:2600, timerProgressBar:true })
+.fire({ icon:'info', title:TH_NEW_MEDIA_TOAST });
+}
+}
+} else {
+if (latestId && !seenId) {
+window._lastSeenFieldMediaId = latestId;
+try { sessionStorage.setItem('lastSeenFieldMediaId', latestId); } catch (e) {}
+}
+setFieldMediaNotifyState(false);
+}
+}
+function refreshFieldMediaReportsDirect() {
+return fetch('https://the-1-ics-connect.occ-hrh.workers.dev/?action=getFieldMediaReports', {
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:'{}'
+}).then(function(res) { return res.json(); }).then(function(list) {
+if (Array.isArray(list)) applyFieldMediaReports(list);
+return list;
+}).catch(function(err) {
+console.warn('[FieldMedia] direct refresh failed', err);
+});
+}
+function refreshFieldMediaReports() {
+if (typeof google === 'undefined' || !google.script || !google.script.run) {
+refreshFieldMediaReportsDirect();
+return;
+}
+google.script.run
+.withSuccessHandler(function(list) {
+if (Array.isArray(list)) applyFieldMediaReports(list);
+else refreshFieldMediaReportsDirect();
+})
+.withFailureHandler(function(err) {
+console.warn('[FieldMedia] bridge refresh failed', err);
+refreshFieldMediaReportsDirect();
+})
+.getFieldMediaReports(30);
+}
 function renderLatestFieldMedia(list) {
 var icon = document.getElementById('no_img_icon');
 var img = document.getElementById('latest_field_img');
