@@ -3776,7 +3776,7 @@ window._roleUpdatesForIC = updates;
 var counts = { jic:0, specialist:0, liaison:0, plan:0, log:0, ops:0 };
 var latestByRole = {};
 updates.forEach(function(u) {
-var isNotifiable = (u.updateType === 'media' || !!u.fileName || u.updateType === 'note' || !!u.note);
+var isNotifiable = (u.updateType === 'note' || !!u.note); // ไฟล์/รูปไม่ต้องแจ้งเตือนที่นี่ (ไปแจ้งที่ภาพหน้างานล่าสุดแยกแล้ว)
 if (!isNotifiable) return;
 var bucket = getRoleUpdateBucket(u.roleCode || u.source);
 if (!bucket) return;
@@ -3850,7 +3850,7 @@ function markRoleMediaRead(roleType) {
 var store = getRoleMediaReadStore();
 var keys = [];
 (window._roleUpdatesForIC || []).forEach(function(u) {
-var isNotifiable = u && (u.updateType === 'media' || !!u.fileName || u.updateType === 'note' || !!u.note);
+var isNotifiable = u && (u.updateType === 'note' || !!u.note); // ไฟล์/รูปไม่ต้องแจ้งเตือนที่นี่ (ไปแจ้งที่ภาพหน้างานล่าสุดแยกแล้ว)
 if (!isNotifiable) return;
 var bucket = getRoleUpdateBucket(u.roleCode || u.source);
 if (roleType !== 'all' && bucket !== roleType) return;
