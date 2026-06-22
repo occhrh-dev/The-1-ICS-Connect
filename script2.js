@@ -3776,10 +3776,14 @@ window._roleUpdatesForIC = updates;
 var counts = { jic:0, specialist:0, liaison:0, plan:0, log:0, ops:0 };
 var latestByRole = {};
 updates.forEach(function(u) {
-var isNotifiable = (u.updateType === 'note' || !!u.note); // ไฟล์/รูปไม่ต้องแจ้งเตือนที่นี่ (ไปแจ้งที่ภาพหน้างานล่าสุดแยกแล้ว)
-if (!isNotifiable) return;
 var bucket = getRoleUpdateBucket(u.roleCode || u.source);
 if (!bucket) return;
+var isMedia = (u.updateType === 'media' || !!u.fileName);
+var isNote = (u.updateType === 'note' || !!u.note);
+// ops (OC/ICP, MED, EVAC) มีแจ้งเตือนไฟล์/รูปแยกที่ "ภาพหน้างานล่าสุด" อยู่แล้ว ไม่ต้องซ้ำที่นี่
+// ส่วน role อื่น (JIC/ผู้เชี่ยวชาญ/ประสานงาน/อำนวยการ/สนับสนุน) ไม่มีช่องแจ้งเตือนไฟล์ที่อื่น ให้คงเดิม
+var isNotifiable = bucket === 'ops' ? isNote : (isMedia || isNote);
+if (!isNotifiable) return;
 if (isRoleMediaRead(u)) return;
 counts[bucket]++;
 if (!latestByRole[bucket]) latestByRole[bucket] = u;
@@ -3850,9 +3854,12 @@ function markRoleMediaRead(roleType) {
 var store = getRoleMediaReadStore();
 var keys = [];
 (window._roleUpdatesForIC || []).forEach(function(u) {
-var isNotifiable = u && (u.updateType === 'note' || !!u.note); // ไฟล์/รูปไม่ต้องแจ้งเตือนที่นี่ (ไปแจ้งที่ภาพหน้างานล่าสุดแยกแล้ว)
-if (!isNotifiable) return;
+if (!u) return;
 var bucket = getRoleUpdateBucket(u.roleCode || u.source);
+var isMedia = (u.updateType === 'media' || !!u.fileName);
+var isNote = (u.updateType === 'note' || !!u.note);
+var isNotifiable = bucket === 'ops' ? isNote : (isMedia || isNote);
+if (!isNotifiable) return;
 if (roleType !== 'all' && bucket !== roleType) return;
 var key = getRoleMediaKey(u);
 store[key] = Date.now();
