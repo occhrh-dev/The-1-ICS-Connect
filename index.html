@@ -1664,6 +1664,7 @@ var APP_AGENCY_ID = sessionStorage.getItem('EOC_AGENCY_ID') || '';
 var APP_AGENCY_NAME = sessionStorage.getItem('EOC_AGENCY_NAME') || '';
 var APP_AGENCY_SHEET_ID = sessionStorage.getItem('EOC_AGENCY_SHEET_ID') || '';
 var APP_AGENCY_TIER = sessionStorage.getItem('EOC_AGENCY_TIER') || '2';
+var APP_AGENCY_TYPE = sessionStorage.getItem('EOC_AGENCY_TYPE') || 'municipality'; // municipality | hospital | factory ฯลฯ
 var APP_TIER_CONFIG = null;
 try { APP_TIER_CONFIG = JSON.parse(sessionStorage.getItem('EOC_TIER_CONFIG') || 'null'); } catch(e) { APP_TIER_CONFIG = null; }
 
@@ -1674,12 +1675,14 @@ APP_AGENCY_ID = result.agencyId || '';
 APP_AGENCY_NAME = result.agencyName || result.label || '';
 APP_AGENCY_SHEET_ID = result.sheetId || result.agencySheetId || '';
 APP_AGENCY_TIER = result.tier || '2';
+APP_AGENCY_TYPE = result.agencyType || 'municipality';
 APP_TIER_CONFIG = result.tierConfig || null;
 sessionStorage.setItem('EOC_ACCESS_ROLE', APP_ACCESS_ROLE);
 sessionStorage.setItem('EOC_AGENCY_ID', APP_AGENCY_ID);
 sessionStorage.setItem('EOC_AGENCY_NAME', APP_AGENCY_NAME);
 sessionStorage.setItem('EOC_AGENCY_SHEET_ID', APP_AGENCY_SHEET_ID);
 sessionStorage.setItem('EOC_AGENCY_TIER', APP_AGENCY_TIER);
+sessionStorage.setItem('EOC_AGENCY_TYPE', APP_AGENCY_TYPE);
 try { sessionStorage.setItem('EOC_TIER_CONFIG', JSON.stringify(APP_TIER_CONFIG || {})); } catch(e) {}
 try { applyTierUIRestrictions(); } catch(e) {}
 if (APP_AGENCY_ID && typeof google !== 'undefined' && google.script && google.script.run) {
