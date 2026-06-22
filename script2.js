@@ -3193,7 +3193,7 @@ setFieldMediaNotifyState(false);
 }
 }
 function refreshFieldMediaReportsDirect() {
-return fetch('https://the-1-ics-connect.occ-hrh.workers.dev/?action=getFieldMediaReports', {
+return fetch(WORKER_URL + '/?action=getFieldMediaReports', {
 method:'POST',
 headers:{'Content-Type':'application/json'},
 body:'{}'
