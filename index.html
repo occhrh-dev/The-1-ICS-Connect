@@ -177,6 +177,8 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
     if (action === '__noop__') { if(successCb) successCb(null); return; }
     try {
       var body = argsToBody(fn, args);
+      // เติม agencyId จาก session ปัจจุบันให้ทุก request เสมอ (Worker ใช้กรองข้อมูลแยกหน่วยงาน)
+      body.agencyId = window.APP_AGENCY_ID || body.agencyId || '';
       var res = await fetch(WORKER_URL+'/?action='+action, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       var data = await res.json();
       if (data && data.error) { if(failureCb) failureCb({message:data.error}); }
