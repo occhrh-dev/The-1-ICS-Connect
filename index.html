@@ -93,6 +93,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
     registerFieldMediaFile:'registerFieldMediaFile',uploadFieldMedia:'uploadFieldMedia',
     getTierConfigForAgency:'__noop__',checkAgencyLogin_:'__noop__',
     checkAgencySetupAccess:'__noop__',getPhoneDirectory:'__noop__',
+    getAgencyPositions:'getAgencyPositions',setAgencyPositions:'setAgencyPositions',
     savePhoneDirectoryEntry:'__noop__',deletePhoneDirectoryEntry:'__noop__',
     saveHospitalDirectoryEntry:'__noop__',deleteHospitalDirectoryEntry:'__noop__'
   };
@@ -144,6 +145,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       getAttendanceListByRole:{roleCode:a[0]},
       searchPlaces:{query:a[0]},
       validateJoinToken:{joinToken:a[0]},
+      getAgencyPositions:{agencyId:a[0]},setAgencyPositions:{agencyId:a[0],positions:a[1]},
       uploadFieldMedia:{source:a[0],reporter:a[1],fileName:a[2],mimeType:a[3],base64Data:a[4],note:a[5],agencyId:a[6]||window.APP_AGENCY_ID||'unknown'},
       registerFieldMediaFile:{source:a[0],reporter:a[1],fileName:a[2],mimeType:a[3],fileUrl:a[4],fileId:a[5],note:a[6],agencyId:a[7]},
       getFieldMediaUploadToken:{agencyId:a[0],source:a[1],mimeType:a[2]},
@@ -336,6 +338,7 @@ if (detected) {
 <p id="preLoginStatus" style="color:#2ecc71;font-weight:bold;">เข้าสู่ระบบแล้ว <span id="preAdminTierBadge"></span></p>
 <p>หากเกิดเหตุวิกฤต กดปุ่มด้านล่าง<br>เพื่อเปิดศูนย์ปฏิบัติการ (EOC)</p>
 <button class="btn-boom" onclick="openDeclareForm()"><i class="fas fa-exclamation-triangle"></i> แจ้งเหตุฉุกเฉิน</button>
+<button onclick="openPositionListManager()" style="margin-top:10px;background:#0f766e;border:none;color:white;border-radius:8px;padding:10px 16px;cursor:pointer;width:100%;font-family:'Prompt',sans-serif;font-weight:600;"><i class="fas fa-list"></i> ตั้งค่ารายชื่อตำแหน่ง/หน่วยงาน (Login)</button>
 <button onclick="logoutPreIncident()" style="margin-top:12px;border:none;background:none;color:white;text-decoration:underline;cursor:pointer;">ออกจากระบบ</button>
 </div>
 <div id="preViewerBox" style="display:none;">
@@ -1679,6 +1682,14 @@ sessionStorage.setItem('EOC_AGENCY_SHEET_ID', APP_AGENCY_SHEET_ID);
 sessionStorage.setItem('EOC_AGENCY_TIER', APP_AGENCY_TIER);
 try { sessionStorage.setItem('EOC_TIER_CONFIG', JSON.stringify(APP_TIER_CONFIG || {})); } catch(e) {}
 try { applyTierUIRestrictions(); } catch(e) {}
+if (APP_AGENCY_ID && typeof google !== 'undefined' && google.script && google.script.run) {
+google.script.run
+.withSuccessHandler(function(res) {
+if (res && res.ok && res.positions) applyAgencyPositions(res.positions);
+})
+.withFailureHandler(function(err) {})
+.getAgencyPositions(APP_AGENCY_ID);
+}
 return true;
 }
 
@@ -1983,6 +1994,89 @@ return '<span style="background:' + color + ';color:white;padding:2px 8px;border
 // ============================================================
 // 🔧 ตั้งค่าข้อมูลหน่วยงาน (ก่อนเข้าสู่ระบบ) — กรอกรหัสครั้งเดียว ระบบ detect tier แล้วเปิดเมนูที่รองรับให้เอง
 // ============================================================
+// ============================================================
+// 📋 จัดการรายชื่อตำแหน่ง/หน่วยงานสำหรับ login แต่ละ role (แยกตาม agencyId)
+// ============================================================
+function applyAgencyPositions(custom) {
+if (!custom || typeof custom !== 'object') return;
+Object.keys(custom).forEach(function(role) {
+if (Array.isArray(custom[role])) eocPositions[role] = custom[role];
+});
+}
+var _posEditState = {};
+var _posCurrentRole = 'IC';
+function openPositionListManager() {
+if (APP_ACCESS_ROLE !== 'admin') { Swal.fire('ต้องใช้สิทธิ์ Admin', 'เฉพาะ Admin เท่านั้นที่จัดการได้', 'warning'); return; }
+Swal.fire({ title: 'กำลังโหลด...', didOpen: function(){ Swal.showLoading(); }, allowOutsideClick: false });
+google.script.run
+.withSuccessHandler(function(res) {
+var saved = (res && res.ok && res.positions) ? res.positions : null;
+_posEditState = JSON.parse(JSON.stringify(saved || eocPositions));
+_renderPositionListEditor_();
+})
+.withFailureHandler(function(err) { Swal.fire('โหลดไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
+.getAgencyPositions(APP_AGENCY_ID || '');
+}
+function _renderPositionListEditor_() {
+var roleLabels = {
+IC: 'ผู้บัญชาการเหตุการณ์ (IC)',
+JIC: 'ประชาสัมพันธ์ร่วม (JIC)',
+Liaison: 'ประสานงาน (Liaison)',
+Specialist: 'ผู้เชี่ยวชาญ (Specialist)',
+Planning: 'อำนวยการ (Planning)',
+Logistics: 'สนับสนุน (Logistics)',
+OSC: 'ระงับเหตุ (OSC)',
+MED: 'สาธารณสุข/1669 (MED)',
+EVAC_POINT: 'จุดอพยพ (EVAC)',
+Operation: 'ปฏิบัติการรวม (ใช้เมื่อ OSC/MED/EVAC ไม่มีลิสต์เฉพาะ)'
+};
+var roleOptions = Object.keys(roleLabels).map(function(r) {
+return '<option value="' + r + '">' + roleLabels[r] + '</option>';
+}).join('');
+var html = '<div style="text-align:left;">' +
+'<div style="font-size:13px;color:#64748b;margin-bottom:10px;">เลือก role แล้วพิมพ์รายชื่อตำแหน่ง/หน่วยงาน <b>1 บรรทัดต่อ 1 รายการ</b> — ระบบจะใช้เป็นตัวเลือกตอนเลือก role นี้ในหน้า login</div>' +
+'<select id="pos_role_select" onchange="_switchPositionRole_()" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;margin-bottom:8px;font-family:Prompt,sans-serif;">' + roleOptions + '</select>' +
+'<textarea id="pos_textarea" rows="8" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-family:Prompt,sans-serif;"></textarea>' +
+'<div style="font-size:12px;color:#94a3b8;margin-top:6px;">เว้นว่างไว้ = ตอน login จะให้พิมพ์ชื่อตำแหน่งเองได้อิสระ (ไม่มีตัวเลือกให้กด)</div>' +
+'</div>';
+Swal.fire({
+title: '📋 ตั้งค่ารายชื่อตำแหน่ง/หน่วยงาน',
+html: html,
+width: '600px',
+showCancelButton: true,
+confirmButtonText: '💾 บันทึก',
+cancelButtonText: 'ปิด',
+didOpen: function() {
+document.getElementById('pos_role_select').value = _posCurrentRole;
+_switchPositionRole_(true);
+},
+preConfirm: function() { _capturePositionTextarea_(); }
+}).then(function(result) {
+if (!result.isConfirmed) return;
+Swal.fire({ title: 'กำลังบันทึก...', didOpen: function(){ Swal.showLoading(); }, allowOutsideClick: false });
+google.script.run
+.withSuccessHandler(function() {
+applyAgencyPositions(_posEditState);
+Swal.fire('บันทึกแล้ว', 'รายชื่อตำแหน่งอัปเดตแล้ว มีผลทันทีตอนเลือก role', 'success');
+})
+.withFailureHandler(function(err) { Swal.fire('บันทึกไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
+.setAgencyPositions(APP_AGENCY_ID || '', _posEditState);
+});
+}
+function _switchPositionRole_(skipCapture) {
+if (!skipCapture) _capturePositionTextarea_();
+var sel = document.getElementById('pos_role_select');
+_posCurrentRole = sel.value;
+var ta = document.getElementById('pos_textarea');
+var list = _posEditState[_posCurrentRole] || [];
+ta.value = list.join('\n');
+}
+function _capturePositionTextarea_() {
+var ta = document.getElementById('pos_textarea');
+if (!ta) return;
+var lines = ta.value.split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+_posEditState[_posCurrentRole] = lines;
+}
 function openAgencySetupAccess() {
 Swal.fire({
 title: '🔧 ตั้งค่าข้อมูลหน่วยงาน',
