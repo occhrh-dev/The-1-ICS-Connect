@@ -3435,6 +3435,19 @@ try { applyTierUIRestrictions(); } catch(e) {}
 }).getTierConfigForAgency(APP_AGENCY_ID);
 } catch(e) {}
 }
+// ถ้ายังไม่มี agencyId เลย (ยังไม่เคย login ในเครื่อง/แท็บนี้ และไม่ได้มาจาก join link)
+// ให้ขึ้นหน้า login ตรงๆ — ไม่มีทางรู้ "สถานะ" ของหน่วยงานไหนได้ก่อนรู้ว่าใคร login
+if (!APP_AGENCY_ID) {
+document.getElementById('scene_Loading').style.display = 'none';
+document.getElementById('scene_Declare').style.display = 'flex';
+document.getElementById('scene_OrgChart').style.display = 'none';
+document.getElementById('scene_Dashboard').style.display = 'none';
+document.getElementById('scene_OC').style.display = 'none';
+document.getElementById('scene_Health').style.display = 'none';
+document.getElementById('scene_EvacPoint').style.display = 'none';
+renderPreIncidentAccess();
+return;
+}
 checkSystemStatus();
 };
 function checkSystemStatus(retryCount) {
