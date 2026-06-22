@@ -3134,46 +3134,6 @@ try { sessionStorage.setItem('lastSeenFieldMediaId', id); } catch (e) {}
 }
 setFieldMediaNotifyState(false);
 }
-function refreshFieldMediaReports() {
-if (typeof google === 'undefined' || !google.script || !google.script.run) return;
-google.script.run.withSuccessHandler(function(list) {
-list = list || [];
-// แสดงเฉพาะรูปจาก OC/ICP, MED, EVAC เท่านั้น
-list = list.filter(function(item) {
-var src = String(item.source || item.roleCode || '').trim();
-var srcUp = src.toUpperCase();
-var isOC = srcUp === 'OC/ICP' || srcUp === 'OSC' || srcUp === 'OC';
-var isMED = srcUp === 'MED' || src.indexOf('สาธารณสุข') !== -1 || src.indexOf('1669') !== -1 || src.indexOf('EMS') !== -1;
-var isEVAC = srcUp === 'EVAC' || srcUp === 'EVAC_POINT' || src.indexOf('อพยพ') !== -1;
-return isOC || isMED || isEVAC;
-});
-var latest = list[0] || null;
-var latestId = getFieldMediaId(latest);
-var seenId = window._lastSeenFieldMediaId;
-if (!seenId) {
-try { seenId = sessionStorage.getItem('lastSeenFieldMediaId') || ''; } catch (e) { seenId = ''; }
-}
-var hadPriorMedia = !!seenId;
-window._fieldMediaReports = list;
-renderLatestFieldMedia(window._fieldMediaReports);
-if (latestId && hadPriorMedia && latestId !== seenId) {
-setFieldMediaNotifyState(true);
-if (window._lastNotifiedFieldMediaId !== latestId) {
-window._lastNotifiedFieldMediaId = latestId;
-if (typeof Swal !== 'undefined') {
-Swal.mixin({ toast:true, position:'top-end', showConfirmButton:false, timer:2600, timerProgressBar:true })
-.fire({ icon:'info', title:TH_NEW_MEDIA_TOAST });
-}
-}
-} else {
-if (latestId && !seenId) {
-window._lastSeenFieldMediaId = latestId;
-try { sessionStorage.setItem('lastSeenFieldMediaId', latestId); } catch (e) {}
-}
-setFieldMediaNotifyState(false);
-}
-}).getFieldMediaReports(30);
-}
 function normalizeFieldMediaReport(item) {
 item = item || {};
 var fileUrl = item.url || item.fileUrl || item.file_url || item.directUrl || item.previewUrl || '';
@@ -3202,8 +3162,8 @@ list = list.filter(function(item) {
 var src = String(item.source || item.roleCode || '').trim();
 var srcUp = src.toUpperCase();
 var isOC = srcUp === 'OC/ICP' || srcUp === 'OSC' || srcUp === 'OC';
-var isMED = srcUp === 'MED' || src.indexOf('à¸ªà¸²à¸˜à¸²à¸£à¸“à¸ªà¸¸à¸‚') !== -1 || src.indexOf('1669') !== -1 || src.indexOf('EMS') !== -1;
-var isEVAC = srcUp === 'EVAC' || srcUp === 'EVAC_POINT' || src.indexOf('à¸­à¸žà¸¢à¸ž') !== -1;
+var isMED = srcUp === 'MED' || src.indexOf('สาธารณสุข') !== -1 || src.indexOf('1669') !== -1 || src.indexOf('EMS') !== -1;
+var isEVAC = srcUp === 'EVAC' || srcUp === 'EVAC_POINT' || src.indexOf('อพยพ') !== -1;
 return isOC || isMED || isEVAC;
 });
 var latest = list[0] || null;
