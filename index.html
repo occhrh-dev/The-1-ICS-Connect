@@ -175,6 +175,13 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       };
     }
     if (action === '__noop__') { if(successCb) successCb(null); return; }
+    // ยามกลาง: ถ้ายังไม่ login (ไม่มี agencyId) และ action นี้ไม่ใช่ตัวที่ใช้ตอน login/join เอง
+    // ให้ข้ามไปเลย ไม่ยิง request ไปหา Worker (กัน error "Missing agencyId" จากจุดที่เผลอเรียกก่อน login)
+    var BOOTSTRAP_ACTIONS = { checkAppLogin:1, validateJoinToken:1 };
+    if (!window.APP_AGENCY_ID && !BOOTSTRAP_ACTIONS[action]) {
+      if (failureCb) failureCb({message:'ยังไม่ login'});
+      return;
+    }
     try {
       var body = argsToBody(fn, args);
       // เติม agencyId จาก session ปัจจุบันให้ทุก request เสมอ (Worker ใช้กรองข้อมูลแยกหน่วยงาน)
