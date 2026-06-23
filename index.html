@@ -200,7 +200,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
     // ให้ข้ามไปเลย ไม่ยิง request ไปหา Worker (กัน error "Missing agencyId" จากจุดที่เผลอเรียกก่อน login)
     try {
       var body = argsToBody(fn, args);
-      var BOOTSTRAP_ACTIONS = { checkAppLogin:1, validateJoinToken:1 };
+      var BOOTSTRAP_ACTIONS = { checkAppLogin:1, validateJoinToken:1, createDashboardViewToken:1, validateDashboardViewToken:1 };
       var bridgeAgencyId = getBridgeAgencyId();
       var effectiveAgencyId = bridgeAgencyId || body.agencyId || '';
       if (!effectiveAgencyId && !BOOTSTRAP_ACTIONS[action]) {
