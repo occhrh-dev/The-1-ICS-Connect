@@ -3855,17 +3855,11 @@ var html = [
 '<div class="declare-label">ชื่อเหตุการณ์</div>',
 '<input id="swal-evt" class="declare-input" placeholder="เช่น สารเคมีรั่วไหล / ไฟไหม้โรงงาน">',
 '<div class="declare-label">สถานที่เกิดเหตุ</div>',
-(APP_LOCATION_MODE === 'both' ?
-  '<div style="display:flex;gap:14px;margin-bottom:8px;flex-wrap:wrap;">' +
-  '<label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#334155;cursor:pointer;"><input type="radio" name="swal-loc-mode" value="area" checked onchange="toggleDeclareLocMode()"> ใช้แผนที่ (ปักหมุด)</label>' +
-  '<label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:#334155;cursor:pointer;"><input type="radio" name="swal-loc-mode" value="building" onchange="toggleDeclareLocMode()"> ไม่ใช้แผนที่ (ระบุชื่อ/ชั้น/อาคาร)</label>' +
-  '</div>' : ''),
 '<div style="display:flex;gap:8px;">',
-'<input id="swal-loc" class="declare-input" placeholder="' + (APP_LOCATION_MODE === 'building' ? 'เช่น ตึก A ชั้น 3 / ห้องผ่าตัด' : 'พิมพ์ชื่อสถานที่...') + '" style="flex:1;">',
-(APP_LOCATION_MODE === 'building' ? '' :
-  '<button type="button" id="swal-loc-map-btn" onclick="openDeclareMapPicker()" style="background:#ea4335;color:white;border:none;border-radius:8px;padding:0 14px;cursor:pointer;font-weight:900;"><i class="fas fa-map-marker-alt"></i> Maps</button>'),
+'<input id="swal-loc" class="declare-input" placeholder="พิมพ์ชื่อสถานที่..." style="flex:1;">',
+'<button type="button" onclick="openDeclareMapPicker()" style="background:#ea4335;color:white;border:none;border-radius:8px;padding:0 14px;cursor:pointer;font-weight:900;"><i class="fas fa-map-marker-alt"></i> Maps</button>',
 '</div>',
-'<div id="show-coords" class="declare-note"' + (APP_LOCATION_MODE === 'building' ? ' style="display:none;"' : '') + '>ยังไม่ระบุพิกัด</div>',
+'<div id="show-coords" class="declare-note">ยังไม่ระบุพิกัด</div>',
 '<input type="hidden" id="hidden-lat"><input type="hidden" id="hidden-lng">',
 '<div>',
 '<div class="declare-label">ที่ตั้ง EOC</div>' +
@@ -3915,19 +3909,13 @@ var windModeEl = document.querySelector('input[name="swal-wind-mode"]:checked');
 var windMode = windModeEl ? windModeEl.value : 'manual';
 var windDir = document.getElementById('swal-wind-dir').value;
 var windSpeed = document.getElementById('swal-wind-speed').value;
-var locModeEl = document.querySelector('input[name="swal-loc-mode"]:checked');
-var effectiveLocMode = APP_LOCATION_MODE === 'both' ? (locModeEl ? locModeEl.value : 'area') : APP_LOCATION_MODE;
 if (!evt) return Swal.showValidationMessage('กรุณาใส่ชื่อเหตุการณ์');
-if (effectiveLocMode === 'building') {
-if (!loc) return Swal.showValidationMessage('กรุณาระบุชื่อสถานที่ (เช่น ตึก/ชั้น/ห้อง)');
-} else {
 if (!lat || !lng) return Swal.showValidationMessage('กรุณากด Maps เพื่อเลือกพิกัดจุดเกิดเหตุก่อน');
-}
 if (windMode === 'manual' && windDir && windSpeed === '') return Swal.showValidationMessage('ถ้าเลือกทิศทางลม กรุณาใส่ความเร็วลมด้วย');
 return [
 evt,
 loc,
-(lat && lng) ? (lat + ',' + lng) : '',
+lat + ',' + lng,
 document.getElementById('emerPlanType').value,
 document.getElementById('emerLevel').value,
 eoc,
@@ -4051,21 +4039,6 @@ return '<div style="display:flex;gap:8px;justify-content:center;margin-top:8px;"
 '<button type="button" onclick="downloadJoinQr()" style="background:#0f172a;color:white;border:none;border-radius:7px;padding:7px 14px;cursor:pointer;font-weight:900;font-size:0.8rem;"><i class="fas fa-download"></i> โหลด QR</button>' +
 '<button type="button" onclick="shareJoinQr()" style="background:#16a34a;color:white;border:none;border-radius:7px;padding:7px 14px;cursor:pointer;font-weight:900;font-size:0.8rem;"><i class="fas fa-share-nodes"></i> แชร์ QR</button>' +
 '</div>';
-}
-function toggleDeclareLocMode() {
-var modeEl = document.querySelector('input[name="swal-loc-mode"]:checked');
-var useMap = !modeEl || modeEl.value === 'area';
-var btn = document.getElementById('swal-loc-map-btn');
-var coordsNote = document.getElementById('show-coords');
-var input = document.getElementById('swal-loc');
-if (btn) btn.style.display = useMap ? '' : 'none';
-if (coordsNote) coordsNote.style.display = useMap ? '' : 'none';
-if (input) input.placeholder = useMap ? 'พิมพ์ชื่อสถานที่...' : 'เช่น ตึก A ชั้น 3 / ห้องผ่าตัด';
-if (!useMap) {
-document.getElementById('hidden-lat').value = '';
-document.getElementById('hidden-lng').value = '';
-if (coordsNote) coordsNote.textContent = 'ยังไม่ระบุพิกัด';
-}
 }
 function toggleDeclareWindMode() {
 var modeEl = document.querySelector('input[name="swal-wind-mode"]:checked');
