@@ -1183,6 +1183,7 @@ if (!byHosp[hosp]) byHosp[hosp] = { qty:0, rows:[] };
 byHosp[hosp].qty += parseInt(r.qty, 10) || 1;
 byHosp[hosp].rows.push(r);
 });
+if (typeof groupMedicalTriageRowsByHospital === 'function') byHosp = groupMedicalTriageRowsByHospital(rows);
 var html = Object.keys(byHosp).map(function(hosp) {
 return '<div style="text-align:left;border-bottom:1px solid #eee;padding:8px 0;">' +
 '<b>' + roleSafeText(hosp) + '</b><span style="float:right;font-weight:900;">' + byHosp[hosp].qty + ' ราย</span>' +

@@ -117,7 +117,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       claimICSCoord:{sectionCode:a[0],sectionLabel:a[1],coordName:a[2],agency:a[3],phone:a[4],assignedBy:a[5]},
       releaseICSCoord:{sectionCode:a[0],coordName:a[1]},
       updateMedicalTriage:{red:a[0],yellow:a[1],green:a[2],black:a[3],onsite:a[4],location:a[5],reporter:a[6]},
-      addMedicalTriageRows:(function(color,entries,reporter){var body={red:0,yellow:0,green:0,black:0,onsite:0,location:'',reporter:reporter||''};var total=0;var hospitals=[];(Array.isArray(entries)?entries:[]).forEach(function(e){if(!e)return;total+=parseInt(e.count)||0;if(e.hospital)hospitals.push((e.count||0)+' @ '+e.hospital);});body[String(color||'').toLowerCase()]=total;body.onsite=total;body.location=hospitals.join(', ');return body;})(a[0],a[1],a[2]),
+      addMedicalTriageRows:(function(color,entries,reporter){var body={red:0,yellow:0,green:0,black:0,onsite:0,location:'',reporter:reporter||''};var total=0;var hospitals=[];(Array.isArray(entries)?entries:[]).forEach(function(e){if(!e)return;total+=parseInt(e.count)||0;if(e.hospital)hospitals.push((e.count||0)+' @ '+e.hospital);});body[String(color||'').toLowerCase()]=total;body.onsite=total;body.location=hospitals.join('; ');return body;})(a[0],a[1],a[2]),
       saveZoneMarker:{zoneType:a[0],label:a[1],lat:a[2],lng:a[3],note:a[4],loggedBy:a[5],phone:a[6],locationKind:a[8],floorLabel:a[9]},
       saveZoneConfig:{hotM:a[0],warmM:a[1],coldM:a[2],deconLat:a[3],deconLng:a[4]},
       addTask:{taskName:a[0],type:a[1],priority:a[2],assignedTo:a[3],location:a[4],note:a[5],loggedBy:a[6]},
@@ -5404,6 +5404,36 @@ return String(value || '').replace(/[&<>"']/g, function(ch) {
 return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[ch];
 });
 }
+function expandMedicalTriageDetailRows(rows) {
+var expanded = [];
+(Array.isArray(rows) ? rows : []).forEach(function(row) {
+var baseQty = parseInt(row && row.qty, 10) || 0;
+var raw = String((row && (row.hospital || row.location)) || '').trim();
+raw = raw.replace(/^(RED|YELLOW|GREEN|BLACK)\s*:\s*/i, '').trim();
+var normalized = raw.replace(/\s*[;,]\s*(?=\d+\s*@)/g, '||');
+var parts = normalized ? normalized.split('||').map(function(part) { return part.trim(); }).filter(Boolean) : [];
+if (!parts.length) parts = [raw || 'ไม่ระบุ รพ.'];
+parts.forEach(function(part, idx) {
+var m = part.match(/^(\d+)\s*@\s*(.+)$/);
+var copy = {};
+Object.keys(row || {}).forEach(function(k) { copy[k] = row[k]; });
+copy.qty = m ? (parseInt(m[1], 10) || baseQty || 1) : ((idx === 0 && baseQty) ? baseQty : 1);
+copy.hospital = m ? m[2].trim() : (part || 'ไม่ระบุ รพ.');
+expanded.push(copy);
+});
+});
+return expanded;
+}
+function groupMedicalTriageRowsByHospital(rows) {
+var groups = {};
+expandMedicalTriageDetailRows(rows).forEach(function(r) {
+var hosp = String(r.hospital || 'ไม่ระบุ รพ.').trim() || 'ไม่ระบุ รพ.';
+if (!groups[hosp]) groups[hosp] = { qty:0, rows:[] };
+groups[hosp].qty += parseInt(r.qty, 10) || 1;
+groups[hosp].rows.push(r);
+});
+return groups;
+}
 function compactRoleSitrepText(text, maxLen) {
 text = String(text || '').replace(/[-]{5,}/g, ' ').replace(/\s+/g, ' ').trim();
 if (!text) return '-';
@@ -6115,8 +6145,8 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }
 </script>
 
-<script src="https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260617_0800" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260617_0800" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260623_1700" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260623_1700" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {
