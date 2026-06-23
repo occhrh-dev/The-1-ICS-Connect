@@ -1705,9 +1705,7 @@ var APP_AGENCY_ID = sessionStorage.getItem('EOC_AGENCY_ID') || '';
 var APP_AGENCY_NAME = sessionStorage.getItem('EOC_AGENCY_NAME') || '';
 var APP_AGENCY_SHEET_ID = sessionStorage.getItem('EOC_AGENCY_SHEET_ID') || '';
 var APP_AGENCY_TIER = sessionStorage.getItem('EOC_AGENCY_TIER') || '2';
-var APP_AGENCY_TYPE = sessionStorage.getItem('EOC_AGENCY_TYPE') || 'municipality'; // municipality | hospital | factory ฯลฯ
 var APP_SUPPORT_MODE = sessionStorage.getItem('EOC_SUPPORT_MODE') || 'external'; // external (สนับสนุนนอกหน่วยงาน) | internal (สนับสนุนในตัวเอง)
-var APP_LOCATION_MODE = sessionStorage.getItem('EOC_LOCATION_MODE') || 'area'; // building (ไม่ใช้แผนที่) | area (ใช้แผนที่) | both
 var APP_TIER_CONFIG = null;
 try { APP_TIER_CONFIG = JSON.parse(sessionStorage.getItem('EOC_TIER_CONFIG') || 'null'); } catch(e) { APP_TIER_CONFIG = null; }
 
@@ -1718,18 +1716,14 @@ APP_AGENCY_ID = result.agencyId || '';
 APP_AGENCY_NAME = result.agencyName || result.label || '';
 APP_AGENCY_SHEET_ID = result.sheetId || result.agencySheetId || '';
 APP_AGENCY_TIER = result.tier || '2';
-APP_AGENCY_TYPE = result.agencyType || 'municipality';
 APP_SUPPORT_MODE = result.supportMode || 'external';
-APP_LOCATION_MODE = result.locationMode || 'area';
 APP_TIER_CONFIG = result.tierConfig || null;
 sessionStorage.setItem('EOC_ACCESS_ROLE', APP_ACCESS_ROLE);
 sessionStorage.setItem('EOC_AGENCY_ID', APP_AGENCY_ID);
 sessionStorage.setItem('EOC_AGENCY_NAME', APP_AGENCY_NAME);
 sessionStorage.setItem('EOC_AGENCY_SHEET_ID', APP_AGENCY_SHEET_ID);
 sessionStorage.setItem('EOC_AGENCY_TIER', APP_AGENCY_TIER);
-sessionStorage.setItem('EOC_AGENCY_TYPE', APP_AGENCY_TYPE);
 sessionStorage.setItem('EOC_SUPPORT_MODE', APP_SUPPORT_MODE);
-sessionStorage.setItem('EOC_LOCATION_MODE', APP_LOCATION_MODE);
 try { sessionStorage.setItem('EOC_TIER_CONFIG', JSON.stringify(APP_TIER_CONFIG || {})); } catch(e) {}
 try { applyTierUIRestrictions(); } catch(e) {}
 if (APP_AGENCY_ID && typeof google !== 'undefined' && google.script && google.script.run) {
