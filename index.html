@@ -40,6 +40,16 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
 (function() {
   var WORKER_URL = 'https://the-1-ics-connect.occ-hrh.workers.dev';
   window.WORKER_URL = WORKER_URL; // เปิดเผยให้ script2.js/script3.js เรียกใช้ได้ (เดิมเป็นค่าส่วนตัวใน IIFE นี้เท่านั้น)
+  function getBridgeAgencyId() {
+    try {
+      if (typeof APP_AGENCY_ID !== 'undefined' && APP_AGENCY_ID) return APP_AGENCY_ID;
+      if (window.APP_AGENCY_ID) return window.APP_AGENCY_ID;
+      return sessionStorage.getItem('EOC_AGENCY_ID') || '';
+    } catch(e) {
+      return '';
+    }
+  }
+  window.getBridgeAgencyId = getBridgeAgencyId;
   var ACTION_MAP = {
     checkAppLogin:'checkAppLogin',getEmergencyState:'getEmergencyState',
     getEmergencyStateLite:'getEmergencyStateLite',getEmergencyStateForAgency:'getEmergencyState',
@@ -131,7 +141,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       addRoleNote:{roleCode:a[0],roleLabel:a[1],reporter:a[2],phone:a[3],note:a[4]},
       getRoleNotes:{limit:a[0]||50},
       submitSitReport:{situationTag:a[0],detail:a[1],attachmentURL:a[2],loggedBy:a[3]},
-      getBroadcastEventsSince:{since:a[0],agencyId:a[2]||window.APP_AGENCY_ID||''},
+      getBroadcastEventsSince:{since:a[0],agencyId:a[2]||getBridgeAgencyId()||''},
       clearEOCCallByRoom:{room:a[0]},
       saveRoleSitrep:{text:a[0],createdBy:a[1]},
       markRoleMediaReadForIC:{roleType:a[0],keys:a[1],readBy:a[2]},
@@ -188,15 +198,17 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
     if (action === '__noop__') { if(successCb) successCb(null); return; }
     // ยามกลาง: ถ้ายังไม่ login (ไม่มี agencyId) และ action นี้ไม่ใช่ตัวที่ใช้ตอน login/join เอง
     // ให้ข้ามไปเลย ไม่ยิง request ไปหา Worker (กัน error "Missing agencyId" จากจุดที่เผลอเรียกก่อน login)
-    var BOOTSTRAP_ACTIONS = { checkAppLogin:1, validateJoinToken:1 };
-    if (!window.APP_AGENCY_ID && !BOOTSTRAP_ACTIONS[action]) {
-      if (failureCb) failureCb({message:'ยังไม่ login'});
-      return;
-    }
     try {
       var body = argsToBody(fn, args);
+      var BOOTSTRAP_ACTIONS = { checkAppLogin:1, validateJoinToken:1 };
+      var bridgeAgencyId = getBridgeAgencyId();
+      var effectiveAgencyId = bridgeAgencyId || body.agencyId || '';
+      if (!effectiveAgencyId && !BOOTSTRAP_ACTIONS[action]) {
+        if (failureCb) failureCb({message:'ยังไม่ login'});
+        return;
+      }
       // เติม agencyId จาก session ปัจจุบันให้ทุก request เสมอ (Worker ใช้กรองข้อมูลแยกหน่วยงาน)
-      body.agencyId = window.APP_AGENCY_ID || body.agencyId || '';
+      body.agencyId = effectiveAgencyId;
       var res = await fetch(WORKER_URL+'/?action='+action, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       var data = await res.json();
       if (data && data.error) { if(failureCb) failureCb({message:data.error}); }
@@ -5404,6 +5416,16 @@ return String(value || '').replace(/[&<>"']/g, function(ch) {
 return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[ch];
 });
 }
+function getBridgeAgencyId() {
+try {
+if (typeof APP_AGENCY_ID !== 'undefined' && APP_AGENCY_ID) return APP_AGENCY_ID;
+if (window.APP_AGENCY_ID) return window.APP_AGENCY_ID;
+return sessionStorage.getItem('EOC_AGENCY_ID') || '';
+} catch(e) {
+return '';
+}
+}
+window.getBridgeAgencyId = getBridgeAgencyId;
 function expandMedicalTriageDetailRows(rows) {
 var expanded = [];
 (Array.isArray(rows) ? rows : []).forEach(function(row) {
@@ -5587,6 +5609,11 @@ function pollRoleBroadcastEvents(roleCode) {
 if (!isRoleWorkSceneOpen() || typeof google === 'undefined' || !google.script || !google.script.run) return;
 if (roleBroadcastPolling) return;
 if (roleBroadcastPausedUntil && Date.now() < roleBroadcastPausedUntil) return;
+var broadcastAgencyId = (typeof getBridgeAgencyId === 'function') ? getBridgeAgencyId() : (APP_AGENCY_ID || '');
+if (!broadcastAgencyId) {
+roleBroadcastPausedUntil = Date.now() + 60000;
+return;
+}
 roleBroadcastPolling = true;
 google.script.run
 .withSuccessHandler(function(res) {
@@ -5609,11 +5636,9 @@ showRoleBroadcastEvent(evt);
 .withFailureHandler(function(err) {
 roleBroadcastPolling = false;
 roleBroadcastFailCount += 1;
-if (roleBroadcastFailCount >= 3) {
-roleBroadcastPausedUntil = Date.now() + 60000;
-}
+roleBroadcastPausedUntil = Date.now() + 300000;
 })
-.getBroadcastEventsSince(roleBroadcastLastRow, roleCode || '', APP_AGENCY_ID || '');
+.getBroadcastEventsSince(roleBroadcastLastRow, roleCode || '', broadcastAgencyId);
 }
 function isStaleRoleBroadcastEvent(evt) {
 if (!evt || !roleBroadcastStartedAt) return false;

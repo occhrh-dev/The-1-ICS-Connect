@@ -189,7 +189,7 @@ function argsToBody(fnName, args) {
     case 'submitSitReport':
       return { situationTag: a[0], detail: a[1], attachmentURL: a[2], loggedBy: a[3] };
     case 'getBroadcastEventsSince':
-      return { since: a[0], agencyId: a[2] || globalThis.APP_AGENCY_ID || '' };
+      return { since: a[0], agencyId: a[2] || getBridgeAgencyId() || '' };
     case 'clearEOCCallByRoom':
       return { room: a[0] };
     case 'getEmergencyStateForAgency':
@@ -233,6 +233,15 @@ function argsToBody(fnName, args) {
       return { roleCode: a[0] };
     default:
       return {};
+  }
+}
+function getBridgeAgencyId() {
+  try {
+    if (typeof APP_AGENCY_ID !== 'undefined' && APP_AGENCY_ID) return APP_AGENCY_ID;
+    if (globalThis.APP_AGENCY_ID) return globalThis.APP_AGENCY_ID;
+    return sessionStorage.getItem('EOC_AGENCY_ID') || '';
+  } catch(e) {
+    return '';
   }
 }
 
