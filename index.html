@@ -3635,7 +3635,7 @@ document.getElementById('org_ic_position').innerText = (data.registeredICPositio
 if ((data.registeredICName || '').trim()) {
 window._icLoggedIn = true;
 window._icLoginName = data.registeredICName;
-lockICBox(USER_NAME !== data.registeredICName);
+lockICBox(shouldLockICBoxForCurrentUser(data.registeredICName));
 } else {
 window._icLoggedIn = false;
 window._icLoginName = '';
@@ -3722,7 +3722,7 @@ if (document.getElementById('org_ic_position')) document.getElementById('org_ic_
 if ((data.registeredICName || '').trim()) {
 window._icLoggedIn = true;
 window._icLoginName = data.registeredICName;
-lockICBox(USER_NAME !== data.registeredICName);
+lockICBox(shouldLockICBoxForCurrentUser(data.registeredICName));
 } else {
 window._icLoggedIn = false;
 window._icLoginName = '';
@@ -3877,6 +3877,18 @@ sessionStorage.setItem('EOC_AGENCY_SHEET_ID', APP_AGENCY_SHEET_ID);
 function getLastUserIdentity() {
 var data = getLastRoleSession();
 return data && data.name ? data : { name: USER_NAME || currentUserName || '', phone: window.currentUserPhone || '' };
+}
+function canCurrentUserOpenLockedIC(registeredName) {
+registeredName = String(registeredName || '').trim();
+if (!registeredName) return true;
+if (APP_ACCESS_ROLE === 'admin') return true;
+var data = getLastRoleSession();
+var sessionName = String((data && data.name) || USER_NAME || currentUserName || '').trim();
+var sessionRole = String((data && data.role) || currentRole || TEMP_ROLE || '').trim();
+return !!(sessionName && sessionName === registeredName && sessionRole === 'IC');
+}
+function shouldLockICBoxForCurrentUser(registeredName) {
+return !!String(registeredName || '').trim() && !canCurrentUserOpenLockedIC(registeredName);
 }
 function renderICSLeads(leads) {
 ICS_LEADS = leads || {};
@@ -4813,6 +4825,15 @@ function lockICBox(locked) {
     box.style.cursor = 'not-allowed';
     box.onclick = function() {
       var name = window._icLoginName || 'IC';
+      if (canCurrentUserOpenLockedIC(name)) {
+        TEMP_ROLE = 'IC';
+        TEMP_ROLE_LABEL = 'ผู้บัญชาการเหตุการณ์';
+        currentRole = 'IC';
+        USER_NAME = USER_NAME || currentUserName || name || 'IC';
+        currentUserName = USER_NAME;
+        enterDashboard();
+        return;
+      }
       Swal.fire({
         icon: 'info',
         title: 'กล่องนี้ถูกล็อค',
@@ -4823,7 +4844,18 @@ function lockICBox(locked) {
   } else {
     box.style.opacity = '';
     box.style.cursor = 'pointer';
-    box.onclick = function() { selectRole('IC', 'ผู้บัญชาการเหตุการณ์'); };
+    box.onclick = function() {
+      if (window._icLoginName && canCurrentUserOpenLockedIC(window._icLoginName)) {
+        TEMP_ROLE = 'IC';
+        TEMP_ROLE_LABEL = 'ผู้บัญชาการเหตุการณ์';
+        currentRole = 'IC';
+        USER_NAME = USER_NAME || currentUserName || window._icLoginName || 'IC';
+        currentUserName = USER_NAME;
+        enterDashboard();
+        return;
+      }
+      selectRole('IC', 'ผู้บัญชาการเหตุการณ์');
+    };
   }
 }
 
