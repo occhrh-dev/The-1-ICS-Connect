@@ -3736,6 +3736,10 @@ try { refreshVisibleRoleSitrepDirect(); } catch(e) {}
 return;
 }
 if (data.status === 'Normal') {
+if (shouldOpenDashboardViewOnly()) {
+openDashboardViewOnly();
+return;
+}
 if (isJoinLinkSessionActive()) {
 handleJoinIncidentAlreadyClosed();
 return;
@@ -5904,7 +5908,7 @@ releaseAdminDashboardLock();
 showGeneralRoleReportScreen(selectedRole);
 return;
 }
-if (!acquireAdminDashboardLock()) {
+if (!(APP_ACCESS_ROLE === 'viewer' && selectedRole === 'IC') && !acquireAdminDashboardLock()) {
 document.getElementById('scene_OrgChart').style.display = 'flex';
 if (typeof renderICSLeads === 'function' && window.ICS_LEADS) renderICSLeads(window.ICS_LEADS);
 if (typeof refreshICSLeads === 'function') refreshICSLeads();
@@ -5985,6 +5989,11 @@ applyDashboardReadOnlyLock();
 return;
 }
 if (d.status === 'Normal') {
+if (isDashboardViewOnlyMode() || window._pendingVToken) {
+applyDashboardReadOnlyLock();
+finishDashboardFetch();
+return;
+}
 if (document.getElementById('scene_Dashboard').style.display === 'flex' || document.getElementById('scene_OrgChart').style.display === 'flex') {
 if(otherMarkers) {
 clearLongdoOverlayList(dashMap, otherMarkers);
