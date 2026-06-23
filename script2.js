@@ -862,6 +862,7 @@ window._icSupportReqs = list;
 if (document.getElementById('oc_req_history')) {
 renderOCReqHistory(list);
 }
+renderDashboardOCSupportPanel(list);
 if (context === 'ic' || document.getElementById('scene_Dashboard')) {
 var zones = (window._icZoneMarkers && window._icZoneMarkers.length) ? window._icZoneMarkers : (window._pendingICZoneMarkers || []);
 if (!zones.length && window._lastOCState && window._lastOCState.zoneMarkers) {
@@ -1943,6 +1944,41 @@ var cp = findCommandPostZone(zones);
 if (!cp) return 'ยังไม่กำหนดจุดปฏิบัติการ';
 return cp.label || cp.Label || 'Command Post / จุดปฏิบัติการ';
 }
+function renderDashboardOCSupportPanel(list) {
+var panel = document.getElementById('dashboard_oc_support_panel');
+var feed = document.getElementById('dashboard_oc_support_feed');
+var countEl = document.getElementById('dashboard_oc_support_count');
+if (!panel || !feed) return;
+list = normalizeOCSupportRequests(list);
+var active = getActiveOCSupportRequests(list);
+if (!active.length) {
+panel.style.display = 'none';
+feed.innerHTML = '';
+if (countEl) countEl.textContent = '0';
+return;
+}
+panel.style.display = 'block';
+if (countEl) countEl.textContent = String(active.length);
+feed.innerHTML = active.slice(0, 4).map(function(r) {
+var status = String(r.status || 'pending').toLowerCase();
+var rowIndex = parseInt(r.id, 10) || parseInt((r.id || r.rowIndex), 10) || 0;
+var label = status === 'acknowledged' ? 'รอการสนับสนุน' : status === 'supported' ? 'ได้รับการสนับสนุนแล้ว' : 'รอ IC รับทราบ';
+var color = status === 'acknowledged' ? '#d97706' : status === 'supported' ? '#16a34a' : '#dc2626';
+var btn = '';
+if (rowIndex && status === 'pending') {
+btn = '<button onclick="updateOCSupportFromIC(' + rowIndex + ',&quot;acknowledged&quot;)" style="margin-top:6px;background:#dc2626;color:white;border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:900;cursor:pointer;">รับทราบ</button>';
+} else if (rowIndex && status === 'acknowledged') {
+btn = '<button onclick="updateOCSupportFromIC(' + rowIndex + ',&quot;supported&quot;)" style="margin-top:6px;background:#16a34a;color:white;border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:900;cursor:pointer;">ได้รับการสนับสนุนแล้ว</button>';
+}
+return '<div style="background:white;border:1px solid #fed7aa;border-left:4px solid ' + color + ';border-radius:8px;padding:8px 9px;">' +
+'<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><b style="color:#7f1d1d;">' + roleSafeText(r.type || '-') + '</b><span style="background:' + color + '20;color:' + color + ';border-radius:999px;padding:1px 7px;font-size:10px;font-weight:900;white-space:nowrap;">' + label + '</span></div>' +
+'<div style="margin-top:4px;color:#334155;">' + roleSafeText(r.detail || '-') + '</div>' +
+'<div style="margin-top:4px;color:#64748b;font-size:11px;"><i class="fas fa-map-marker-alt"></i> ' + roleSafeText(getOCSupportLocationLabel()) + '</div>' +
+(r.time ? '<div style="margin-top:3px;color:#94a3b8;font-size:10px;">' + roleSafeText(r.time) + '</div>' : '') +
+btn +
+'</div>';
+}).join('');
+}
 function buildOCSupportAlertDetail(reqs) {
 return (reqs || []).map(function(r) {
 var status = String(r.status || 'pending').trim().toLowerCase();
@@ -2295,6 +2331,7 @@ if (state.supportReqs.length || !window._icSupportReqs) {
 window._icSupportReqs = state.supportReqs;
 }
 drawOCSupportRequestAlertsOnMap(state.zoneMarkers, state.supportReqs);
+renderDashboardOCSupportPanel(state.supportReqs);
 renderOCSitReportsInSitrepTab(state.sitReports);
 if (state.resources && state.resources.length) {
 renderICIncomingResources(state.resources);
