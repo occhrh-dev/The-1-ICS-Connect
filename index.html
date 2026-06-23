@@ -5501,10 +5501,14 @@ refreshRoleSitrepDirect();
 var roleBroadcastTimer = null;
 var roleBroadcastLastRow = 0;
 var roleBroadcastPriming = true;
+var roleBroadcastStartedAt = 0;
+var roleBroadcastPolling = false;
 function startRoleBroadcastPolling(roleCode) {
 stopRoleBroadcastPolling();
 roleBroadcastLastRow = 0;
 roleBroadcastPriming = true;
+roleBroadcastStartedAt = Date.now();
+roleBroadcastPolling = false;
 pollRoleBroadcastEvents(roleCode || currentRole || TEMP_ROLE);
 roleBroadcastTimer = setInterval(function() {
 if (document.hidden) return;
@@ -5547,21 +5551,35 @@ window._roleSitrepLoading = false;
 }
 function pollRoleBroadcastEvents(roleCode) {
 if (!isRoleWorkSceneOpen() || typeof google === 'undefined' || !google.script || !google.script.run) return;
+if (roleBroadcastPolling) return;
+roleBroadcastPolling = true;
 google.script.run
 .withSuccessHandler(function(res) {
+roleBroadcastPolling = false;
 refreshVisibleRoleSitrepDirect();
 res = res || { lastRow: roleBroadcastLastRow, events: [] };
 var events = res.events || [];
-roleBroadcastLastRow = Number(res.lastRow || roleBroadcastLastRow || 0);
+roleBroadcastLastRow = res.lastRow || roleBroadcastLastRow || 0;
 if (roleBroadcastPriming) {
 roleBroadcastPriming = false;
 return;
 }
-events.forEach(showRoleBroadcastEvent);
+events.forEach(function(evt) {
+if (isStaleRoleBroadcastEvent(evt)) return;
+showRoleBroadcastEvent(evt);
+});
 })
 .withFailureHandler(function(err) {
+roleBroadcastPolling = false;
 })
 .getBroadcastEventsSince(roleBroadcastLastRow, roleCode || '');
+}
+function isStaleRoleBroadcastEvent(evt) {
+if (!evt || !roleBroadcastStartedAt) return false;
+var eventMs = Number(evt.timeMs || 0);
+if (!eventMs && evt.timestamp) eventMs = Date.parse(evt.timestamp);
+if (!eventMs || isNaN(eventMs)) return false;
+return eventMs < (roleBroadcastStartedAt - 3000);
 }
 function showRoleBroadcastEvent(evt) {
 if (!evt) return;

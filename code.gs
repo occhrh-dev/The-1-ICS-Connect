@@ -1039,6 +1039,7 @@ function getBroadcastEventsSince(lastRow, targetRole) {
     return {
       row: startRow + index,
       time: _formatDateSafe_(row[0], "dd/MM HH:mm"),
+      timeMs: (row[0] && row[0].getTime) ? row[0].getTime() : 0,
       type: row[1] || 'info',
       title: row[2] || '',
       message: row[3] || '',
