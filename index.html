@@ -4383,16 +4383,19 @@ event.preventDefault();
 event.stopPropagation();
 }
 if (!requireFeature('share_link', 'Share link ดูแดชบอร์ด')) return;
-var link = getDashboardViewShareLink();
-if (link) {
-copyTextToClipboardOrShow(link);
+if (window.EOC_DASHBOARD_VIEW_URL) {
+copyTextToClipboardOrShow(window.EOC_DASHBOARD_VIEW_URL);
 return;
 }
 google.script.run
 .withSuccessHandler(function(serverLink) {
 window.EOC_DASHBOARD_VIEW_URL = serverLink || '';
 if (serverLink) copyTextToClipboardOrShow(serverLink);
+else {
+var fallback = getDashboardViewShareLink();
+if (fallback) copyTextToClipboardOrShow(fallback);
 else Swal.fire('สร้างลิงก์ไม่ได้', 'กรุณาเปิดจาก URL ของ Web App /exec แล้วลองอีกครั้ง', 'warning');
+}
 })
 .withFailureHandler(function(err) {
 var msg = err && err.message ? err.message : String(err);
