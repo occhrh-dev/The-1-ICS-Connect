@@ -1969,9 +1969,12 @@ if (countEl) countEl.textContent = String(active.length);
 feed.innerHTML = active.slice(0, 2).map(function(r) {
 var status = String(r.status || 'pending').toLowerCase();
 var rowIndex = parseInt(r.id, 10) || parseInt((r.id || r.rowIndex), 10) || 0;
-var label = status === 'acknowledged' ? 'รอการสนับสนุน' : status === 'supported' ? 'ได้รับการสนับสนุนแล้ว' : 'รอ IC รับทราบ';
+var label = status === 'acknowledged' ? '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e48\u0e07\u0e01\u0e32\u0e23\u0e2a\u0e19\u0e31\u0e1a\u0e2a\u0e19\u0e38\u0e19' : status === 'supported' ? 'ได้รับการสนับสนุนแล้ว' : 'รอ IC รับทราบ';
 var color = status === 'acknowledged' ? '#d97706' : status === 'supported' ? '#16a34a' : '#dc2626';
 var btn = '';
+if (rowIndex && status === 'pending') {
+btn = '<button onclick="updateOCSupportFromIC(' + rowIndex + ',&quot;acknowledged&quot;)" style="margin-top:6px;background:#dc2626;color:white;border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:900;cursor:pointer;">รับทราบ</button>';
+}
 return '<div style="background:white;border:1px solid #fed7aa;border-left:4px solid ' + color + ';border-radius:8px;padding:6px 8px;">' +
 '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><b style="color:#7f1d1d;">' + roleSafeText(r.type || '-') + '</b><span style="background:' + color + '20;color:' + color + ';border-radius:999px;padding:1px 7px;font-size:10px;font-weight:900;white-space:nowrap;">' + label + '</span></div>' +
 '<div style="margin-top:4px;color:#334155;">' + roleSafeText(r.detail || '-') + '</div>' +
@@ -1986,9 +1989,12 @@ return (reqs || []).map(function(r) {
 var status = String(r.status || 'pending').trim().toLowerCase();
 var rowIndex = parseInt(r.id, 10) || parseInt((r.id||r.rowIndex), 10) || 0;
 var statusText = status === 'supported' ? 'การดำเนินการเสร็จสิ้น' :
-status === 'acknowledged' ? 'รอการดำเนินการ' : 'รอ IC รับทราบ';
+status === 'acknowledged' ? '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e48\u0e07\u0e01\u0e32\u0e23\u0e2a\u0e19\u0e31\u0e1a\u0e2a\u0e19\u0e38\u0e19' : 'รอ IC รับทราบ';
 var statusColor = status === 'supported' ? '#16a34a' : status === 'acknowledged' ? '#d97706' : '#dc2626';
 var btn = '';
+if (rowIndex && status === 'pending') {
+btn = '<button onclick="updateOCSupportFromIC(' + rowIndex + ',&quot;acknowledged&quot;)" style="margin-top:6px;background:#dc2626;color:white;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:bold;cursor:pointer;">รับทราบ</button>';
+}
 var noteHtml = r.responseNote ? '<div style="margin-top:4px;color:#1d4ed8;font-size:12px;"><b>IC:</b> ' + roleSafeText(r.responseNote) + '</div>' : '';
 return '<div style="padding:7px 0;border-bottom:1px solid #fee2e2;">' +
 '<b style="color:#991b1b;">' + (r.type || '-') + '</b><br>' +
@@ -2038,7 +2044,7 @@ if (isNaN(lat) || isNaN(lng)) return;
 var pendingCount = activeReqs.filter(function(r) {
 return String(r.status || 'pending').trim().toLowerCase() === 'pending';
 }).length;
-var label = pendingCount ? ('ขอสนับสนุน ' + pendingCount) : 'รอการสนับสนุน';
+var label = pendingCount ? ('ขอสนับสนุน ' + pendingCount) : '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e48\u0e07\u0e01\u0e32\u0e23\u0e2a\u0e19\u0e31\u0e1a\u0e2a\u0e19\u0e38\u0e19';
 var bg = pendingCount ? '#b91c1c' : '#d97706';
 clearLongdoOverlayList(dashMap, window._icOCReqAlertOverlays);
 window._icOCReqAlertOverlays = [];
@@ -2363,12 +2369,15 @@ if (reqEl) {
 reqEl.innerHTML = state.supportReqs.length ? state.supportReqs.slice(0, 5).map(function(r) {
 var status = String(r.status || 'pending').toLowerCase();
 var rowIndex = parseInt(r.id, 10) || parseInt((r.id||r.rowIndex), 10) || 0;
-var label = status === 'acknowledged' ? 'รอการสนับสนุน' :
+var label = status === 'acknowledged' ? '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e48\u0e07\u0e01\u0e32\u0e23\u0e2a\u0e19\u0e31\u0e1a\u0e2a\u0e19\u0e38\u0e19' :
 status === 'supported' ? 'ได้รับการสนับสนุนแล้ว' :
 status === 'rejected' ? 'ไม่อนุมัติ' :
 status === 'closed' ? 'ปิดคำขอ' : 'รอ IC รับทราบ';
 var color = status === 'pending' ? '#dc2626' : status === 'acknowledged' ? '#d97706' : status === 'supported' ? '#16a34a' : '#64748b';
 var btn = '';
+if (rowIndex && status === 'pending') {
+btn = '<button onclick="updateOCSupportFromIC(' + rowIndex + ',&quot;acknowledged&quot;)" style="margin-top:5px;background:#dc2626;color:white;border:none;border-radius:5px;padding:4px 8px;font-size:11px;cursor:pointer;">รับทราบ</button>';
+}
 var noteHtml = r.responseNote ? '<div style="margin-top:4px;color:#1d4ed8;font-size:11px;"><b>IC:</b> ' + roleSafeText(r.responseNote) + '</div>' : '';
 var locHtml = '<div style="margin-top:4px;color:#64748b;font-size:11px;"><i class="fas fa-map-marker-alt"></i> ' + roleSafeText(getOCSupportLocationLabel()) + '</div>';
 return '<div style="border-bottom:1px solid #f5c6cb;padding:7px 0;">' +
@@ -2700,9 +2709,13 @@ var html = '<div style="position:relative;width:0;height:0;overflow:visible;poin
 var reqHtml = reqs.length ? '<hr><b>คำขอสนับสนุนจาก OC</b><br>' + reqs.map(function(r) {
 var status = String(r.status || 'pending').toLowerCase();
 var statusText = status === 'supported' ? 'การดำเนินการเสร็จสิ้น' :
-status === 'acknowledged' ? 'รอการดำเนินการ' : 'รอ IC รับทราบ';
+status === 'acknowledged' ? '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e48\u0e07\u0e01\u0e32\u0e23\u0e2a\u0e19\u0e31\u0e1a\u0e2a\u0e19\u0e38\u0e19' : 'รอ IC รับทราบ';
 var statusColor = status === 'supported' ? '#16a34a' : status === 'acknowledged' ? '#d97706' : '#dc2626';
 var btn = '';
+var rowIndex = parseInt(r.id||(r.id||r.rowIndex), 10) || 0;
+if (rowIndex && status === 'pending') {
+btn = '<button onclick="updateOCSupportFromIC(' + rowIndex + ',&quot;acknowledged&quot;)" style="margin-top:4px;background:#dc2626;color:white;border:none;border-radius:5px;padding:3px 7px;font-size:11px;cursor:pointer;">รับทราบ</button>';
+}
 var noteHtml = r.responseNote ? '<br><span style="color:#1d4ed8;"><b>IC:</b> ' + roleSafeText(r.responseNote) + '</span>' : '';
 return '<div style="margin-top:6px;padding-top:5px;border-top:1px solid #eee;"><b>' + (r.type || '-') + '</b><br><span>' + (r.detail || '-') + '</span><br><span style="color:' + statusColor + ';">' + statusText + '</span>' + noteHtml + '<br>' + btn + '</div>';
 }).join('') : '';
@@ -2782,7 +2795,7 @@ rejected: '#64748b'
 };
 var statusLabel = {
 pending: 'รอ IC รับทราบ',
-acknowledged: 'รอการสนับสนุน',
+acknowledged: '\u0e01\u0e33\u0e25\u0e31\u0e07\u0e2a\u0e48\u0e07\u0e01\u0e32\u0e23\u0e2a\u0e19\u0e31\u0e1a\u0e2a\u0e19\u0e38\u0e19',
 supported: 'ได้รับการสนับสนุนแล้ว',
 closed: 'ปิดคำขอ',
 rejected: 'ไม่อนุมัติ'
