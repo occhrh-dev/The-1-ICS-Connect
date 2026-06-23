@@ -3685,6 +3685,14 @@ console.log('[PERF] Data received:', (performance.now()-_t0).toFixed(0)+'ms');
 document.getElementById('scene_Loading').style.display = 'none';
 window._lastEmergState = data || {};
 try { applyIncidentTierFromState(data); } catch(e) {}
+if (data.status !== 'Normal' && typeof isRoleWorkSceneOpen === 'function' && isRoleWorkSceneOpen()) {
+if (typeof renderICSLeads === 'function') renderICSLeads(data.icsLeads || {});
+ICS_COORDS = data.icsCoords || ICS_COORDS || {};
+try { refreshICSCoords(); } catch(e) {}
+try { refreshRoleWorkHeaderDirect(); } catch(e) {}
+try { refreshVisibleRoleSitrepDirect(); } catch(e) {}
+return;
+}
 if (data.status === 'Normal') {
 document.getElementById('scene_Declare').style.display = 'flex';
 document.getElementById('scene_OrgChart').style.display = 'none';
@@ -3692,6 +3700,7 @@ document.getElementById('scene_Dashboard').style.display = 'none';
 document.getElementById('scene_OC').style.display = 'none';
 document.getElementById('scene_Health').style.display = 'none';
 document.getElementById('scene_EvacPoint').style.display = 'none';
+document.getElementById('scene_RoleWork').style.display = 'none';
 renderPreIncidentAccess();
 return;
 }
@@ -3700,6 +3709,7 @@ document.getElementById('scene_Dashboard').style.display = 'none';
 document.getElementById('scene_OC').style.display = 'none';
 document.getElementById('scene_Health').style.display = 'none';
 document.getElementById('scene_EvacPoint').style.display = 'none';
+document.getElementById('scene_RoleWork').style.display = 'none';
 document.getElementById('scene_OrgChart').style.display = 'flex';
 if (typeof renderICSLeads === 'function' && window.ICS_LEADS) renderICSLeads(window.ICS_LEADS);
 if (typeof refreshICSLeads === 'function') refreshICSLeads();
@@ -5523,6 +5533,11 @@ events.forEach(showRoleBroadcastEvent);
 }
 function showRoleBroadcastEvent(evt) {
 if (!evt) return;
+if (evt.type === 'active' && isRoleWorkSceneOpen()) {
+refreshRoleWorkHeaderDirect();
+refreshRoleWorkState(currentRole || TEMP_ROLE);
+return;
+}
 var icon = evt.type === 'deactivate' ? 'warning' : (evt.type === 'active' ? 'success' : 'info');
 var html = '<div style="text-align:left;line-height:1.55;">' +
 '<b>' + roleSafeText(evt.message || evt.title || 'ประกาศจาก EOC') + '</b>' +
