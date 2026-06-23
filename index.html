@@ -3697,6 +3697,35 @@ applySystemStatusData(data);
 })
 .getEmergencyStateLiteForAgency(APP_AGENCY_ID || '', APP_AGENCY_SHEET_ID || '', getActiveJoinToken());
 }
+function isJoinLinkSessionActive() {
+try {
+return !!(getActiveJoinToken() || (document.body && document.body.classList.contains('join-link-session')));
+} catch(e) {
+return false;
+}
+}
+function handleJoinIncidentAlreadyClosed() {
+if (window._joinIncidentClosedHandled) return true;
+window._joinIncidentClosedHandled = true;
+Swal.fire({
+icon: 'warning',
+title: 'เหตุการณ์ยุติแล้ว',
+text: 'ผู้บัญชาการปิดเหตุแล้ว ลิงก์รายงานตัวนี้จึงใช้งานไม่ได้แล้ว',
+confirmButtonText: 'รับทราบ',
+confirmButtonColor: '#2563eb'
+}).then(function() {
+if (typeof handleIncidentDeactivatedFromRole === 'function') {
+handleIncidentDeactivatedFromRole();
+return;
+}
+try { sessionStorage.removeItem('EOC_JOIN_TOKEN_SESSION'); } catch(e) {}
+if (document.body) document.body.classList.remove('join-link-session');
+document.getElementById('scene_Declare').style.display = 'flex';
+document.getElementById('scene_OrgChart').style.display = 'none';
+document.getElementById('scene_Dashboard').style.display = 'none';
+});
+return true;
+}
 function applySystemStatusData(data) {
 try { localStorage.setItem('eoc_last_state', JSON.stringify(data)); } catch(e) {}
 document.getElementById('scene_Loading').style.display = 'none';
@@ -3713,6 +3742,10 @@ try { refreshVisibleRoleSitrepDirect(); } catch(e) {}
 return;
 }
 if (data.status === 'Normal') {
+if (isJoinLinkSessionActive()) {
+handleJoinIncidentAlreadyClosed();
+return;
+}
 document.getElementById('scene_Declare').style.display = 'flex';
 document.getElementById('scene_OrgChart').style.display = 'none';
 document.getElementById('scene_Dashboard').style.display = 'none';
@@ -4662,6 +4695,19 @@ var map = {
 return map[roleCode] || null;
 }
 function selectRole(roleCode, label) {
+if (window._lastEmergState && window._lastEmergState.status === 'Normal') {
+if (typeof handleJoinIncidentAlreadyClosed === 'function' && isJoinLinkSessionActive()) {
+handleJoinIncidentAlreadyClosed();
+return;
+}
+Swal.fire({
+icon: 'info',
+title: 'เหตุการณ์ยุติแล้ว',
+text: 'ขณะนี้ปิดเหตุแล้ว ไม่สามารถรายงานตัวเข้าบทบาทได้',
+confirmButtonText: 'รับทราบ'
+});
+return;
+}
 // 🎚️ Tier guard — block roles ที่ไม่อยู่ใน tier
 var featureName = _roleCodeToFeature_(roleCode);
 if (featureName && !hasFeature(featureName)) {
@@ -6178,7 +6224,7 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 </script>
 
 <script src="https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260623_1700" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260623_1845" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260623_1900" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {
