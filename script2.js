@@ -2806,6 +2806,16 @@ if (el) el.innerHTML = emptyReqHtml;
 if (mobileEl) mobileEl.innerHTML = emptyReqHtml;
 return;
 }
+function shortReqTime(t) {
+t = String(t || '');
+var m = t.match(/(\d{1,2}:\d{2})/);
+return m ? m[1] : t.slice(0, 10);
+}
+function shortReqText(t, limit) {
+t = String(t || '-').replace(/\s+/g, ' ').trim();
+limit = limit || 42;
+return t.length > limit ? t.slice(0, limit - 1) + '...' : t;
+}
 var html = list.map(function(r) {
 var status = String(r.status || 'pending').toLowerCase();
 var sc = statusColor[status] || '#64748b';
@@ -2822,8 +2832,28 @@ return '<div class="oc-card oc-req-row">' +
 '<span style="font-size:11px;color:#aaa;flex-shrink:0;">' + (r.time || '') + '</span>' +
 '</div>';
 }).join('');
+var mobileList = list.slice(0, 3);
+var mobileHtml = mobileList.map(function(r) {
+var status = String(r.status || 'pending').toLowerCase();
+var sc = statusColor[status] || '#64748b';
+var sl = statusLabel[status] || status;
+var rowIndex = parseInt((r.id||r.rowIndex), 10) || 0;
+var btn = (status === 'acknowledged' && rowIndex)
+? '<button onclick="markOCSupportReceived(' + rowIndex + ')" style="border:none;border-radius:999px;background:#16a34a;color:white;padding:3px 7px;font-size:10px;font-weight:900;white-space:nowrap;">ได้รับแล้ว</button>'
+: '';
+return '<div class="oc-req-mobile-row" style="background:white;border:1px solid #e5e7eb;border-left:4px solid ' + sc + ';border-radius:8px;padding:6px 8px;display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:start;">' +
+'<div style="min-width:0;"><span style="background:' + sc + '20;color:' + sc + ';border-radius:999px;padding:1px 6px;font-size:10px;font-weight:900;">' + sl + '</span></div>' +
+'<div style="font-size:10px;color:#94a3b8;text-align:right;white-space:nowrap;">' + roleSafeText(shortReqTime(r.time)) + '</div>' +
+'<div style="min-width:0;"><div style="font-size:11px;font-weight:900;color:#1f2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(r.type || '-') + '</div>' +
+'<div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(shortReqText(r.detail || '-', 48)) + '</div></div>' +
+'<div style="align-self:end;text-align:right;">' + btn + '</div>' +
+'</div>';
+}).join('');
+if (list.length > mobileList.length) {
+mobileHtml += '<div style="text-align:center;color:#64748b;font-size:11px;padding:2px 0;">อีก ' + (list.length - mobileList.length) + ' รายการ ดูในประวัติคำขอ</div>';
+}
 if (el) el.innerHTML = html;
-if (mobileEl) mobileEl.innerHTML = html;
+if (mobileEl) mobileEl.innerHTML = mobileHtml;
 }
 function setCachedOCSupportStatus(rowIndex, status, responseNote) {
 rowIndex = parseInt(rowIndex, 10) || 0;
