@@ -851,7 +851,7 @@ window._ocSupportReqLoading = true;
 google.script.run
 .withSuccessHandler(function(list) {
 window._ocSupportReqLoading = false;
-list = Array.isArray(list) ? list : [];
+list = normalizeOCSupportRequests(Array.isArray(list) ? list : []);
 if (!list.length && window._lastOCSupportReqs && getActiveOCSupportRequests(window._lastOCSupportReqs).length) {
 list = window._lastOCSupportReqs;
 }
@@ -1837,7 +1837,7 @@ var lng = parseFloat(z.lng !== undefined ? z.lng : z.Lng);
 return z && !isNaN(lat) && !isNaN(lng);
 }) : [];
 var sitReports = Array.isArray(state.sitReports) ? state.sitReports : [];
-var supportReqs = Array.isArray(state.supportReqs) ? state.supportReqs : [];
+var supportReqs = normalizeOCSupportRequests(Array.isArray(state.supportReqs) ? state.supportReqs : []);
 var resources = Array.isArray(state.resources) ? state.resources : [];
 var attendance = Array.isArray(state.attendance) ? state.attendance : [];
 var attendanceSummary = state.attendanceSummary || null;
@@ -1855,6 +1855,23 @@ attendanceSummary: attendanceSummary,
 roleUpdates: roleUpdates,
 evacuationPoints: evacuationPoints
 };
+}
+function normalizeOCSupportRequests(list) {
+return (Array.isArray(list) ? list : []).map(function(r) {
+var out = {};
+Object.keys(r || {}).forEach(function(k) { out[k] = r[k]; });
+out.id = out.id || out.rowIndex || '';
+out.rowIndex = out.rowIndex || out.id || '';
+out.type = out.type || out.requestType || out.request_type || '-';
+out.detail = out.detail || '-';
+out.status = out.status || 'pending';
+out.by = out.by || out.loggedBy || out.logged_by || '';
+out.responseNote = out.responseNote || out.response_note || '';
+out.updatedBy = out.updatedBy || out.updated_by || '';
+out.updatedAt = out.updatedAt || out.updated_at || '';
+out.time = out.time || out.timestamp || out.created_at || '';
+return out;
+});
 }
 function activeOCSupportRequests() {
 return getActiveOCSupportRequests(window._icSupportReqs || []);
@@ -1919,6 +1936,12 @@ var type = String(z.type || z.ZoneType || '').toLowerCase();
 var label = String(z.label || z.Label || '').toLowerCase();
 return type === 'icp' || type.indexOf('command') !== -1 || label.indexOf('command') !== -1 || label.indexOf('icp') !== -1;
 }) || null;
+}
+function getOCSupportLocationLabel() {
+var zones = (window._icZoneMarkers && window._icZoneMarkers.length) ? window._icZoneMarkers : ((window._lastOCState && window._lastOCState.zoneMarkers) || []);
+var cp = findCommandPostZone(zones);
+if (!cp) return 'ยังไม่กำหนดจุดปฏิบัติการ';
+return cp.label || cp.Label || 'Command Post / จุดปฏิบัติการ';
 }
 function buildOCSupportAlertDetail(reqs) {
 return (reqs || []).map(function(r) {
@@ -2316,9 +2339,10 @@ btn = '<button onclick="updateOCSupportFromIC(' + rowIndex + ',&quot;acknowledge
 btn = '<button onclick="updateOCSupportFromIC(' + rowIndex + ',&quot;supported&quot;)" style="margin-top:5px;background:#16a34a;color:white;border:none;border-radius:5px;padding:4px 8px;font-size:11px;cursor:pointer;">ได้รับการสนับสนุนแล้ว</button>';
 }
 var noteHtml = r.responseNote ? '<div style="margin-top:4px;color:#1d4ed8;font-size:11px;"><b>IC:</b> ' + roleSafeText(r.responseNote) + '</div>' : '';
+var locHtml = '<div style="margin-top:4px;color:#64748b;font-size:11px;"><i class="fas fa-map-marker-alt"></i> ' + roleSafeText(getOCSupportLocationLabel()) + '</div>';
 return '<div style="border-bottom:1px solid #f5c6cb;padding:7px 0;">' +
 '<b style="color:#c0392b;">' + (r.type || '-') + '</b> <span style="float:right;background:' + color + '20;color:' + color + ';border-radius:10px;padding:1px 7px;font-size:10px;font-weight:bold;">' + label + '</span><br>' +
-'<span>' + (r.detail || '-') + '</span>' + noteHtml + '<br>' + btn +
+'<span>' + (r.detail || '-') + '</span>' + locHtml + noteHtml + '<br>' + btn +
 '</div>';
 }).join('') : '<span style="color:#999;">ยังไม่มีคำขอสนับสนุนจาก OC</span>';
 }
@@ -2711,7 +2735,7 @@ dashMap.bound({ minLon:minLng-padLng, minLat:minLat-padLat, maxLon:maxLng+padLng
 function renderOCReqHistory(list) {
 var el = document.getElementById('oc_req_history');
 var mobileEl = document.getElementById('oc_mobile_req_feed');
-list = Array.isArray(list) ? list : [];
+list = normalizeOCSupportRequests(Array.isArray(list) ? list : []);
 list = dedupeOCSupportRequests(list);
 if (!list.length && window._lastOCSupportReqs && window._lastOCSupportReqs.length) {
 list = dedupeOCSupportRequests(window._lastOCSupportReqs);
@@ -2749,9 +2773,10 @@ var btn = (status === 'acknowledged' && rowIndex)
 ? '<button onclick="markOCSupportReceived(' + rowIndex + ')" style="margin-top:6px;background:#16a34a;color:white;border:none;border-radius:6px;padding:5px 9px;font-size:11px;cursor:pointer;font-weight:bold;">ได้รับการสนับสนุนแล้ว</button>'
 : '';
 var noteHtml = r.responseNote ? '<div style="margin-top:5px;color:#1d4ed8;font-size:12px;"><b>ข้อความจาก IC:</b> ' + roleSafeText(r.responseNote) + '</div>' : '';
+var locHtml = '<div style="font-size:11px;color:#64748b;margin-top:3px;"><i class="fas fa-map-marker-alt"></i> ' + roleSafeText(getOCSupportLocationLabel()) + '</div>';
 return '<div class="oc-card oc-req-row">' +
 '<span style="background:' + sc + '20;color:' + sc + ';border-radius:4px;padding:2px 7px;font-size:11px;font-weight:bold;flex-shrink:0;">' + sl + '</span>' +
-'<div style="flex:1;"><div style="font-size:12px;font-weight:bold;color:#2c3e50;">' + (r.type || '-') + '</div><div style="font-size:12px;color:#666;">' + (r.detail || '-') + '</div>' + noteHtml + btn + '</div>' +
+'<div style="flex:1;"><div style="font-size:12px;font-weight:bold;color:#2c3e50;">' + (r.type || '-') + '</div><div style="font-size:12px;color:#666;">' + (r.detail || '-') + '</div>' + locHtml + noteHtml + btn + '</div>' +
 '<span style="font-size:11px;color:#aaa;flex-shrink:0;">' + (r.time || '') + '</span>' +
 '</div>';
 }).join('');
