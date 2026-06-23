@@ -2,8 +2,8 @@
 const CACHE_NAME = 'eoc-warroom-v20260609_1345';
 
 const STATIC_ASSETS = [
-  'https://occhrh-dev.github.io/The-1-ICS-script/script2.js?v=20260609_1345',
-  'https://occhrh-dev.github.io/The-1-ICS-script/script3.js?v=20260609_1345',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260609_1345',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260609_1345',
   'https://occhrh-dev.github.io/HazMat-Mapper/the1ICS.png'
 ];
 
