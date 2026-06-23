@@ -189,7 +189,7 @@ function argsToBody(fnName, args) {
     case 'submitSitReport':
       return { situationTag: a[0], detail: a[1], attachmentURL: a[2], loggedBy: a[3] };
     case 'getBroadcastEventsSince':
-      return { since: a[0] };
+      return { since: a[0], agencyId: a[2] || globalThis.APP_AGENCY_ID || '' };
     case 'clearEOCCallByRoom':
       return { room: a[0] };
     case 'getEmergencyStateForAgency':

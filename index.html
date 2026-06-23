@@ -131,7 +131,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       addRoleNote:{roleCode:a[0],roleLabel:a[1],reporter:a[2],phone:a[3],note:a[4]},
       getRoleNotes:{limit:a[0]||50},
       submitSitReport:{situationTag:a[0],detail:a[1],attachmentURL:a[2],loggedBy:a[3]},
-      getBroadcastEventsSince:{since:a[0]},
+      getBroadcastEventsSince:{since:a[0],agencyId:a[2]||window.APP_AGENCY_ID||''},
       clearEOCCallByRoom:{room:a[0]},
       saveRoleSitrep:{text:a[0],createdBy:a[1]},
       markRoleMediaReadForIC:{roleType:a[0],keys:a[1],readBy:a[2]},
@@ -5503,12 +5503,16 @@ var roleBroadcastLastRow = 0;
 var roleBroadcastPriming = true;
 var roleBroadcastStartedAt = 0;
 var roleBroadcastPolling = false;
+var roleBroadcastFailCount = 0;
+var roleBroadcastPausedUntil = 0;
 function startRoleBroadcastPolling(roleCode) {
 stopRoleBroadcastPolling();
 roleBroadcastLastRow = 0;
 roleBroadcastPriming = true;
 roleBroadcastStartedAt = Date.now();
 roleBroadcastPolling = false;
+roleBroadcastFailCount = 0;
+roleBroadcastPausedUntil = 0;
 pollRoleBroadcastEvents(roleCode || currentRole || TEMP_ROLE);
 roleBroadcastTimer = setInterval(function() {
 if (document.hidden) return;
@@ -5552,10 +5556,13 @@ window._roleSitrepLoading = false;
 function pollRoleBroadcastEvents(roleCode) {
 if (!isRoleWorkSceneOpen() || typeof google === 'undefined' || !google.script || !google.script.run) return;
 if (roleBroadcastPolling) return;
+if (roleBroadcastPausedUntil && Date.now() < roleBroadcastPausedUntil) return;
 roleBroadcastPolling = true;
 google.script.run
 .withSuccessHandler(function(res) {
 roleBroadcastPolling = false;
+roleBroadcastFailCount = 0;
+roleBroadcastPausedUntil = 0;
 refreshVisibleRoleSitrepDirect();
 res = res || { lastRow: roleBroadcastLastRow, events: [] };
 var events = res.events || [];
@@ -5571,8 +5578,12 @@ showRoleBroadcastEvent(evt);
 })
 .withFailureHandler(function(err) {
 roleBroadcastPolling = false;
+roleBroadcastFailCount += 1;
+if (roleBroadcastFailCount >= 3) {
+roleBroadcastPausedUntil = Date.now() + 60000;
+}
 })
-.getBroadcastEventsSince(roleBroadcastLastRow, roleCode || '');
+.getBroadcastEventsSince(roleBroadcastLastRow, roleCode || '', APP_AGENCY_ID || '');
 }
 function isStaleRoleBroadcastEvent(evt) {
 if (!evt || !roleBroadcastStartedAt) return false;
