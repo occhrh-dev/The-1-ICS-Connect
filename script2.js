@@ -1629,6 +1629,47 @@ var exists = Array.from(sel.options).some(function(opt) { return opt.value === t
 if (!exists) sel.add(new Option(type, type));
 sel.value = type;
 }
+function _saveIndoorZoneMarker_(zoneType, label, successTitle) {
+Swal.fire({
+title: '<i class="fas fa-building"></i> ระบุตำแหน่งในอาคาร',
+html: '<div style="text-align:left;">' +
+'<label style="font-size:13px;font-weight:700;color:#334155;display:block;margin-bottom:6px;">ชั้น / พื้นที่</label>' +
+'<input id="swal-floor-label" class="swal2-input" placeholder="เช่น ชั้น 3 / ห้องผ่าตัด" style="margin:0;">' +
+'</div>',
+showCancelButton: true,
+confirmButtonText: 'บันทึก',
+cancelButtonText: 'ยกเลิก',
+preConfirm: function() {
+var v = document.getElementById('swal-floor-label').value.trim();
+if (!v) return Swal.showValidationMessage('กรุณาระบุชั้น/พื้นที่');
+return v;
+}
+}).then(function(result) {
+if (!result.isConfirmed) return;
+var floorLabel = result.value;
+showOCSending('กำลังบันทึกจุด...', 'กำลังส่งตำแหน่งในอาคารไปยัง EOC');
+google.script.run
+.withSuccessHandler(function() {
+refreshOCData();
+Swal.fire({ icon:'success', title: successTitle || 'บันทึกจุดแล้ว', timer:1500, showConfirmButton:false });
+})
+.withFailureHandler(function(err) {
+Swal.close();
+Swal.fire('บันทึกจุดไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
+})
+.saveZoneMarker(zoneType, label, '', '', '', ocCurrentUser, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''), 'indoor', floorLabel);
+});
+}
+function openZoneIndoorPicker() {
+var zType = document.getElementById('oc_zone_type_sel').value;
+var zLabel = document.getElementById('oc_zone_label').value.trim() || zType;
+_saveIndoorZoneMarker_(zType, zLabel, 'บันทึกจุดแล้ว');
+}
+function openICPIndoorPicker() {
+var labelEl = document.getElementById('oc_icp_label');
+var label = (labelEl && labelEl.value.trim()) ? labelEl.value.trim() : 'ICP / Command';
+_saveIndoorZoneMarker_('ICP', label, 'บันทึก Command Post แล้ว');
+}
 function openZoneMapPicker() {
 mapPickerMode = 'zone';
 mapPickLockToCurrent = false;
@@ -2307,7 +2348,42 @@ seen[key] = true;
 return true;
 });
 }
+function renderIndoorFloors(zoneMarkers) {
+var indoor = (zoneMarkers || []).filter(function(z) { return (z.locationKind || 'outdoor') === 'indoor' && (z.floorLabel || z.floor_label); });
+var box = document.getElementById('dash_indoor_floors');
+var body = document.getElementById('dash_indoor_floors_body');
+if (!box || !body) return;
+if (!indoor.length) { box.style.display = 'none'; return; }
+var floors = {};
+indoor.forEach(function(z) {
+var f = String(z.floorLabel || z.floor_label || '').trim();
+if (!floors[f]) floors[f] = [];
+floors[f].push(z);
+});
+var floorNames = Object.keys(floors).sort(function(a, b) {
+var na = parseFloat((a.match(/[\d.]+/) || [])[0]);
+var nb = parseFloat((b.match(/[\d.]+/) || [])[0]);
+if (!isNaN(na) && !isNaN(nb)) return nb - na;
+if (!isNaN(na)) return -1;
+if (!isNaN(nb)) return 1;
+return a.localeCompare(b, 'th');
+});
+var typeIcon = { 'ICP':'🛡️', 'Decon':'🚿', 'Treatment':'🚑', 'Staging':'📦', 'Parking':'🅿️', 'Loading':'🚚' };
+body.innerHTML = floorNames.map(function(f) {
+var chips = floors[f].map(function(z) {
+var icon = typeIcon[z.type || z.ZoneType || z.zone_type] || '📍';
+var lbl = z.label || z.Label || z.type || z.zone_type || '-';
+return '<span style="display:inline-block;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:999px;padding:2px 8px;margin:2px;font-size:11px;color:#334155;">' + icon + ' ' + lbl + '</span>';
+}).join('');
+return '<div style="border-bottom:1px solid #e2e8f0;padding:6px 4px;">' +
+'<div style="font-size:11px;font-weight:800;color:#0f766e;margin-bottom:3px;">' + f + '</div>' +
+'<div>' + chips + '</div>' +
+'</div>';
+}).join('');
+box.style.display = 'block';
+}
 function drawOCZoneMarkersOnICMap(zones, supportReqs) {
+zones = (zones || []).filter(function(z) { return (z.locationKind || z.location_kind || 'outdoor') !== 'indoor'; });
 zones = normalizeICOCState({ zoneMarkers: zones }).zoneMarkers;
 supportReqs = dedupeOCSupportRequests(reconcileOCSupportRequestStatus(supportReqs || window._icSupportReqs || []));
 if (supportReqs && supportReqs.length) {
