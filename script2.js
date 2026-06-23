@@ -1884,6 +1884,9 @@ var feed = document.getElementById('dashboard_oc_support_feed');
 if (feed) feed.innerHTML = '';
 var count = document.getElementById('dashboard_oc_support_count');
 if (count) count.textContent = '0';
+window._buildingStructures = [];
+window._buildingStructuresLoadedForKey = '';
+if (typeof renderBuildingStructureCards === 'function') renderBuildingStructureCards([]);
 ['ops','plan','log','jic','specialist','liaison'].forEach(function(roleType) {
 var els = document.querySelectorAll('#count_' + roleType);
 Array.prototype.forEach.call(els, function(el) {
