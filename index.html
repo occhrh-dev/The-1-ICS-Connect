@@ -115,7 +115,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       releaseICSCoord:{sectionCode:a[0],coordName:a[1]},
       updateMedicalTriage:{red:a[0],yellow:a[1],green:a[2],black:a[3],onsite:a[4],location:a[5],reporter:a[6]},
       addMedicalTriageRows:(function(color,entries,reporter){var body={red:0,yellow:0,green:0,black:0,onsite:0,location:'',reporter:reporter||''};var total=0;var hospitals=[];(Array.isArray(entries)?entries:[]).forEach(function(e){if(!e)return;total+=parseInt(e.count)||0;if(e.hospital)hospitals.push((e.count||0)+' @ '+e.hospital);});body[String(color||'').toLowerCase()]=total;body.onsite=total;body.location=hospitals.join(', ');return body;})(a[0],a[1],a[2]),
-      saveZoneMarker:{zoneType:a[0],label:a[1],lat:a[2],lng:a[3],note:a[4],loggedBy:a[5],phone:a[6]},
+      saveZoneMarker:{zoneType:a[0],label:a[1],lat:a[2],lng:a[3],note:a[4],loggedBy:a[5],phone:a[6],locationKind:a[8],floorLabel:a[9]},
       saveZoneConfig:{hotM:a[0],warmM:a[1],coldM:a[2],deconLat:a[3],deconLng:a[4]},
       addTask:{taskName:a[0],type:a[1],priority:a[2],assignedTo:a[3],location:a[4],note:a[5],loggedBy:a[6]},
       updateTaskStatus:{taskID:a[0],newStatus:a[1],loggedBy:a[2]},
@@ -880,6 +880,10 @@ if (detected) {
 <button onclick="openLongdoTrafficMap()" style="border:0;background:#f97316;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-road"></i> จราจร</button>
 </div>
 <div id="dash_map_canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
+<div id="dash_indoor_floors" style="display:none;position:absolute;bottom:10px;left:10px;max-width:240px;max-height:75%;overflow-y:auto;background:rgba(255,255,255,0.97);border-radius:8px;box-shadow:0 2px 8px rgba(15,23,42,0.2);z-index:9;font-family:'Prompt',sans-serif;">
+<div style="padding:7px 10px;background:#0f766e;color:white;font-size:12px;font-weight:800;border-radius:8px 8px 0 0;"><i class="fas fa-building"></i> จุดในอาคาร</div>
+<div id="dash_indoor_floors_body" style="padding:6px;"></div>
+</div>
 </div>
 </div>
 <div class="panel" style="display:flex;flex-direction:column;overflow:hidden;margin:0 !important;height:100%;border-bottom-left-radius:0 !important;border-bottom-right-radius:0 !important;box-sizing:border-box;">
@@ -1057,6 +1061,9 @@ if (detected) {
 <button onclick="openICPMapPicker()" style="margin-top:7px;background:#1d4ed8;color:white;border:none;border-radius:6px;padding:9px 12px;font-size:13px;cursor:pointer;font-weight:bold;width:100%;">
 <i class="fas fa-map-location-dot"></i> เลือก Command Post บนแผนที่
 </button>
+<button onclick="openICPIndoorPicker()" style="margin-top:7px;background:#0f766e;color:white;border:none;border-radius:6px;padding:9px 12px;font-size:13px;cursor:pointer;font-weight:bold;width:100%;">
+<i class="fas fa-building"></i> Command Post ในอาคาร (ระบุชั้น)
+</button>
 <div id="oc_icp_hint" style="font-size:11px;color:#999;margin-top:8px;">ยังไม่ได้ตั้ง ICP</div>
 </div>
 <div>
@@ -1074,6 +1081,9 @@ if (detected) {
 <input id="oc_zone_label" placeholder="ชื่อจุดสั้นๆ" style="padding:7px;border:1px solid #ddd;border-radius:6px;font-size:13px;width:220px;max-width:100%;">
 <button onclick="openZoneMapPicker()" style="background:#2c3e50;color:white;border:none;border-radius:6px;padding:7px 12px;font-size:12px;cursor:pointer;">
 <i class="fas fa-map-pin"></i> เลือกพิกัด
+</button>
+<button onclick="openZoneIndoorPicker()" style="background:#0f766e;color:white;border:none;border-radius:6px;padding:7px 12px;font-size:12px;cursor:pointer;">
+<i class="fas fa-building"></i> ระบุชั้น (ในอาคาร)
 </button>
 </div>
 </div>
@@ -5913,6 +5923,7 @@ state = state || {};
 renderICOCFeeds(state);
 applyDashboardReadOnlyLock();
 window._icZoneMarkers = state.zoneMarkers || [];
+renderIndoorFloors(window._icZoneMarkers);
 if (dashMap && window._icZoneMarkers.length) {
 drawOCZoneMarkersOnICMap(window._icZoneMarkers, window._icSupportReqs || state.supportReqs || []);
 drawOCSupportRequestAlertsOnMap(window._icZoneMarkers, window._icSupportReqs || state.supportReqs || []);
