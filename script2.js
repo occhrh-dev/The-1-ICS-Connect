@@ -2172,8 +2172,8 @@ if (!dashMap || !incidentCenter || incidentCenter.lat == null || incidentCenter.
 clearDashWindOverlay();
 var loc = { lon: parseFloat(incidentCenter.lng), lat: parseFloat(incidentCenter.lat) };
 if (isNaN(loc.lon) || isNaN(loc.lat)) return;
-var html = '<div style="display:flex;align-items:center;gap:7px;background:rgba(15,23,42,.92);color:white;border:2px solid #38bdf8;border-radius:999px;padding:5px 9px;box-shadow:0 4px 14px rgba(0,0,0,.45);font-weight:900;white-space:nowrap;font-size:13px;">' +
-'<i class="fas fa-arrow-up" style="color:#7dd3fc;font-size:18px;transform:rotate(' + (Number(destDeg) || 0) + 'deg);"></i>' +
+var html = '<div style="display:flex;align-items:center;gap:5px;background:rgba(15,23,42,.92);color:white;border:1.5px solid #38bdf8;border-radius:999px;padding:3px 7px;box-shadow:0 3px 10px rgba(0,0,0,.4);font-weight:800;white-space:nowrap;font-size:11px;">' +
+'<i class="fas fa-arrow-up" style="color:#7dd3fc;font-size:13px;transform:rotate(' + (Number(destDeg) || 0) + 'deg);"></i>' +
 '<span>' + Number(speed || 0).toFixed(1) + ' m/s</span>' +
 '</div>';
 var marker = makeLongdoHtmlMarker(loc, html, {
@@ -2199,7 +2199,7 @@ var info = document.getElementById('weather_info');
 var arrow = document.getElementById('wind_arrow');
 if (info) {
 var src = source ? ' • ' + source : '';
-info.innerText = windDirectionName(destDeg) + ' ' + Number(speed || 0).toFixed(1) + ' m/s' + src;
+info.innerText = windDirectionName(destDeg) + src;
 }
 if (arrow) {
 arrow.className = 'fas fa-arrow-up';
