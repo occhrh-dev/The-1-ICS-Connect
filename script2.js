@@ -1930,6 +1930,13 @@ return now - window._ocSupportedNoticeAt[key] <= 10000;
 return false;
 });
 }
+function getPendingOCSupportPanelRequests(list) {
+list = reconcileOCSupportRequestStatus(normalizeOCSupportRequests(list));
+return (list || []).filter(function(r) {
+var status = String(r.status || 'pending').trim().toLowerCase();
+return status === 'pending' || status === 'acknowledged' || status.indexOf('\u0e23\u0e2d') !== -1 || status.indexOf('เธฃเธญ') !== -1;
+});
+}
 function findCommandPostZone(zones) {
 zones = normalizeICOCState({ zoneMarkers: zones }).zoneMarkers;
 return zones.find(function(z) {
@@ -1950,7 +1957,7 @@ var feed = document.getElementById('dashboard_oc_support_feed');
 var countEl = document.getElementById('dashboard_oc_support_count');
 if (!panel || !feed) return;
 list = normalizeOCSupportRequests(list);
-var active = getActiveOCSupportRequests(list);
+var active = getPendingOCSupportPanelRequests(list);
 if (!active.length) {
 panel.style.display = 'none';
 feed.innerHTML = '';
@@ -1959,7 +1966,7 @@ return;
 }
 panel.style.display = 'block';
 if (countEl) countEl.textContent = String(active.length);
-feed.innerHTML = active.slice(0, 4).map(function(r) {
+feed.innerHTML = active.slice(0, 2).map(function(r) {
 var status = String(r.status || 'pending').toLowerCase();
 var rowIndex = parseInt(r.id, 10) || parseInt((r.id || r.rowIndex), 10) || 0;
 var label = status === 'acknowledged' ? 'รอการสนับสนุน' : status === 'supported' ? 'ได้รับการสนับสนุนแล้ว' : 'รอ IC รับทราบ';
@@ -1970,7 +1977,7 @@ btn = '<button onclick="updateOCSupportFromIC(' + rowIndex + ',&quot;acknowledge
 } else if (rowIndex && status === 'acknowledged') {
 btn = '<button onclick="updateOCSupportFromIC(' + rowIndex + ',&quot;supported&quot;)" style="margin-top:6px;background:#16a34a;color:white;border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:900;cursor:pointer;">ได้รับการสนับสนุนแล้ว</button>';
 }
-return '<div style="background:white;border:1px solid #fed7aa;border-left:4px solid ' + color + ';border-radius:8px;padding:8px 9px;">' +
+return '<div style="background:white;border:1px solid #fed7aa;border-left:4px solid ' + color + ';border-radius:8px;padding:6px 8px;">' +
 '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;"><b style="color:#7f1d1d;">' + roleSafeText(r.type || '-') + '</b><span style="background:' + color + '20;color:' + color + ';border-radius:999px;padding:1px 7px;font-size:10px;font-weight:900;white-space:nowrap;">' + label + '</span></div>' +
 '<div style="margin-top:4px;color:#334155;">' + roleSafeText(r.detail || '-') + '</div>' +
 '<div style="margin-top:4px;color:#64748b;font-size:11px;"><i class="fas fa-map-marker-alt"></i> ' + roleSafeText(getOCSupportLocationLabel()) + '</div>' +
@@ -2849,6 +2856,7 @@ if (window._lastOCState && Array.isArray(window._lastOCState.supportReqs)) {
 window._lastOCState.supportReqs = updateList(window._lastOCState.supportReqs);
 }
 renderOCReqHistory(window._lastOCSupportReqs || window._icSupportReqs || []);
+renderDashboardOCSupportPanel(window._icSupportReqs || window._lastOCSupportReqs || []);
 if (window._icZoneMarkers && window._icZoneMarkers.length && dashMap) {
 drawOCZoneMarkersOnICMap(window._icZoneMarkers, window._icSupportReqs || []);
 drawOCSupportRequestAlertsOnMap(window._icZoneMarkers, window._icSupportReqs || []);
