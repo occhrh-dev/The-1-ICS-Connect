@@ -5574,13 +5574,27 @@ currentRole = '';
 currentUserName = '';
 IS_LEAD = false;
 IS_COORD = false;
-['scene_RoleWork', 'scene_OC', 'scene_Health', 'scene_EvacPoint', 'scene_Dashboard', 'scene_OrgChart'].forEach(function(id) {
+APP_ACCESS_ROLE = '';
+APP_AGENCY_ID = '';
+APP_AGENCY_NAME = '';
+APP_AGENCY_SHEET_ID = '';
+window.EOC_JOIN_TOKEN = '';
+window._currentJoinUrl = '';
+try { sessionStorage.removeItem('EOC_ACCESS_ROLE'); } catch (e) {}
+try { sessionStorage.removeItem('EOC_AGENCY_ID'); } catch (e) {}
+try { sessionStorage.removeItem('EOC_AGENCY_NAME'); } catch (e) {}
+try { sessionStorage.removeItem('EOC_AGENCY_SHEET_ID'); } catch (e) {}
+try { sessionStorage.removeItem('EOC_JOIN_TOKEN_SESSION'); } catch (e) {}
+try { sessionStorage.removeItem('EOC_JOIN_URL'); } catch (e) {}
+try { localStorage.setItem('eoc_last_state', JSON.stringify({ status: 'Normal' })); } catch (e) {}
+if (document.body) document.body.classList.remove('join-link-session', 'dashboard-active', 'admin-warroom-active');
+['scene_Loading', 'scene_RoleWork', 'scene_OC', 'scene_Health', 'scene_EvacPoint', 'scene_Dashboard', 'scene_OrgChart'].forEach(function(id) {
 var el = document.getElementById(id);
 if (el) el.style.display = 'none';
 });
-var loading = document.getElementById('scene_Loading');
-if (loading) loading.style.display = 'flex';
-checkSystemStatus();
+var declare = document.getElementById('scene_Declare');
+if (declare) declare.style.display = 'flex';
+renderPreIncidentAccess();
 }
 function renderRoleWorkHistory(state) {
 var el = document.getElementById('role_work_history');
