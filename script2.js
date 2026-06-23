@@ -2355,6 +2355,8 @@ var BLDG_FLOOR_TYPES = {
 incident: 'จุดเกิดเหตุ',
 blocked: 'ปิดกั้น/ห้ามเข้า',
 icp: 'จุดบัญชาการ (ICP)',
+evacuating: 'กำลังอพยพ',
+evacuated: 'อพยพแล้ว',
 safe: 'ปลอดภัย/ใช้งานได้ปกติ',
 other: 'อื่นๆ'
 };
@@ -2362,6 +2364,8 @@ var BLDG_FLOOR_COLORS = {
 incident: '#dc2626',
 blocked: '#d97706',
 icp: '#1d4ed8',
+evacuating: '#f97316',
+evacuated: '#059669',
 safe: '#16a34a',
 other: '#64748b'
 };
