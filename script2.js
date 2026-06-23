@@ -2348,6 +2348,196 @@ seen[key] = true;
 return true;
 });
 }
+// ============================================================
+// 🏢 การ์ดโครงสร้างอาคาร (Building Structure Card) — Admin เท่านั้น
+// ============================================================
+var BLDG_FLOOR_TYPES = {
+incident: 'จุดเกิดเหตุ',
+blocked: 'ปิดกั้น/ห้ามเข้า',
+icp: 'จุดบัญชาการ (ICP)',
+safe: 'ปลอดภัย/ใช้งานได้ปกติ',
+other: 'อื่นๆ'
+};
+var BLDG_FLOOR_COLORS = {
+incident: '#dc2626',
+blocked: '#d97706',
+icp: '#1d4ed8',
+safe: '#16a34a',
+other: '#64748b'
+};
+function openAddBuildingStructure() {
+if (APP_ACCESS_ROLE !== 'admin') { Swal.fire('ต้องใช้สิทธิ์ Admin', 'เฉพาะ Admin เท่านั้นที่สร้างโครงสร้างอาคารได้', 'warning'); return; }
+Swal.fire({
+title: '<i class="fas fa-building"></i> เพิ่มโครงสร้างอาคาร',
+html: '<div style="text-align:left;">' +
+'<label style="font-size:13px;font-weight:700;color:#334155;display:block;margin-bottom:6px;">ชื่ออาคาร</label>' +
+'<input id="bldg-name" class="swal2-input" placeholder="เช่น ตึกผู้ป่วยใน A" style="margin:0 0 12px;">' +
+'<label style="font-size:13px;font-weight:700;color:#334155;display:block;margin-bottom:6px;">จำนวนชั้น</label>' +
+'<input id="bldg-floors" type="number" min="1" max="60" class="swal2-input" placeholder="เช่น 5" style="margin:0;">' +
+'</div>',
+showCancelButton: true,
+confirmButtonText: 'ถัดไป',
+cancelButtonText: 'ยกเลิก',
+preConfirm: function() {
+var name = document.getElementById('bldg-name').value.trim();
+var count = parseInt(document.getElementById('bldg-floors').value, 10);
+if (!name) return Swal.showValidationMessage('กรุณาระบุชื่ออาคาร');
+if (!count || count < 1 || count > 60) return Swal.showValidationMessage('กรุณาระบุจำนวนชั้น (1-60)');
+return { name: name, count: count };
+}
+}).then(function(result) {
+if (!result.isConfirmed) return;
+_openBuildingFloorTable_(result.value.name, result.value.count, null, null);
+});
+}
+function _toggleBldgOtherInput_(floorNum) {
+var sel = document.getElementById('bldg-floor-type-' + floorNum);
+var note = document.getElementById('bldg-floor-note-' + floorNum);
+if (!sel || !note) return;
+note.style.display = sel.value === 'other' ? '' : 'none';
+}
+function _openBuildingFloorTable_(buildingName, floorCount, existingId, existingFloors) {
+var floors = [];
+for (var i = 1; i <= floorCount; i++) {
+var ex = (existingFloors || []).filter(function(f) { return f.floor === i; })[0];
+floors.push(ex || { floor: i, type: 'safe', note: '' });
+}
+var sorted = floors.slice().sort(function(a, b) { return b.floor - a.floor; });
+var rowsHtml = sorted.map(function(f) {
+var opts = Object.keys(BLDG_FLOOR_TYPES).map(function(k) {
+return '<option value="' + k + '"' + (f.type === k ? ' selected' : '') + '>' + BLDG_FLOOR_TYPES[k] + '</option>';
+}).join('');
+return '<tr>' +
+'<td style="padding:5px 8px;font-weight:800;color:#0f766e;font-size:13px;white-space:nowrap;">ชั้น ' + f.floor + '</td>' +
+'<td style="padding:5px;"><select id="bldg-floor-type-' + f.floor + '" onchange="_toggleBldgOtherInput_(' + f.floor + ')" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;font-family:Prompt,sans-serif;">' + opts + '</select></td>' +
+'<td style="padding:5px;"><input id="bldg-floor-note-' + f.floor + '" value="' + String(f.note || '').replace(/"/g, '&quot;') + '" placeholder="หมายเหตุ" style="width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;' + (f.type === 'other' ? '' : 'display:none;') + '"></td>' +
+'</tr>';
+}).join('');
+Swal.fire({
+title: (existingId ? '✏️ แก้ไข: ' : '🏢 ') + buildingName,
+html: '<div style="max-height:400px;overflow-y:auto;text-align:left;"><table style="width:100%;border-collapse:collapse;"><thead><tr><th style="text-align:left;font-size:12px;color:#64748b;padding:4px 8px;">ชั้น</th><th style="text-align:left;font-size:12px;color:#64748b;padding:4px;">ประเภท</th><th style="text-align:left;font-size:12px;color:#64748b;padding:4px;">หมายเหตุ</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>',
+width: 560,
+showCancelButton: true,
+confirmButtonText: existingId ? 'บันทึกการแก้ไข' : 'บันทึก',
+cancelButtonText: 'ยกเลิก',
+preConfirm: function() {
+return floors.map(function(f) {
+var sel = document.getElementById('bldg-floor-type-' + f.floor);
+var noteEl = document.getElementById('bldg-floor-note-' + f.floor);
+return { floor: f.floor, type: sel ? sel.value : 'safe', note: noteEl ? noteEl.value.trim() : '' };
+});
+}
+}).then(function(result) {
+if (!result.isConfirmed) return;
+var finalFloors = result.value;
+showOCSending('กำลังบันทึก...', 'กำลังบันทึกโครงสร้างอาคาร');
+if (existingId) {
+google.script.run
+.withSuccessHandler(function() {
+Swal.close();
+var card = (window._buildingStructures || []).filter(function(c) { return c.id === existingId; })[0];
+if (card) { card.buildingName = buildingName; card.floors = finalFloors; }
+renderBuildingStructureCards(window._buildingStructures || []);
+Swal.fire({ icon:'success', title:'บันทึกแล้ว', timer:1200, showConfirmButton:false });
+})
+.withFailureHandler(function(err) { Swal.close(); Swal.fire('บันทึกไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
+.updateBuildingStructure(existingId, buildingName, finalFloors);
+} else {
+google.script.run
+.withSuccessHandler(function(res) {
+Swal.close();
+var rec = (res && res.record) || { buildingName: buildingName, floors: finalFloors, posX: 20, posY: 20 };
+window._buildingStructures = window._buildingStructures || [];
+window._buildingStructures.push(rec);
+renderBuildingStructureCards(window._buildingStructures);
+Swal.fire({ icon:'success', title:'สร้างการ์ดแล้ว', timer:1200, showConfirmButton:false });
+})
+.withFailureHandler(function(err) { Swal.close(); Swal.fire('บันทึกไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
+.saveBuildingStructure(buildingName, finalFloors, (typeof ocCurrentUser !== 'undefined' && ocCurrentUser) || (typeof USER_NAME !== 'undefined' && USER_NAME) || 'Admin');
+}
+});
+}
+function renderBuildingStructureCards(list) {
+var layer = document.getElementById('dash_building_cards_layer');
+if (!layer) return;
+layer.innerHTML = '';
+(list || []).forEach(function(card) {
+var div = document.createElement('div');
+div.className = 'bldg-structure-card';
+div.style.cssText = 'position:absolute;left:' + (card.posX || 20) + 'px;top:' + (card.posY || 20) + 'px;width:220px;background:white;border-radius:8px;box-shadow:0 4px 14px rgba(15,23,42,0.28);pointer-events:auto;font-family:Prompt,sans-serif;border:1px solid #cbd5e1;';
+var sortedFloors = (card.floors || []).slice().sort(function(a, b) { return b.floor - a.floor; });
+var floorsHtml = sortedFloors.map(function(f) {
+var color = BLDG_FLOOR_COLORS[f.type] || '#64748b';
+var lbl = (f.type === 'other' && f.note) ? f.note : (BLDG_FLOOR_TYPES[f.type] || f.type);
+return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;border-bottom:1px solid #f1f5f9;font-size:11px;">' +
+'<span style="color:#475569;font-weight:700;">ชั้น ' + f.floor + '</span>' +
+'<span style="background:' + color + ';color:white;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:700;white-space:nowrap;">' + lbl + '</span>' +
+'</div>';
+}).join('');
+div.innerHTML =
+'<div class="bldg-card-header" style="background:#0f766e;color:white;padding:7px 9px;border-radius:8px 8px 0 0;font-size:12px;font-weight:800;display:flex;justify-content:space-between;align-items:center;cursor:move;">' +
+'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><i class="fas fa-building"></i> ' + card.buildingName + '</span>' +
+'<span style="flex:0 0 auto;margin-left:6px;">' +
+'<i class="fas fa-pen" style="cursor:pointer;margin-right:8px;" onclick="event.stopPropagation();_editBuildingStructure_(' + card.id + ')"></i>' +
+'<i class="fas fa-times" style="cursor:pointer;" onclick="event.stopPropagation();_deleteBuildingStructure_(' + card.id + ')"></i>' +
+'</span>' +
+'</div>' +
+'<div style="max-height:200px;overflow-y:auto;">' + floorsHtml + '</div>';
+layer.appendChild(div);
+_makeBldgCardDraggable_(div, card);
+});
+}
+function _makeBldgCardDraggable_(el, card) {
+var header = el.querySelector('.bldg-card-header');
+var startX, startY, origX, origY, dragging = false;
+function onDown(clientX, clientY) {
+if (APP_ACCESS_ROLE !== 'admin') return;
+dragging = true;
+window._bldgDragInProgress = true;
+startX = clientX; startY = clientY;
+origX = parseFloat(el.style.left) || 0;
+origY = parseFloat(el.style.top) || 0;
+}
+function onMove(clientX, clientY) {
+if (!dragging) return;
+el.style.left = (origX + (clientX - startX)) + 'px';
+el.style.top = (origY + (clientY - startY)) + 'px';
+}
+function onUp() {
+if (!dragging) return;
+dragging = false;
+window._bldgDragInProgress = false;
+var x = parseFloat(el.style.left) || 0;
+var y = parseFloat(el.style.top) || 0;
+card.posX = x; card.posY = y;
+google.script.run.withFailureHandler(function() {}).updateBuildingStructurePosition(card.id, x, y);
+}
+header.addEventListener('mousedown', function(e) { onDown(e.clientX, e.clientY); e.preventDefault(); });
+document.addEventListener('mousemove', function(e) { onMove(e.clientX, e.clientY); });
+document.addEventListener('mouseup', onUp);
+header.addEventListener('touchstart', function(e) { var t = e.touches[0]; onDown(t.clientX, t.clientY); }, { passive: true });
+document.addEventListener('touchmove', function(e) { if (!dragging) return; var t = e.touches[0]; onMove(t.clientX, t.clientY); }, { passive: true });
+document.addEventListener('touchend', onUp);
+}
+function _editBuildingStructure_(id) {
+if (APP_ACCESS_ROLE !== 'admin') { Swal.fire('ต้องใช้สิทธิ์ Admin', 'เฉพาะ Admin เท่านั้นที่แก้ไขได้', 'warning'); return; }
+var card = (window._buildingStructures || []).filter(function(c) { return c.id === id; })[0];
+if (!card) return;
+_openBuildingFloorTable_(card.buildingName, (card.floors || []).length, id, card.floors);
+}
+function _deleteBuildingStructure_(id) {
+if (APP_ACCESS_ROLE !== 'admin') { Swal.fire('ต้องใช้สิทธิ์ Admin', 'เฉพาะ Admin เท่านั้นที่ลบได้', 'warning'); return; }
+Swal.fire({ title: 'ลบการ์ดนี้?', icon: 'warning', showCancelButton: true, confirmButtonText: 'ลบ', cancelButtonText: 'ยกเลิก', confirmButtonColor: '#dc2626' }).then(function(r) {
+if (!r.isConfirmed) return;
+google.script.run
+.withSuccessHandler(function() {
+window._buildingStructures = (window._buildingStructures || []).filter(function(c) { return c.id !== id; });
+renderBuildingStructureCards(window._buildingStructures);
+})
+.withFailureHandler(function(err) { Swal.fire('ลบไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
+.deleteBuildingStructure(id);
+});
+}
 function renderIndoorFloors(zoneMarkers) {
 var indoor = (zoneMarkers || []).filter(function(z) { return (z.locationKind || 'outdoor') === 'indoor' && (z.floorLabel || z.floor_label); });
 var box = document.getElementById('dash_indoor_floors');
