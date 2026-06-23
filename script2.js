@@ -843,6 +843,7 @@ refreshOCSupportRequestsDirect('oc');
 }
 function refreshOCSupportRequestsDirect(context) {
 if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+resetIncidentScopedCachesIfNeeded();
 if (window._ocSupportReqLoading) return;
 var now = Date.now();
 if (window._lastOCSupportReqAt && now - window._lastOCSupportReqAt < 4500) return;
@@ -851,8 +852,8 @@ window._ocSupportReqLoading = true;
 google.script.run
 .withSuccessHandler(function(list) {
 window._ocSupportReqLoading = false;
-list = normalizeOCSupportRequests(Array.isArray(list) ? list : []);
-if (!list.length && window._lastOCSupportReqs && getActiveOCSupportRequests(window._lastOCSupportReqs).length) {
+list = normalizeOCSupportRequests(filterCurrentIncidentRows(Array.isArray(list) ? list : []));
+if (!getCurrentIncidentStartMs() && !list.length && window._lastOCSupportReqs && getActiveOCSupportRequests(window._lastOCSupportReqs).length) {
 list = window._lastOCSupportReqs;
 }
 if (list.length) {
@@ -881,6 +882,7 @@ window._ocSupportReqLoading = false;
 }
 function refreshOCSitReportsDirect(context) {
 if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+resetIncidentScopedCachesIfNeeded();
 if (window._ocSitReportsLoading) return;
 var now = Date.now();
 if (window._lastOCSitReportsAt && now - window._lastOCSitReportsAt < 4500) return;
@@ -889,8 +891,8 @@ window._ocSitReportsLoading = true;
 google.script.run
 .withSuccessHandler(function(list) {
 window._ocSitReportsLoading = false;
-list = Array.isArray(list) ? list : [];
-if (!list.length && window._lastOCSitReports && window._lastOCSitReports.length) {
+list = filterCurrentIncidentRows(Array.isArray(list) ? list : []);
+if (!getCurrentIncidentStartMs() && !list.length && window._lastOCSitReports && window._lastOCSitReports.length) {
 list = window._lastOCSitReports;
 }
 if (list.length) {
@@ -1830,22 +1832,102 @@ opt.remove();
 }
 cleanOCResourceControls();
 var IC_OC_HARD_VERSION = 'IC-OC-HARD-2026-05-19-1410';
+function parseIncidentScopedTime(value) {
+if (!value) return 0;
+if (value instanceof Date) return value.getTime();
+var raw = String(value || '').trim();
+if (!raw) return 0;
+var ms = Date.parse(raw);
+if (!isNaN(ms)) return ms;
+ms = Date.parse(raw.replace(' ', 'T'));
+return isNaN(ms) ? 0 : ms;
+}
+function getCurrentIncidentStartMs(state) {
+var es = getIncidentStateForCacheKey(state);
+return parseIncidentScopedTime(es.timestamp || es.StartTime || es.startTime || es.startedAt || es.activeAt || '');
+}
+function getIncidentScopedTime(row) {
+row = row || {};
+return parseIncidentScopedTime(row.time || row.timestamp || row.Timestamp || row.created_at || row.createdAt || row.updatedAt || row.updated_at || row.loggedAt || row.Date || row.date || '');
+}
+function isCurrentIncidentRow(row, state) {
+var startMs = getCurrentIncidentStartMs(state);
+if (!startMs) return true;
+var rowMs = getIncidentScopedTime(row);
+if (!rowMs) return true;
+return rowMs >= (startMs - 60000);
+}
+function filterCurrentIncidentRows(list, state) {
+return (Array.isArray(list) ? list : []).filter(function(row) {
+return isCurrentIncidentRow(row, state);
+});
+}
+function getIncidentStateForCacheKey(state) {
+if (state && state.emergState) return state.emergState;
+if (state && (state.status || state.evtName || state.evtLoc || state.timestamp || state.StartTime || state.startTime)) return state;
+return window._lastEmergState || (window._lastOCState && window._lastOCState.emergState) || {};
+}
+function getCurrentIncidentKey(state) {
+var es = getIncidentStateForCacheKey(state);
+return [es.timestamp || es.StartTime || es.startTime || '', es.evtName || '', es.evtLoc || '', es.evtPlan || ''].join('|');
+}
+function clearIncidentScopedDashboardUI() {
+var sitEl = document.getElementById('ic_oc_sitrep_feed');
+if (sitEl) sitEl.innerHTML = '<span style="color:#999;">ยังไม่มีรายงานสถานการณ์จาก OC/ICP</span>';
+var reqEl = document.getElementById('ic_oc_support_feed');
+if (reqEl) reqEl.innerHTML = '<span style="color:#999;">ยังไม่มีคำขอสนับสนุนจาก OC</span>';
+var sitTab = document.getElementById('sitrep_oc_feed');
+if (sitTab) sitTab.innerHTML = 'ยังไม่มีรายงานสถานการณ์จาก OC/ICP';
+var panel = document.getElementById('dashboard_oc_support_panel');
+if (panel) panel.style.display = 'none';
+var feed = document.getElementById('dashboard_oc_support_feed');
+if (feed) feed.innerHTML = '';
+var count = document.getElementById('dashboard_oc_support_count');
+if (count) count.textContent = '0';
+['ops','plan','log','jic','specialist','liaison'].forEach(function(roleType) {
+var els = document.querySelectorAll('#count_' + roleType);
+Array.prototype.forEach.call(els, function(el) {
+el.textContent = '0';
+el.innerText = '0';
+});
+});
+}
+function resetIncidentScopedCachesIfNeeded(state) {
+var key = getCurrentIncidentKey(state);
+if (!key || key === '|||') return;
+if (window._incidentScopedCacheKey === key) return;
+window._incidentScopedCacheKey = key;
+window._lastOCSitReports = [];
+window._icSitReports = [];
+window._lastOCSupportReqs = [];
+window._icSupportReqs = [];
+window._lastAttendanceCounts = null;
+window._attendanceData = [];
+window._attendancePeopleByRole = {};
+window._ocSupportedNoticeAt = {};
+clearIncidentScopedDashboardUI();
+}
 function normalizeICOCState(state) {
 state = state || {};
+resetIncidentScopedCachesIfNeeded(state);
 var zones = Array.isArray(state.zoneMarkers) ? state.zoneMarkers.filter(function(z) {
 var lat = parseFloat(z.lat !== undefined ? z.lat : z.Lat);
 var lng = parseFloat(z.lng !== undefined ? z.lng : z.Lng);
 return z && !isNaN(lat) && !isNaN(lng);
 }) : [];
-var sitReports = Array.isArray(state.sitReports) ? state.sitReports : [];
-var supportReqs = normalizeOCSupportRequests(Array.isArray(state.supportReqs) ? state.supportReqs : []);
+var sitReports = filterCurrentIncidentRows(Array.isArray(state.sitReports) ? state.sitReports : [], state);
+var supportReqs = normalizeOCSupportRequests(filterCurrentIncidentRows(Array.isArray(state.supportReqs) ? state.supportReqs : [], state));
 var resources = Array.isArray(state.resources) ? state.resources : [];
-var attendance = Array.isArray(state.attendance) ? state.attendance : [];
+var attendance = filterCurrentIncidentRows(Array.isArray(state.attendance) ? state.attendance : [], state);
 var attendanceSummary = state.attendanceSummary || null;
+if (attendanceSummary && Array.isArray(attendanceSummary.people)) {
+attendanceSummary = Object.assign({}, attendanceSummary, { people: filterCurrentIncidentRows(attendanceSummary.people, state) });
+attendanceSummary.counts = summarizeAttendanceRows(attendanceSummary.people).counts;
+}
 var roleUpdates = Array.isArray(state.roleUpdates) ? state.roleUpdates : [];
 var evacuationPoints = Array.isArray(state.evacuationPoints) ? state.evacuationPoints : [];
 if (!zones.length && window._icZoneMarkers && window._icZoneMarkers.length) zones = window._icZoneMarkers;
-if (!supportReqs.length && window._icSupportReqs && getActiveOCSupportRequests(window._icSupportReqs).length) supportReqs = window._icSupportReqs;
+if (!getCurrentIncidentStartMs() && !supportReqs.length && window._icSupportReqs && getActiveOCSupportRequests(window._icSupportReqs).length) supportReqs = window._icSupportReqs;
 return {
 zoneMarkers: zones,
 sitReports: sitReports,
@@ -2291,7 +2373,7 @@ var topText = document.getElementById('hdr_oc_sitrep_text');
 var topBox = document.getElementById('hdr_oc_sitrep_box');
 var el = document.getElementById('sitrep_oc_feed');
 list = Array.isArray(list) ? list : [];
-if (!list.length && window._lastOCSitReports && window._lastOCSitReports.length) {
+if (!getCurrentIncidentStartMs() && !list.length && window._lastOCSitReports && window._lastOCSitReports.length) {
 list = window._lastOCSitReports;
 }
 if (list.length) {
@@ -2779,7 +2861,7 @@ var el = document.getElementById('oc_req_history');
 var mobileEl = document.getElementById('oc_mobile_req_feed');
 list = normalizeOCSupportRequests(Array.isArray(list) ? list : []);
 list = dedupeOCSupportRequests(list);
-if (!list.length && window._lastOCSupportReqs && window._lastOCSupportReqs.length) {
+if (!getCurrentIncidentStartMs() && !list.length && window._lastOCSupportReqs && window._lastOCSupportReqs.length) {
 list = dedupeOCSupportRequests(window._lastOCSupportReqs);
 }
 if (list.length) {
@@ -4068,13 +4150,14 @@ return { counts: counts, people: people, peopleByRole: peopleByRole };
 }
 function applyAttendanceCounts(counts) {
 counts = counts || {};
+resetIncidentScopedCachesIfNeeded();
 var hasAnyCount = ['ops','plan','log','jic','specialist','liaison'].some(function(roleType) {
 return Number(counts[roleType] || 0) > 0;
 });
 var hadAnyCount = window._lastAttendanceCounts && ['ops','plan','log','jic','specialist','liaison'].some(function(roleType) {
 return Number(window._lastAttendanceCounts[roleType] || 0) > 0;
 });
-if (!hasAnyCount && hadAnyCount) {
+if (!hasAnyCount && hadAnyCount && !getCurrentIncidentStartMs()) {
 counts = window._lastAttendanceCounts;
 }
 window._lastAttendanceCounts = counts;
