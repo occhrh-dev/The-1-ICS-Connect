@@ -2168,17 +2168,16 @@ try { dashMap.Overlays.remove(o); } catch(e) {}
 window._dashWindOverlays = [];
 }
 function drawWindArrowOnDashMap(destDeg, speed) {
-if (!dashMap || !incidentCenter || incidentCenter.lat == null || incidentCenter.lng == null || typeof longdo === 'undefined') return;
+if (!dashMap || !incidentCenter || incidentCenter.lat == null || incidentCenter.lng == null || typeof makeLongdoHtmlMarker !== 'function') return;
 clearDashWindOverlay();
 var loc = { lon: parseFloat(incidentCenter.lng), lat: parseFloat(incidentCenter.lat) };
 if (isNaN(loc.lon) || isNaN(loc.lat)) return;
-var html = '<div style="display:flex;align-items:center;gap:5px;background:rgba(15,23,42,.92);color:white;border:1.5px solid #38bdf8;border-radius:999px;padding:3px 7px;box-shadow:0 3px 10px rgba(0,0,0,.4);font-weight:800;white-space:nowrap;font-size:11px;">' +
+var html = '<div style="position:relative;z-index:30;display:flex;align-items:center;gap:5px;background:rgba(15,23,42,.9);color:white;border:1.5px solid #38bdf8;border-radius:999px;padding:3px 7px;box-shadow:0 3px 10px rgba(0,0,0,.38);font-weight:800;white-space:nowrap;font-size:11px;">' +
 '<i class="fas fa-arrow-up" style="color:#7dd3fc;font-size:13px;transform:rotate(' + (Number(destDeg) || 0) + 'deg);"></i>' +
 '<span>' + Number(speed || 0).toFixed(1) + ' m/s</span>' +
 '</div>';
 var marker = makeLongdoHtmlMarker(loc, html, {
-offset: { x: 0, y: 0 },
-weight: longdo.OverlayWeight.Top,
+offset: { x: 0, y: -34 },
 scaleMode: 'label'
 });
 dashMap.Overlays.add(marker);
