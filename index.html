@@ -5938,8 +5938,10 @@ setupUserUI();
 if (window._lastEmergState && window._lastEmergState.status && window._lastEmergState.status !== 'Normal') {
 applyDashboardEmergencyState(window._lastEmergState);
 }
+if (!window._pendingVToken) {
 loadEmergencyStateLiteForDashboard();
 fetchData();
+}
 if (!window._dashFetchInterval) {
 window._dashFetchInterval = setInterval(function() {
 if (document.hidden) return;
