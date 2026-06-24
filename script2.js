@@ -2139,7 +2139,6 @@ var html = '<div style="display:flex;align-items:center;gap:8px;background:' + b
 var detail = '<b>คำขอสนับสนุนจาก OC/ICP</b><br>' + buildOCSupportAlertDetail(activeReqs);
 var overlay = makeLongdoHtmlMarker({ lon: lng, lat: lat }, html, {
 offset: { x: 0, y: 0 },
-weight: longdo.OverlayWeight.Top,
 title: 'คำขอสนับสนุนจาก OC/ICP',
 scaleMode: 'label',
 markerOptions: { detail: detail }
