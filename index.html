@@ -3581,6 +3581,14 @@ try { applyTierUIRestrictions(); } catch(e) {}
 }).getTierConfigForAgency(APP_AGENCY_ID);
 } catch(e) {}
 }
+// ถ้ามี vtoken ในลิงก์ (ลิงก์ดูอย่างเดียว) ให้เข้า dashboard view-only ตรงๆ
+// ต้องเช็คก่อนจุด "ไม่มี agencyId → โชว์หน้า login" ด้านล่าง เพราะ token เองจะ resolve
+// agencyId ให้เองผ่าน Worker ไม่ต้องมี session login เดิมอยู่ก่อนเลย
+if (shouldOpenDashboardViewOnly()) {
+document.getElementById('scene_Loading').style.display = 'none';
+openDashboardViewOnly();
+return;
+}
 // ถ้ายังไม่มี agencyId เลย (ยังไม่เคย login ในเครื่อง/แท็บนี้ และไม่ได้มาจาก join link)
 // ให้ขึ้นหน้า login ตรงๆ — ไม่มีทางรู้ "สถานะ" ของหน่วยงานไหนได้ก่อนรู้ว่าใคร login
 if (!APP_AGENCY_ID) {
