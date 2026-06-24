@@ -5938,7 +5938,7 @@ if (savedJoinUrl) window._currentJoinUrl = savedJoinUrl;
 var exitViewBtn = document.getElementById('dashboard_exit_view_btn');
 if (exitViewBtn) exitViewBtn.style.display = 'none';
 // IC ที่ไม่ใช่ admin — แสดงปุ่มออกระบบ ซ่อนปุ่มที่ใช้ไม่ได้
-var isICNonAdmin = (currentRole === 'IC' && APP_ACCESS_ROLE !== 'admin');
+var isICNonAdmin = (currentRole === 'IC' && APP_ACCESS_ROLE !== 'admin' && TEMP_ROLE_LABEL !== 'Dashboard View');
 applyICLimitedMode(isICNonAdmin);
 applyDashboardReadOnlyLock();
 updateDashboardUserInfo();
