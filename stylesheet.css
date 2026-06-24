@@ -52,3 +52,17 @@ gap:10px !important;
 -webkit-overflow-scrolling:touch;
 }
 }
+@media (max-width:640px){
+.dash-toolbar-left,.dash-toolbar-right{position:absolute !important;left:6px !important;right:auto !important;}
+.dash-toolbar-left{top:6px !important;}
+.dash-toolbar-right{top:40px !important;}
+.dash-toolbar-left button,.dash-toolbar-right button{padding:5px 8px !important;font-size:10.5px !important;}
+#wind_panel{top:72px !important;left:6px !important;width:150px !important;}
+#wind_panel #weather_info{font-size:0.62rem !important;}
+#wind_panel > div:first-child + div > div:first-child{font-size:0.52rem !important;}
+#dash_indoor_floors{top:auto !important;bottom:6px !important;left:6px !important;max-width:150px !important;}
+}
+@media (max-width:420px){
+.dash-toolbar-left button,.dash-toolbar-right button{padding:4px 6px !important;font-size:9.5px !important;}
+#wind_panel{width:135px !important;}
+}
