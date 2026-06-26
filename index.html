@@ -3782,12 +3782,14 @@ document.getElementById('ban_name').innerText = data.evtName || '-';
 document.getElementById('ban_status').innerText = data.evtPlan || '-';
 document.getElementById('ban_eoc').innerText = data.evtEOC || '-';
 try { _updateEOCNavBadge_(data.evtEOCCoords || ''); } catch(e) {}
-if (document.getElementById('org_ic_name')) document.getElementById('org_ic_name').innerText = (data.registeredICName || '').trim() || '';
-if (document.getElementById('org_ic_position')) document.getElementById('org_ic_position').innerText = (data.registeredICPosition || '').trim() || '';
-if ((data.registeredICName || '').trim()) {
+var registeredICName = getIncidentCommanderName(data);
+var registeredICPosition = getIncidentCommanderPosition(data);
+if (document.getElementById('org_ic_name')) document.getElementById('org_ic_name').innerText = registeredICName || '';
+if (document.getElementById('org_ic_position')) document.getElementById('org_ic_position').innerText = registeredICPosition || '';
+if (registeredICName) {
 window._icLoggedIn = true;
-window._icLoginName = data.registeredICName;
-lockICBox(shouldLockICBoxForCurrentUser(data.registeredICName));
+window._icLoginName = registeredICName;
+lockICBox(shouldLockICBoxForCurrentUser(registeredICName));
 } else {
 window._icLoggedIn = false;
 window._icLoginName = '';
@@ -4769,7 +4771,7 @@ if (roleCode === 'IC') {
     return;
   }
   // ตรวจว่ามี IC ที่รายงานตัวอยู่แล้วหรือยัง (server-side authoritative)
-  var regIC = (emergState.registeredICName || '').trim();
+  var regIC = getIncidentCommanderName(emergState);
   if (regIC) {
     Swal.fire({
       icon: 'warning',
@@ -5490,7 +5492,9 @@ var fallbackPlan = document.getElementById('ban_status') ? document.getElementBy
 var eventName = es.evtName || es.IncidentName || es.name || es.eventName || fallbackEvtName || '';
 var eventLoc = es.evtLoc || es.IncidentLocation || es.loc || es.location || fallbackEvtLoc || '';
 var chem = erg.name ? ((erg.un ? 'UN ' + erg.un + ' / ' : '') + erg.name) : '';
-var commander = ((es.commanderPosition ? es.commanderPosition + ' ' : '') + (es.commanderName || es.commander || es.incidentCommander || es.evtIC || fallbackCommander || '')).trim();
+var commanderName = getIncidentCommanderName(es, fallbackCommander);
+var commanderPosition = getIncidentCommanderPosition(es);
+var commander = ((commanderPosition ? commanderPosition + ' ' : '') + commanderName).trim();
 var plan = es.evtPlan || es.plan || es.PlanInfo || fallbackPlan || '';
 setRoleHeaderText('role_evt_name', eventName, false);
 setRoleHeaderText('role_evt_loc', eventLoc, false);
@@ -5502,6 +5506,15 @@ function roleSafeText(value) {
 return String(value || '').replace(/[&<>"']/g, function(ch) {
 return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[ch];
 });
+}
+function getIncidentCommanderName(state, fallback) {
+state = state || {};
+var name = state.registeredICName || state.commanderName || state.commander || state.incidentCommander || state.evtIC || state.icName || fallback || '';
+return String(name || '').trim();
+}
+function getIncidentCommanderPosition(state) {
+state = state || {};
+return String(state.registeredICPosition || state.commanderPosition || state.incidentCommanderPosition || '').trim();
 }
 function getBridgeAgencyId() {
 try {
@@ -5906,8 +5919,8 @@ function() { refreshRoleWorkState(currentRole || TEMP_ROLE); }
 }
 function getDashboardUserInfoText() {
 var state = window._lastEmergState || {};
-var name = (state.registeredICName || '').trim() || 'ยังไม่มี IC';
-var position = state.commanderPosition || '';
+var name = getIncidentCommanderName(state) || 'ยังไม่มี IC';
+var position = getIncidentCommanderPosition(state);
 var suffix = position || (TEMP_ROLE === 'IC' && TEMP_ROLE_LABEL === 'ผู้บัญชาการเหตุการณ์' ? '' : TEMP_ROLE_LABEL);
 return name + (suffix ? ' (' + suffix + ')' : '');
 }
@@ -6119,6 +6132,7 @@ if (document.getElementById('dash_ban_eoc_inline')) {
 document.getElementById('dash_ban_eoc_inline').innerText = d.evtEOC || '-';
 }
 try { _updateDashboardEOCAction_(d.evtEOCCoords || ''); } catch(e) {}
+updateDashboardUserInfo();
 if (d.evtCoords) {
 if (!dashMap) {
 initDashMap(d.evtCoords).then(function() {
