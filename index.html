@@ -5289,6 +5289,16 @@ window.open(info.url, '_blank');
 }
 function enterRoleWorkScene(roleCode) {
 roleCode = roleCode || currentRole || TEMP_ROLE;
+if (window._lastEmergState && window._lastEmergState.status === 'Normal') {
+handleIncidentDeactivatedFromRole();
+Swal.fire({
+icon: 'info',
+title: 'ภารกิจจบแล้ว',
+text: 'ผู้บัญชาการปิดเหตุแล้ว ไม่สามารถเข้าการ์ดงานได้',
+confirmButtonText: 'รับทราบ'
+});
+return;
+}
 var meta = getRoleWorkMeta(roleCode);
 clearDashboardSceneLocks();
 document.getElementById('modal_Pin').style.display = 'none';
@@ -5598,6 +5608,17 @@ if (typeof google === 'undefined' || !google.script || !google.script.run) retur
 google.script.run
 .withSuccessHandler(function(es) {
 window._lastEmergState = es || window._lastEmergState || {};
+if (es && es.status === 'Normal' && isRoleWorkSceneOpen()) {
+Swal.fire({
+icon: 'info',
+title: 'ภารกิจจบแล้ว',
+text: 'ผู้บัญชาการปิดเหตุแล้ว ไม่สามารถรายงานต่อได้',
+confirmButtonText: 'รับทราบ'
+}).then(function() {
+handleIncidentDeactivatedFromRole();
+});
+return;
+}
 applyRoleWorkHeader(es || {}, {});
 updateRoleEOCNavigationCard(currentRole || TEMP_ROLE);
 })
@@ -5611,6 +5632,17 @@ google.script.run
 state = state || {};
 var es = state.emergState || {};
 var erg = state.ergState || {};
+if (es.status === 'Normal') {
+Swal.fire({
+icon: 'info',
+title: 'ภารกิจจบแล้ว',
+text: 'ผู้บัญชาการปิดเหตุแล้ว ไม่สามารถรายงานต่อได้',
+confirmButtonText: 'รับทราบ'
+}).then(function() {
+handleIncidentDeactivatedFromRole();
+});
+return;
+}
 applyRoleWorkHeader(es, erg);
 window._lastEmergState = es || window._lastEmergState || {};
 updateRoleEOCNavigationCard(roleCode);
@@ -5703,6 +5735,9 @@ var events = res.events || [];
 roleBroadcastLastRow = res.lastRow || roleBroadcastLastRow || 0;
 if (roleBroadcastPriming) {
 roleBroadcastPriming = false;
+events.forEach(function(evt) {
+if (evt && evt.type === 'deactivate') showRoleBroadcastEvent(evt);
+});
 return;
 }
 events.forEach(function(evt) {
