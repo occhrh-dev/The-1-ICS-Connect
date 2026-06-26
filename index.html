@@ -3547,7 +3547,7 @@ window._eocOnloadFn = function() {
 try { applyTierUIRestrictions(); } catch(e) {}
 try {
   var cached = JSON.parse(localStorage.getItem('eoc_last_state') || 'null');
-  if (!window.EOC_JOIN_TOKEN && cached && cached.status) applySystemStatusData(cached);
+  if (cached && cached.status) applySystemStatusData(cached);
 } catch(e) {}
 if (window.EOC_JOIN_TOKEN) {
 document.getElementById('scene_Loading').style.display = 'flex';
@@ -3782,14 +3782,12 @@ document.getElementById('ban_name').innerText = data.evtName || '-';
 document.getElementById('ban_status').innerText = data.evtPlan || '-';
 document.getElementById('ban_eoc').innerText = data.evtEOC || '-';
 try { _updateEOCNavBadge_(data.evtEOCCoords || ''); } catch(e) {}
-var registeredICName = getIncidentCommanderName(data);
-var registeredICPosition = getIncidentCommanderPosition(data);
-if (document.getElementById('org_ic_name')) document.getElementById('org_ic_name').innerText = registeredICName || '';
-if (document.getElementById('org_ic_position')) document.getElementById('org_ic_position').innerText = registeredICPosition || '';
-if (registeredICName) {
+if (document.getElementById('org_ic_name')) document.getElementById('org_ic_name').innerText = (data.registeredICName || '').trim() || '';
+if (document.getElementById('org_ic_position')) document.getElementById('org_ic_position').innerText = (data.registeredICPosition || '').trim() || '';
+if ((data.registeredICName || '').trim()) {
 window._icLoggedIn = true;
-window._icLoginName = registeredICName;
-lockICBox(shouldLockICBoxForCurrentUser(registeredICName));
+window._icLoginName = data.registeredICName;
+lockICBox(shouldLockICBoxForCurrentUser(data.registeredICName));
 } else {
 window._icLoggedIn = false;
 window._icLoginName = '';
@@ -3830,7 +3828,7 @@ d = d || window._lastEmergState || {};
 window._lastEmergState = d;
 try { applyIncidentTierFromState(d); } catch(e) {}
 // เก็บ Join URL ถ้ามี
-if (d.joinUrl) {
+if (d.joinUrl && !window._currentJoinUrl) {
 window._currentJoinUrl = d.joinUrl;
 try { sessionStorage.setItem('EOC_JOIN_URL', d.joinUrl); } catch(e) {}
 try { showJoinLinkInDashboard(d.joinUrl); } catch(e) {}
@@ -4340,7 +4338,7 @@ var btn = document.getElementById('dashboard_join_link_btn');
 if (btn && APP_ACCESS_ROLE === 'admin') btn.style.display = 'inline-flex';
 }
 function showJoinLinkPopup() {
-var url = window._currentJoinUrl || '';
+var url = window._currentJoinUrl || sessionStorage.getItem('EOC_JOIN_URL') || '';
 if (!url) {
 // ถ้ายังไม่มีใน memory → fetch จาก state
 var state = window._lastEmergState || {};
@@ -4771,7 +4769,7 @@ if (roleCode === 'IC') {
     return;
   }
   // ตรวจว่ามี IC ที่รายงานตัวอยู่แล้วหรือยัง (server-side authoritative)
-  var regIC = getIncidentCommanderName(emergState);
+  var regIC = (emergState.registeredICName || '').trim();
   if (regIC) {
     Swal.fire({
       icon: 'warning',
@@ -5291,16 +5289,6 @@ window.open(info.url, '_blank');
 }
 function enterRoleWorkScene(roleCode) {
 roleCode = roleCode || currentRole || TEMP_ROLE;
-if (window._lastEmergState && window._lastEmergState.status === 'Normal') {
-handleIncidentDeactivatedFromRole();
-Swal.fire({
-icon: 'info',
-title: 'ภารกิจจบแล้ว',
-text: 'ผู้บัญชาการปิดเหตุแล้ว ไม่สามารถเข้าการ์ดงานได้',
-confirmButtonText: 'รับทราบ'
-});
-return;
-}
 var meta = getRoleWorkMeta(roleCode);
 clearDashboardSceneLocks();
 document.getElementById('modal_Pin').style.display = 'none';
@@ -5492,9 +5480,7 @@ var fallbackPlan = document.getElementById('ban_status') ? document.getElementBy
 var eventName = es.evtName || es.IncidentName || es.name || es.eventName || fallbackEvtName || '';
 var eventLoc = es.evtLoc || es.IncidentLocation || es.loc || es.location || fallbackEvtLoc || '';
 var chem = erg.name ? ((erg.un ? 'UN ' + erg.un + ' / ' : '') + erg.name) : '';
-var commanderName = getIncidentCommanderName(es, fallbackCommander);
-var commanderPosition = getIncidentCommanderPosition(es);
-var commander = ((commanderPosition ? commanderPosition + ' ' : '') + commanderName).trim();
+var commander = ((es.commanderPosition ? es.commanderPosition + ' ' : '') + (es.commanderName || es.commander || es.incidentCommander || es.evtIC || fallbackCommander || '')).trim();
 var plan = es.evtPlan || es.plan || es.PlanInfo || fallbackPlan || '';
 setRoleHeaderText('role_evt_name', eventName, false);
 setRoleHeaderText('role_evt_loc', eventLoc, false);
@@ -5506,15 +5492,6 @@ function roleSafeText(value) {
 return String(value || '').replace(/[&<>"']/g, function(ch) {
 return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[ch];
 });
-}
-function getIncidentCommanderName(state, fallback) {
-state = state || {};
-var name = state.registeredICName || state.commanderName || state.commander || state.incidentCommander || state.evtIC || state.icName || fallback || '';
-return String(name || '').trim();
-}
-function getIncidentCommanderPosition(state) {
-state = state || {};
-return String(state.registeredICPosition || state.commanderPosition || state.incidentCommanderPosition || '').trim();
 }
 function getBridgeAgencyId() {
 try {
@@ -5621,17 +5598,6 @@ if (typeof google === 'undefined' || !google.script || !google.script.run) retur
 google.script.run
 .withSuccessHandler(function(es) {
 window._lastEmergState = es || window._lastEmergState || {};
-if (es && es.status === 'Normal' && isRoleWorkSceneOpen()) {
-Swal.fire({
-icon: 'info',
-title: 'ภารกิจจบแล้ว',
-text: 'ผู้บัญชาการปิดเหตุแล้ว ไม่สามารถรายงานต่อได้',
-confirmButtonText: 'รับทราบ'
-}).then(function() {
-handleIncidentDeactivatedFromRole();
-});
-return;
-}
 applyRoleWorkHeader(es || {}, {});
 updateRoleEOCNavigationCard(currentRole || TEMP_ROLE);
 })
@@ -5645,17 +5611,6 @@ google.script.run
 state = state || {};
 var es = state.emergState || {};
 var erg = state.ergState || {};
-if (es.status === 'Normal') {
-Swal.fire({
-icon: 'info',
-title: 'ภารกิจจบแล้ว',
-text: 'ผู้บัญชาการปิดเหตุแล้ว ไม่สามารถรายงานต่อได้',
-confirmButtonText: 'รับทราบ'
-}).then(function() {
-handleIncidentDeactivatedFromRole();
-});
-return;
-}
 applyRoleWorkHeader(es, erg);
 window._lastEmergState = es || window._lastEmergState || {};
 updateRoleEOCNavigationCard(roleCode);
@@ -5748,9 +5703,6 @@ var events = res.events || [];
 roleBroadcastLastRow = res.lastRow || roleBroadcastLastRow || 0;
 if (roleBroadcastPriming) {
 roleBroadcastPriming = false;
-events.forEach(function(evt) {
-if (evt && evt.type === 'deactivate') showRoleBroadcastEvent(evt);
-});
 return;
 }
 events.forEach(function(evt) {
@@ -5919,8 +5871,8 @@ function() { refreshRoleWorkState(currentRole || TEMP_ROLE); }
 }
 function getDashboardUserInfoText() {
 var state = window._lastEmergState || {};
-var name = getIncidentCommanderName(state) || 'ยังไม่มี IC';
-var position = getIncidentCommanderPosition(state);
+var name = (state.registeredICName || '').trim() || 'ยังไม่มี IC';
+var position = state.commanderPosition || '';
 var suffix = position || (TEMP_ROLE === 'IC' && TEMP_ROLE_LABEL === 'ผู้บัญชาการเหตุการณ์' ? '' : TEMP_ROLE_LABEL);
 return name + (suffix ? ' (' + suffix + ')' : '');
 }
@@ -5995,6 +5947,9 @@ if (shareBtn) shareBtn.style.display = APP_ACCESS_ROLE === 'admin' ? 'inline-fle
 // แสดงปุ่ม Join Link เฉพาะ admin
 var joinBtn = document.getElementById('dashboard_join_link_btn');
 if (joinBtn) joinBtn.style.display = APP_ACCESS_ROLE === 'admin' ? 'inline-flex' : 'none';
+// ดึง join url จาก session ถ้ามี
+var savedJoinUrl = sessionStorage.getItem('EOC_JOIN_URL') || '';
+if (savedJoinUrl) window._currentJoinUrl = savedJoinUrl;
 var exitViewBtn = document.getElementById('dashboard_exit_view_btn');
 if (exitViewBtn) exitViewBtn.style.display = 'none';
 // IC ที่ไม่ใช่ admin — แสดงปุ่มออกระบบ ซ่อนปุ่มที่ใช้ไม่ได้
@@ -6129,7 +6084,6 @@ if (document.getElementById('dash_ban_eoc_inline')) {
 document.getElementById('dash_ban_eoc_inline').innerText = d.evtEOC || '-';
 }
 try { _updateDashboardEOCAction_(d.evtEOCCoords || ''); } catch(e) {}
-updateDashboardUserInfo();
 if (d.evtCoords) {
 if (!dashMap) {
 initDashMap(d.evtCoords).then(function() {
