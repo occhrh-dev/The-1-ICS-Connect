@@ -3547,7 +3547,7 @@ window._eocOnloadFn = function() {
 try { applyTierUIRestrictions(); } catch(e) {}
 try {
   var cached = JSON.parse(localStorage.getItem('eoc_last_state') || 'null');
-  if (cached && cached.status) applySystemStatusData(cached);
+  if (!window.EOC_JOIN_TOKEN && cached && cached.status) applySystemStatusData(cached);
 } catch(e) {}
 if (window.EOC_JOIN_TOKEN) {
 document.getElementById('scene_Loading').style.display = 'flex';
