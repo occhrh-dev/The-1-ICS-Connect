@@ -776,17 +776,17 @@ document.getElementById('evac_food').value,
 document.getElementById('evac_blanket').value,
 document.getElementById('evac_bed').value,
 document.getElementById('evac_other').value.trim(),
-'',
+document.getElementById('evac_note').value.trim(),
 evacCurrentUser || 'EVAC'
 );
 }
 function submitEvacNote() {
-var noteEl = document.getElementById('evac_note');
+var noteEl = document.getElementById('evac_note_text');
 var note = noteEl ? noteEl.value.trim() : '';
 if (!note) return Swal.fire('กรุณาพิมพ์ Note ก่อนส่ง', '', 'warning');
 if (noteEl) noteEl.value = '';
 _optimisticRun_('addRoleNote',
-['EVAC', 'จุดอพยพ', evacCurrentUser || USER_NAME || 'EVAC', window.currentUserPhone || '', note],
+['EVAC_POINT', 'จุดอพยพ', evacCurrentUser || USER_NAME || 'EVAC', window.currentUserPhone || '', note],
 'ส่ง Note เข้า IC แล้ว ✓', 'ส่ง Note ไม่สำเร็จ');
 }
 
@@ -812,7 +812,7 @@ renderOCBanner(es);
 } else {
 refreshOCBannerOnly();
 }
-window._lastERGState = state.ergState || window._lastERGState || {};
+window._lastERGState = state.ergState || {};
 if (typeof renderPickerMapContext === 'function') {
 try { renderPickerMapContext(true); } catch (e) { }
 }
@@ -2325,7 +2325,7 @@ refreshOCSupportRequestsDirect('ic');
 })
 .withSuccessHandler(function(state) {
 window._icOCFeedsLoading = false;
-window._lastERGState = (state && state.ergState) || window._lastERGState || {};
+window._lastERGState = (state && state.ergState) || {};
 state = normalizeICOCState(state);
 renderICOCFeeds(state);
 if (!state.sitReports || !state.sitReports.length) {

@@ -1761,6 +1761,11 @@ function persistJoinToken(token) {
 if (!token) return;
 try { sessionStorage.setItem('EOC_JOIN_TOKEN_SESSION', token); } catch(e) {}
 }
+function clearJoinTokenSession() {
+window.EOC_JOIN_TOKEN = '';
+try { sessionStorage.removeItem('EOC_JOIN_TOKEN_SESSION'); } catch(e) {}
+if (document.body) document.body.classList.remove('join-link-session');
+}
 function hasFeature(featureName) {
 return true; // TODO: restore tier system after 19 Jun
 }
@@ -3549,12 +3554,14 @@ document.getElementById('scene_Loading').style.display = 'flex';
 google.script.run
 .withFailureHandler(function(err) {
 document.getElementById('scene_Loading').style.display = 'none';
+clearJoinTokenSession();
 Swal.fire('Join Link ไม่ถูกต้อง', err && err.message ? err.message : String(err), 'error');
 renderPreIncidentAccess();
 })
 .withSuccessHandler(function(res) {
 if (!res || !res.ok) {
 document.getElementById('scene_Loading').style.display = 'none';
+clearJoinTokenSession();
 Swal.fire('Join Link ไม่ถูกต้อง', 'ลิงก์นี้หมดอายุ ถูกปิดใช้งาน หรือไม่พบในระบบ', 'error');
 renderPreIncidentAccess();
 return;
@@ -3887,6 +3894,7 @@ accessRole: APP_ACCESS_ROLE || '',
 agencyId: APP_AGENCY_ID || '',
 agencyName: APP_AGENCY_NAME || '',
 agencySheetId: APP_AGENCY_SHEET_ID || '',
+incidentKey: (typeof getCurrentIncidentKey === 'function') ? getCurrentIncidentKey(window._lastEmergState || {}) : '',
 isLead: !!IS_LEAD,
 isCoord: !!IS_COORD,
 savedAt: Date.now()
@@ -3913,6 +3921,13 @@ function restoreLastRoleSessionIfAny() {
 if (LAST_ROLE_RESTORE_DONE) return;
 var data = getLastRoleSession();
 if (!data) return;
+if (data.incidentKey && typeof getCurrentIncidentKey === 'function') {
+var currentIncidentKey = getCurrentIncidentKey(window._lastEmergState || {});
+if (currentIncidentKey && data.incidentKey !== currentIncidentKey) {
+clearLastRoleSession();
+return;
+}
+}
 LAST_ROLE_RESTORE_DONE = true;
 USER_NAME = data.name;
 currentUserName = data.name;
@@ -6257,7 +6272,7 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 </script>
 
 <script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260623_1700" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260623_2255" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260626_1045" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {
