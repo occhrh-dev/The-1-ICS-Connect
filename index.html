@@ -6191,19 +6191,35 @@ document.getElementById('cmdInput').value = "";
 function promptUpdate(t) { Swal.fire({input:'number', title:'Update '+t}).then(r=>{ if(r.value) google.script.run.updateEmerCount(t, r.value); }); }
 function exportLogPDF() {
 Swal.fire({ title: 'กำลังโหลด Log...', didOpen: () => Swal.showLoading() });
-google.script.run.withSuccessHandler(function(logs) {
+Promise.all([
+new Promise(function(resolve) { google.script.run.withSuccessHandler(resolve).withFailureHandler(function(){ resolve([]); }).getLogData(); }),
+new Promise(function(resolve) { google.script.run.withSuccessHandler(resolve).withFailureHandler(function(){ resolve([]); }).getFieldMediaReports(200); })
+]).then(function(results) {
 Swal.close();
-if (!logs || logs.length === 0) {
+var logs = results[0] || [];
+var media = results[1] || [];
+if (logs.length === 0 && media.length === 0) {
 Swal.fire('ไม่มีข้อมูล', 'ยังไม่มี Log ในระบบ', 'info');
 return;
 }
+var merged = logs.map(function(r) {
+return { ts: r.timestamp || '', time: r.time, reporter: r.reporter, html: (r.msg || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>') };
+});
+media.forEach(function(m) {
+var isImg = (m.mimeType || '').indexOf('image/') === 0;
+var caption = '📎 แนบสื่อจาก ' + (m.source || '-') + (m.note ? (' — ' + String(m.note).replace(/</g,'&lt;').replace(/>/g,'&gt;')) : '');
+var body = isImg
+? '<img src="' + m.url + '" style="max-width:260px;max-height:200px;display:block;margin-top:4px;border:1px solid #ddd;border-radius:4px;">'
+: '<div style="color:#888;margin-top:2px;">[ไฟล์แนบ: ' + (m.fileName || '-') + ' — ' + (m.mimeType || 'ไม่ทราบประเภท') + ']</div>';
+merged.push({ ts: m.timestamp || '', time: m.time, reporter: m.reporter, html: caption + body });
+});
+merged.sort(function(a, b) { return (a.ts || '').localeCompare(b.ts || ''); });
 var now = new Date().toLocaleString('th-TH', { hour12: false });
-var rows = logs.slice().reverse().map(function(r) {
+var rows = merged.map(function(r) {
 var t = typeof r.time === 'string' ? r.time : String(r.time || '');
 var dateOnly = t.includes(' ') ? t.split(' ')[0] : t;
 var timeOnly = t.includes(' ') ? t.split(' ')[1] : '';
-var msg = (r.msg || '').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')
-return '<tr><td>' + dateOnly + '</td><td>' + timeOnly + '</td><td>' + (r.reporter||'') + '</td><td class="msg">' + msg + '</td></tr>';
+return '<tr><td>' + dateOnly + '</td><td>' + timeOnly + '</td><td>' + (r.reporter||'') + '</td><td class="msg">' + r.html + '</td></tr>';
 }).join('');
 var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>EOC Log</title><style>'
 + 'body{font-family:Sarabun,Prompt,sans-serif;font-size:11px;margin:15mm 10mm;color:#222}'
@@ -6215,10 +6231,10 @@ var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>EOC Log</tit
 + 'tr:nth-child(even) td{background:#f8f9fa}'
 + 'td.msg{max-width:380px;word-break:break-word;line-height:1.5}'
 + '.footer{margin-top:16px;font-size:9px;color:#aaa;text-align:right}'
-+ '@media print{@page{margin:10mm}}'
++ '@media print{@page{margin:10mm} img{max-width:260px !important;}}'
 + '</style></head><body>'
 + '<h1>🚨 EOC — บันทึกเหตุการณ์ฉุกเฉิน</h1>'
-+ '<div class="sub">Export: ' + now + ' &nbsp;|&nbsp; รายการทั้งหมด: ' + logs.length + ' รายการ</div>'
++ '<div class="sub">Export: ' + now + ' &nbsp;|&nbsp; รายการทั้งหมด: ' + merged.length + ' รายการ (รวมรูปภาพ)</div>'
 + '<table><thead><tr>'
 + '<th style="width:75px">วันที่</th>'
 + '<th style="width:60px">เวลา</th>'
@@ -6232,11 +6248,11 @@ if (w) {
 w.document.open();
 w.document.write(html);
 w.document.close();
-setTimeout(function(){ w.print(); }, 800);
+setTimeout(function(){ w.print(); }, 1200);
 } else {
 Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Popup สำหรับเว็บนี้แล้วลองใหม่', 'warning');
 }
-}).getLogData();
+});
 }
 </script>
 
