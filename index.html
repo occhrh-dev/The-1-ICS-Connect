@@ -5065,7 +5065,7 @@ TEMP_ROLE_LABEL = specificRole;
 function continueLoginAfterLead() {
 try { google.script.run.logAccess(TEMP_ROLE_LABEL, USER_NAME); } catch(e) {}
 saveLastRoleSession();
-if (TEMP_ROLE === 'IC' && APP_ACCESS_ROLE !== 'admin') {
+if (TEMP_ROLE === 'IC') {
 google.script.run
 .withSuccessHandler(function(res) {
 if (!res || !res.ok) {
