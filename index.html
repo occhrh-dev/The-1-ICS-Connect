@@ -3830,7 +3830,7 @@ d = d || window._lastEmergState || {};
 window._lastEmergState = d;
 try { applyIncidentTierFromState(d); } catch(e) {}
 // เก็บ Join URL ถ้ามี
-if (d.joinUrl && !window._currentJoinUrl) {
+if (d.joinUrl) {
 window._currentJoinUrl = d.joinUrl;
 try { sessionStorage.setItem('EOC_JOIN_URL', d.joinUrl); } catch(e) {}
 try { showJoinLinkInDashboard(d.joinUrl); } catch(e) {}
@@ -4340,7 +4340,7 @@ var btn = document.getElementById('dashboard_join_link_btn');
 if (btn && APP_ACCESS_ROLE === 'admin') btn.style.display = 'inline-flex';
 }
 function showJoinLinkPopup() {
-var url = window._currentJoinUrl || sessionStorage.getItem('EOC_JOIN_URL') || '';
+var url = window._currentJoinUrl || '';
 if (!url) {
 // ถ้ายังไม่มีใน memory → fetch จาก state
 var state = window._lastEmergState || {};
@@ -5995,9 +5995,6 @@ if (shareBtn) shareBtn.style.display = APP_ACCESS_ROLE === 'admin' ? 'inline-fle
 // แสดงปุ่ม Join Link เฉพาะ admin
 var joinBtn = document.getElementById('dashboard_join_link_btn');
 if (joinBtn) joinBtn.style.display = APP_ACCESS_ROLE === 'admin' ? 'inline-flex' : 'none';
-// ดึง join url จาก session ถ้ามี
-var savedJoinUrl = sessionStorage.getItem('EOC_JOIN_URL') || '';
-if (savedJoinUrl) window._currentJoinUrl = savedJoinUrl;
 var exitViewBtn = document.getElementById('dashboard_exit_view_btn');
 if (exitViewBtn) exitViewBtn.style.display = 'none';
 // IC ที่ไม่ใช่ admin — แสดงปุ่มออกระบบ ซ่อนปุ่มที่ใช้ไม่ได้
