@@ -3545,10 +3545,15 @@ Swal.fire('ยังไม่ได้เลือก','กรุณาจิ้
 }
 window._eocOnloadFn = function() {
 try { applyTierUIRestrictions(); } catch(e) {}
+// ⚠️ ห้าม apply cached state (จาก localStorage รอบก่อน) ถ้ามี join token ใหม่ใน URL
+// เพราะ cache อาจเป็น {status:'Normal'} จากการปิดเหตุรอบก่อน ซึ่งจะไปทับ/แสดงผล
+// "ยกเลิกเหตุแล้ว" ก่อนที่ validateJoinToken (token ของรอบใหม่) จะตอบกลับมาเสียอีก
+if (!window.EOC_JOIN_TOKEN) {
 try {
   var cached = JSON.parse(localStorage.getItem('eoc_last_state') || 'null');
   if (cached && cached.status) applySystemStatusData(cached);
 } catch(e) {}
+}
 if (window.EOC_JOIN_TOKEN) {
 document.getElementById('scene_Loading').style.display = 'flex';
 google.script.run
@@ -3568,6 +3573,7 @@ return;
 }
 applyAccessSession(res);
 persistJoinToken(window.EOC_JOIN_TOKEN);
+try { localStorage.removeItem('eoc_last_state'); } catch(e) {}
 renderPreIncidentAccess();
 checkSystemStatus();
 })
