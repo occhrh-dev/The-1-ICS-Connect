@@ -1611,10 +1611,7 @@ function renderDashboardEvacPoints(points) {
 points = Array.isArray(points) ? points.filter(function(p) {
 return p && (p.pointName || p.leaderName || p.evacueeCount || p.staffCount);
 }) : [];
-if (!points.length && window._dashboardEvacPoints && window._dashboardEvacPoints.length) {
-points = window._dashboardEvacPoints;
-}
-if (points.length) window._dashboardEvacPoints = points;
+window._dashboardEvacPoints = points;
 var emptyHtml = '<div style="font-size:0.72rem;color:#aaa;text-align:center;padding:8px 0;">ยังไม่มีรายงานจากจุดอพยพ</div>';
 var icEl = document.getElementById('ic_evac_point_list');
 if (icEl) {
