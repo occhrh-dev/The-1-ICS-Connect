@@ -2424,9 +2424,7 @@ renderOCSitReportsInSitrepTab(state.sitReports);
 if (state.resources && state.resources.length) {
 renderICIncomingResources(state.resources);
 }
-if (state.evacuationPoints.length || !window._dashboardEvacPoints) {
 renderDashboardEvacPoints(state.evacuationPoints);
-}
 if (state.attendanceSummary && state.attendanceSummary.counts) {
 window._attendanceData = state.attendanceSummary.people || state.attendance || window._attendanceData || [];
 window._attendanceSummaryLockedUntil = Date.now() + 15000;
