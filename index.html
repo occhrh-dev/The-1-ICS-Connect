@@ -6110,6 +6110,7 @@ if (document.getElementById('dash_ban_eoc_inline')) {
 document.getElementById('dash_ban_eoc_inline').innerText = d.evtEOC || '-';
 }
 try { _updateDashboardEOCAction_(d.evtEOCCoords || ''); } catch(e) {}
+updateDashboardUserInfo();
 if (d.evtCoords) {
 if (!dashMap) {
 initDashMap(d.evtCoords).then(function() {
