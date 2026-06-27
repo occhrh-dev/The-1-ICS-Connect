@@ -5506,7 +5506,8 @@ var fallbackPlan = document.getElementById('ban_status') ? document.getElementBy
 var eventName = es.evtName || es.IncidentName || es.name || es.eventName || fallbackEvtName || '';
 var eventLoc = es.evtLoc || es.IncidentLocation || es.loc || es.location || fallbackEvtLoc || '';
 var chem = erg.name ? ((erg.un ? 'UN ' + erg.un + ' / ' : '') + erg.name) : '';
-var commander = ((es.commanderPosition ? es.commanderPosition + ' ' : '') + (es.commanderName || es.commander || es.incidentCommander || es.evtIC || fallbackCommander || '')).trim();
+var commander = ((es.registeredICPosition || es.commanderPosition) ? (es.registeredICPosition || es.commanderPosition) + ' ' : '') + (es.registeredICName || es.commanderName || es.commander || es.incidentCommander || es.evtIC || fallbackCommander || '');
+commander = commander.trim();
 var plan = es.evtPlan || es.plan || es.PlanInfo || fallbackPlan || '';
 setRoleHeaderText('role_evt_name', eventName, false);
 setRoleHeaderText('role_evt_loc', eventLoc, false);
@@ -5898,7 +5899,7 @@ function() { refreshRoleWorkState(currentRole || TEMP_ROLE); }
 function getDashboardUserInfoText() {
 var state = window._lastEmergState || {};
 var name = (state.registeredICName || '').trim() || 'ยังไม่มี IC';
-var position = state.commanderPosition || '';
+var position = (state.registeredICPosition || '').trim();
 var suffix = position || (TEMP_ROLE === 'IC' && TEMP_ROLE_LABEL === 'ผู้บัญชาการเหตุการณ์' ? '' : TEMP_ROLE_LABEL);
 return name + (suffix ? ' (' + suffix + ')' : '');
 }
