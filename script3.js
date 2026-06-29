@@ -298,7 +298,7 @@ var need = HELP_NEED_META[req.need] || { emoji: '🆘', label: req.need || '-' }
 var statusMeta = HELP_STATUS_META[req.status] || { label: req.status || '-' };
 var locText = req.loc ? req.loc.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '(ไม่ระบุจุดสังเกต)';
 var phoneHtml = req.phone ? '<br>📞 <a href="tel:' + req.phone + '" style="color:#2980b9;">' + req.phone + '</a>' : '';
-var photoHtml = req.photo_url ? '<br><img src="' + req.photo_url + '" style="max-width:200px;border-radius:6px;margin-top:6px;">' : '';
+var photoHtml = req.photo_url ? '<br><img src="' + req.photo_url + '" style="max-width:200px;max-height:150px;object-fit:cover;border-radius:6px;margin-top:6px;cursor:pointer;" onclick="window.open(this.src,\'_blank\')">' : '';
 var noteHtml = req.note ? '<br><span style="color:#777;font-size:0.8rem;">' + req.note.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>' : '';
 
 var statusButtons = ['new', 'ack', 'enroute', 'helped'].map(function(s) {
@@ -429,7 +429,7 @@ var isNew = req.status === 'new';
 var locText = req.loc ? escapeHtml(req.loc) : '(ไม่ระบุจุดสังเกต)';
 var phoneHtml = req.phone ? '<div style="font-size:0.78rem;color:#2563eb;margin-top:2px;">📞 <a href="tel:' + req.phone + '" style="color:#2563eb;text-decoration:none;">' + req.phone + '</a></div>' : '';
 var noteHtml = req.note ? '<div style="font-size:0.75rem;color:#777;margin-top:4px;">📝 ' + escapeHtml(req.note) + '</div>' : '';
-var photoHtml = req.photo_url ? '<img src="' + req.photo_url + '" style="max-width:100%;border-radius:6px;margin-top:6px;display:block;">' : '';
+var photoHtml = req.photo_url ? '<img src="' + req.photo_url + '" style="max-width:100%;max-height:220px;width:auto;border-radius:6px;margin-top:6px;display:block;object-fit:cover;cursor:pointer;" onclick="window.open(this.src,\'_blank\')">' : '';
 
 var statusBtns = ['new', 'ack', 'enroute', 'helped'].map(function(s) {
 var meta = HELP_STATUS_META[s];
