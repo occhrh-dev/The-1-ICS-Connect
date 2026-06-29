@@ -54,6 +54,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
     checkAppLogin:'checkAppLogin',getEmergencyState:'getEmergencyState',
     getEmergencyStateLite:'getEmergencyStateLite',getEmergencyStateForAgency:'getEmergencyState',
     getEmergencyStateLiteForAgency:'getEmergencyStateLite',activateEmergency:'activateEmergency',
+    getOrCreateResponderCode:'getOrCreateResponderCode',
     deactivateEmergency:'deactivateEmergency',getResources:'getResources',updateResource:'updateResource',
     updateEmerCount:'updateResource',submitEmergencyAttendance:'submitEmergencyAttendance',
     getAttendanceData:'getAttendanceData',getAttendanceSummary:'getAttendanceSummary',
@@ -120,6 +121,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       submitEmergencyAttendance:{name:a[0],role:a[1],location:a[2],phone:a[3],roleCode:a[4]},
       getEmergencyStateForAgency:{agencyId:a[0],sheetId:a[1],joinToken:a[2]},
       getEmergencyStateLiteForAgency:{agencyId:a[0],sheetId:a[1],joinToken:a[2]},
+      getOrCreateResponderCode:{agencyId:a[0]},
       getICDashboardOCDataForAgency:{agencyId:a[0],sheetId:a[1],joinToken:a[2]},
       setICSLead:{roleCode:a[0],roleLabel:a[1],leadName:a[2],agency:a[3],phone:a[4],assignedBy:a[5]},
       claimICSLead:{roleCode:a[0],roleLabel:a[1],leadName:a[2],agency:a[3],phone:a[4],assignedBy:a[5]},
@@ -614,6 +616,9 @@ if (detected) {
 </button>
 <button id="citizen_checkin_link_btn" onclick="showCitizenCheckinLinkPopup()" style="display:none;background:#f59e0b;color:white;border:none;border-radius:6px;padding:6px 12px;margin-right:6px;font-size:0.82rem;font-weight:900;cursor:pointer;align-self:center;white-space:nowrap;">
 <i class="fas fa-life-ring"></i> Link ขอความช่วยเหลือ
+</button>
+<button id="responder_code_btn" onclick="showResponderCodePopup()" style="display:none;background:#7c3aed;color:white;border:none;border-radius:6px;padding:6px 12px;margin-right:6px;font-size:0.82rem;font-weight:900;cursor:pointer;align-self:center;white-space:nowrap;">
+<i class="fas fa-truck-medical"></i> รหัสสำหรับกู้ภัย
 </button>
 <button id="dashboard_share_link_btn" data-require-feature="share_link" data-min-tier="2" onclick="copyDashboardViewLink(event)" style="display:none;background:#2563eb;color:white;border:none;border-radius:6px;padding:6px 12px;margin-right:12px;font-size:0.82rem;font-weight:900;cursor:pointer;align-self:center;white-space:nowrap;">
 <i class="fas fa-link"></i> แชร์ลิงก์ดูอย่างเดียว
@@ -4386,6 +4391,8 @@ var btn = document.getElementById('dashboard_join_link_btn');
 if (btn && APP_ACCESS_ROLE === 'admin') btn.style.display = 'inline-flex';
 var ccBtn = document.getElementById('citizen_checkin_link_btn');
 if (ccBtn && APP_ACCESS_ROLE === 'admin') ccBtn.style.display = 'inline-flex';
+var rcBtn = document.getElementById('responder_code_btn');
+if (rcBtn && APP_ACCESS_ROLE === 'admin') rcBtn.style.display = 'inline-flex';
 }
 function showJoinLinkPopup() {
 var url = window._currentJoinUrl || sessionStorage.getItem('EOC_JOIN_URL') || '';
@@ -4486,6 +4493,62 @@ if (inp) inp.select();
 }
 }).then(function(r) {
 if (r.isConfirmed) prompt('คัดลอก link นี้ (Ctrl+A แล้ว Ctrl+C):', ccUrl);
+});
+}
+
+// ============================================================
+// 🚑 รหัสสำหรับกู้ภัย/อาสาสมัคร — Citizen Check-in Responder
+// gen รหัส 5 หลักผูกกับ agency_id ปัจจุบัน ผ่าน worker หลัก (action ใหม่ ไม่กระทบของเดิม)
+// ============================================================
+function showResponderCodePopup() {
+var agencyId = APP_AGENCY_ID || '';
+if (!agencyId) {
+Swal.fire({ icon: 'warning', title: 'ยังไม่พร้อม', text: 'ระบบยังไม่พบรหัสหน่วยงาน กรุณาลองใหม่หลังเหตุการณ์เปิดสมบูรณ์', confirmButtonText: 'ปิด' });
+return;
+}
+
+Swal.fire({
+title: 'กำลังสร้างรหัส...',
+didOpen: function() { Swal.showLoading(); },
+allowOutsideClick: false
+});
+
+google.script.run
+.withSuccessHandler(function(d) {
+Swal.close();
+if (!d || !d.ok) {
+Swal.fire({ icon: 'error', title: 'สร้างรหัสไม่สำเร็จ', text: 'กรุณาลองใหม่อีกครั้ง', confirmButtonText: 'ปิด' });
+return;
+}
+_openResponderCodeSwal_(d.code);
+})
+.withFailureHandler(function() {
+Swal.close();
+Swal.fire({ icon: 'error', title: 'สร้างรหัสไม่สำเร็จ', text: 'ตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองใหม่', confirmButtonText: 'ปิด' });
+})
+.getOrCreateResponderCode(agencyId);
+}
+
+function _openResponderCodeSwal_(code) {
+var baseUrl = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
+var responderUrl = baseUrl + 'citizen-checkin/responder.html';
+Swal.fire({
+title: '🚑 รหัสสำหรับกู้ภัย/อาสาสมัคร',
+html:
+'<div style="font-size:0.82rem;color:#475569;margin-bottom:14px;">บอกรหัสนี้ให้กู้ภัย/อาสาสมัครทุกคน — เปิดลิงก์ระบบแล้วกรอกรหัสนี้เพื่อเข้าทำงานในเหตุการณ์นี้</div>' +
+'<div style="background:#f5f3ff;border:2px solid #7c3aed;border-radius:14px;padding:16px;margin-bottom:14px;">' +
+'<div style="font-size:0.75rem;color:#7c3aed;font-weight:700;margin-bottom:6px;">รหัสเหตุการณ์</div>' +
+'<div style="font-size:2.2rem;font-weight:900;color:#4c1d95;letter-spacing:6px;">' + code + '</div>' +
+'</div>' +
+'<div style="font-size:0.78rem;color:#64748b;margin-bottom:6px;">ระบบสำหรับกู้ภัย:</div>' +
+'<input id="responder_url_input" value="' + responderUrl + '" readonly onclick="this.select()" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.72rem;color:#334155;cursor:pointer;">' +
+'<div style="font-size:0.72rem;color:#94a3b8;margin-top:6px;">💡 รหัสนี้ใช้ได้ตลอดเหตุการณ์นี้ — หมดอายุอัตโนมัติเมื่อปิดเหตุการณ์</div>',
+showCancelButton: true,
+confirmButtonText: '📋 คัดลอกลิงก์ระบบ',
+cancelButtonText: 'ปิด',
+confirmButtonColor: '#7c3aed'
+}).then(function(r) {
+if (r.isConfirmed) prompt('คัดลอก link นี้ (Ctrl+A แล้ว Ctrl+C):', responderUrl);
 });
 }
 
@@ -6040,6 +6103,8 @@ var joinBtn = document.getElementById('dashboard_join_link_btn');
 if (joinBtn) joinBtn.style.display = APP_ACCESS_ROLE === 'admin' ? 'inline-flex' : 'none';
 var ccLinkBtn = document.getElementById('citizen_checkin_link_btn');
 if (ccLinkBtn) ccLinkBtn.style.display = APP_ACCESS_ROLE === 'admin' ? 'inline-flex' : 'none';
+var rcLinkBtn = document.getElementById('responder_code_btn');
+if (rcLinkBtn) rcLinkBtn.style.display = APP_ACCESS_ROLE === 'admin' ? 'inline-flex' : 'none';
 // ดึง join url จาก session ถ้ามี
 var savedJoinUrl = sessionStorage.getItem('EOC_JOIN_URL') || '';
 if (savedJoinUrl) window._currentJoinUrl = savedJoinUrl;
@@ -6152,6 +6217,8 @@ var jBtn = document.getElementById('dashboard_join_link_btn');
 if (jBtn) jBtn.style.display = 'none';
 var ccBtnClose = document.getElementById('citizen_checkin_link_btn');
 if (ccBtnClose) ccBtnClose.style.display = 'none';
+var rcBtnClose = document.getElementById('responder_code_btn');
+if (rcBtnClose) rcBtnClose.style.display = 'none';
 });
 return;
 }
