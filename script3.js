@@ -320,9 +320,11 @@ phoneHtml + noteHtml + photoHtml +
 }
 
 async function fetchHelpRequests() {
+var agencyId = (typeof APP_AGENCY_ID !== 'undefined' && APP_AGENCY_ID) || '';
+if (!agencyId) return []; // ไม่มี agency ปัจจุบัน — ไม่ดึงอะไรเลย กันข้อมูลปนกัน
 try {
 var res = await fetch(
-CITIZEN_CHECKIN_SUPABASE_URL + '/rest/v1/help_requests?select=*&order=created_at.desc&limit=200',
+CITIZEN_CHECKIN_SUPABASE_URL + '/rest/v1/help_requests?select=*&agency_id=eq.' + encodeURIComponent(agencyId) + '&order=created_at.desc&limit=200',
 {
 headers: {
 'apikey': CITIZEN_CHECKIN_SUPABASE_KEY,
