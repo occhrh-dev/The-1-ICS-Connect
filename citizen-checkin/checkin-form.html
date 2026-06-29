@@ -458,10 +458,24 @@ body{
 const SUPABASE_URL = 'https://cpdhykeogdgjjxmwvnkt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_ziI_yJath2uIPrurZkhHtw_HlTOv1bq';
 
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const AGENCY_ID = URL_PARAMS.get('agency') || '';
+
 let selectedNeed = null;
 let peopleCount = 1;
 let gpsLat = null, gpsLng = null;
 let compressedPhotoBlob = null;
+
+// ---- เช็คว่ามี agency_id ในลิงก์หรือไม่ (ลิงก์นี้ต้องมาจากปุ่มที่ IC สร้างเท่านั้น) ----
+if (!AGENCY_ID) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const banner = document.getElementById('errorBanner');
+    if (banner) {
+      banner.innerText = '⚠️ ลิงก์นี้ไม่สมบูรณ์ (ไม่พบรหัสหน่วยงาน) กรุณาขอลิงก์ใหม่จากทีมบัญชาการเหตุการณ์ หรือสแกน QR code จากป้ายประกาศโดยตรง';
+      banner.style.display = 'block';
+    }
+  });
+}
 
 // ---- ปุ่มเลือกความต้องการ ----
 document.querySelectorAll('.need-btn').forEach(btn => {
@@ -623,7 +637,8 @@ async function submitRequest() {
       phone: phone || null,
       photo_url: photoUrl,
       note: note || null,
-      status: 'new'
+      status: 'new',
+      agency_id: AGENCY_ID || null
     };
 
     const res = await fetch(`${SUPABASE_URL}/rest/v1/help_requests`, {
