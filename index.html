@@ -994,6 +994,14 @@ if (detected) {
 </div>
 </div>
 </div>
+<div id="help_request_panel">
+<div class="hr-title">🆘 คำขอช่วยเหลือจากประชาชน</div>
+<span id="help_request_waiting_count">0</span>
+<span id="help_request_waiting_label">คนกำลังรอความช่วยเหลือ</span>
+<div id="help_request_list">
+<div style="font-size:0.72rem;color:#aaa;text-align:center;padding:10px 0;">กำลังโหลด...</div>
+</div>
+</div>
 <div id="dashboard_oc_support_panel" style="display:none;background:#fff7ed;border:1px solid #f97316;border-left:5px solid #dc2626;border-radius:10px;padding:8px 9px;margin-bottom:8px;box-shadow:0 3px 12px rgba(220,38,38,0.16);">
 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;">
 <div style="font-size:0.84rem;font-weight:900;color:#9a3412;"><i class="fas fa-hand-holding-medical"></i> คำขอสนับสนุนจาก OC/ICP</div>
@@ -6121,6 +6129,7 @@ drawOCSupportRequestAlertsOnMap(window._icZoneMarkers, window._icSupportReqs || 
 }
 updateLiveMarkers();
 refreshICOCFeedsDirect();
+if (typeof startHelpRequestPolling === 'function') startHelpRequestPolling();
 });
 } else {
 // map มีอยู่แล้ว — อัพเดท marker (รวมถึงกรณี dashMarker=null)
