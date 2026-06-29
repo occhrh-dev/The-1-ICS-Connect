@@ -315,7 +315,7 @@ return '<button onclick="updateHelpRequestStatus(' + req.id + ',\'' + s + '\')" 
 meta.label + '</button>';
 }).join('');
 
-return '<div style="min-width:180px;">' +
+return '<div style="min-width:180px;max-height:min(60vh,320px);overflow-y:auto;">' +
 '<b>' + need.emoji + ' ' + need.label + '</b> (' + (req.people || 1) + ' คน)<br>' +
 '📍 ' + locText +
 phoneHtml + noteHtml + photoHtml +
