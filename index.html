@@ -4813,15 +4813,15 @@ grid.style.maxWidth = '';
 grid.style.margin = '';
 grid.style.display = '';
 grid.style.gridTemplateColumns = '';
-grid.style.gridTemplateRows = '';
+grid.style.gridTemplateRows = 'minmax(0,1fr)';
 grid.style.height = '';
-grid.style.minHeight = '';
+grid.style.minHeight = '0';
 grid.style.overflow = '';
 grid.style.padding = '';
 grid.style.gap = '';
-Array.prototype.forEach.call(grid.children, function(panel) {
+Array.prototype.forEach.call(grid.children, function(panel, panelIdx) {
 panel.style.gridColumn = '';
-panel.style.height = '';
+panel.style.height = (panelIdx === 2) ? 'auto' : '100%';
 panel.style.minHeight = '';
 panel.style.borderRadius = '';
 panel.style.order = '';
