@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ระบบรับงานช่วยเหลือ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;900&display=swap');
+
+:root{
+  --bg:#0B1220;
+  --bg-card:#121A2B;
+  --bg-input:#1A2438;
+  --blue:#2563eb;
+  --blue-dark:#1d4ed8;
+  --green:#16A34A;
+  --yellow:#FACC15;
+  --orange:#ea580c;
+  --white:#F8FAFC;
+  --gray:#94A3B8;
+  --border:#26324A;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:'Noto Sans Thai',sans-serif;
+  min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+body{
+  padding:14px;
+  padding-bottom:30px;
+  max-width:480px;
+  margin:0 auto;
+}
+.header{
+  text-align:center;
+  padding:12px 0 14px;
+}
+.header .badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:#1e3a8a;
+  border:1px solid var(--blue);
+  color:#93c5fd;
+  font-size:0.72rem;
+  font-weight:700;
+  padding:5px 14px;
+  border-radius:999px;
+  margin-bottom:8px;
+}
+.header h1{
+  font-size:1.3rem;
+  font-weight:900;
+}
+
+/* Setup screen */
+.card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px;
+  margin-bottom:14px;
+}
+.input-field{
+  width:100%;
+  background:var(--bg-input);
+  border:2px solid var(--border);
+  color:var(--white);
+  font-family:inherit;
+  font-size:1rem;
+  padding:14px;
+  border-radius:12px;
+  margin-bottom:12px;
+}
+.input-field::placeholder{color:var(--gray);}
+.input-field:focus{outline:none;border-color:var(--blue);}
+.btn-primary{
+  width:100%;
+  background:var(--blue);
+  border:none;
+  color:white;
+  font-family:inherit;
+  font-size:1.05rem;
+  font-weight:900;
+  padding:16px;
+  border-radius:12px;
+  cursor:pointer;
+}
+.btn-primary:active{transform:scale(0.98);}
+.btn-primary:disabled{background:var(--border);color:var(--gray);cursor:not-allowed;}
+
+/* Job list */
+.responder-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 14px;
+  margin-bottom:14px;
+}
+.responder-bar .name{font-size:0.85rem;font-weight:700;}
+.responder-bar .phone{font-size:0.72rem;color:var(--gray);}
+.responder-bar button{
+  background:none;
+  border:1px solid var(--border);
+  color:var(--gray);
+  font-size:0.7rem;
+  padding:5px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  font-family:inherit;
+}
+
+.section-label{
+  font-size:0.8rem;
+  font-weight:700;
+  color:var(--gray);
+  margin:14px 0 8px;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+
+.job-card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px;
+  margin-bottom:10px;
+}
+.job-card.new{border-color:var(--yellow);background:rgba(250,204,21,0.06);}
+.job-card.mine{border-color:var(--blue);background:rgba(37,99,235,0.08);}
+.job-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:6px;
+}
+.job-need{font-size:1rem;font-weight:900;}
+.job-badge{
+  font-size:0.68rem;
+  font-weight:700;
+  padding:3px 9px;
+  border-radius:999px;
+}
+.job-loc{font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;}
+.job-meta{font-size:0.78rem;color:var(--gray);margin-bottom:10px;}
+.job-note{font-size:0.78rem;color:#888;margin-bottom:10px;font-style:italic;}
+.job-photo{max-width:100%;border-radius:8px;margin-bottom:10px;display:block;}
+
+.btn-claim{
+  width:100%;
+  background:var(--green);
+  border:none;
+  color:white;
+  font-family:inherit;
+  font-size:0.95rem;
+  font-weight:900;
+  padding:12px;
+  border-radius:10px;
+  cursor:pointer;
+}
+.btn-claim:active{transform:scale(0.98);}
+
+.btn-action{
+  width:100%;
+  border:none;
+  color:white;
+  font-family:inherit;
+  font-size:0.95rem;
+  font-weight:900;
+  padding:12px;
+  border-radius:10px;
+  cursor:pointer;
+  margin-bottom:8px;
+}
+.btn-action.enroute{background:var(--orange);}
+.btn-action.arrived{background:#9333ea;}
+.btn-action.helped{background:var(--green);}
+.btn-cancel{
+  width:100%;
+  background:none;
+  border:1px solid var(--border);
+  color:var(--gray);
+  font-family:inherit;
+  font-size:0.8rem;
+  padding:9px;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+.verify-input-row{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+.verify-input-row input{
+  flex:1;
+  background:var(--bg-input);
+  border:2px solid var(--border);
+  color:var(--white);
+  font-family:inherit;
+  font-size:1.4rem;
+  font-weight:900;
+  text-align:center;
+  letter-spacing:4px;
+  padding:10px;
+  border-radius:10px;
+}
+.verify-input-row input:focus{outline:none;border-color:#9333ea;}
+
+.empty-state{
+  text-align:center;
+  padding:30px 10px;
+  color:var(--gray);
+  font-size:0.85rem;
+}
+
+.error-banner{
+  background:rgba(239,68,68,0.12);
+  border:1px solid #ef4444;
+  color:#fca5a5;
+  font-size:0.82rem;
+  font-weight:700;
+  padding:10px 14px;
+  border-radius:10px;
+  margin-bottom:12px;
+  display:none;
+}
+
+.spinner-inline{
+  display:inline-block;
+  width:14px;height:14px;
+  border:2px solid rgba(255,255,255,0.3);
+  border-top-color:white;
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+  margin-right:6px;
+  vertical-align:middle;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+
+<div class="header">
+<div class="badge">🚑 ระบบรับงานช่วยเหลือ</div>
+<h1 id="headerTitle">เลือกงานที่จะไปช่วย</h1>
+</div>
+
+<div id="errorBanner" class="error-banner"></div>
+
+<!-- Setup screen -->
+<div id="setupScreen" style="display:none;">
+  <div class="card">
+    <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:14px;">กรอกชื่อและเบอร์โทรของคุณก่อนเริ่มรับงาน — ใช้ยืนยันตัวตอนอัปเดตสถานะ</div>
+    <input type="text" id="setupName" class="input-field" placeholder="ชื่อ-สกุล หรือชื่อทีม">
+    <input type="tel" id="setupPhone" class="input-field" placeholder="เบอร์โทร" inputmode="numeric">
+    <button class="btn-primary" onclick="saveResponderInfo()">เริ่มรับงาน</button>
+  </div>
+</div>
+
+<!-- Main screen -->
+<div id="mainScreen" style="display:none;">
+  <div class="responder-bar">
+    <div>
+      <div class="name" id="responderNameDisplay">-</div>
+      <div class="phone" id="responderPhoneDisplay">-</div>
+    </div>
+    <button onclick="resetResponderInfo()">เปลี่ยนผู้ใช้</button>
+  </div>
+
+  <div id="myJobsSection" style="display:none;">
+    <div class="section-label">งานของคุณ</div>
+    <div id="myJobsList"></div>
+  </div>
+
+  <div class="section-label">งานที่ยังไม่มีคนรับ</div>
+  <div id="availableJobsList">
+    <div class="empty-state">กำลังโหลด...</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://cpdhykeogdgjjxmwvnkt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ziI_yJath2uIPrurZkhHtw_HlTOv1bq';
+const WORKER_URL = 'https://citizen-checkin-worker.occ-hrh.workers.dev';
+
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const AGENCY_ID = URL_PARAMS.get('agency') || '';
+
+const NEED_META = {
+  boat: { emoji: '🚤', label: 'ต้องการเรือ' },
+  medical: { emoji: '💊', label: 'ช่วยทางการแพทย์' },
+  supplies: { emoji: '🍚', label: 'อาหาร / น้ำ' },
+  trapped: { emoji: '🆘', label: 'ติดอยู่ ออกไม่ได้' }
+};
+
+let responderName = '';
+let responderPhone = '';
+let pollInterval = null;
+
+function init() {
+  if (!AGENCY_ID) {
+    showError('⚠️ ลิงก์นี้ไม่สมบูรณ์ (ไม่พบรหัสหน่วยงาน) กรุณาขอลิงก์ใหม่จากทีมบัญชาการเหตุการณ์');
+    return;
+  }
+
+  const saved = localStorage.getItem('responder_info');
+  if (saved) {
+    try {
+      const info = JSON.parse(saved);
+      responderName = info.name;
+      responderPhone = info.phone;
+      showMainScreen();
+      return;
+    } catch (e) {}
+  }
+  document.getElementById('setupScreen').style.display = 'block';
+}
+
+function saveResponderInfo() {
+  const name = document.getElementById('setupName').value.trim();
+  const phone = document.getElementById('setupPhone').value.trim();
+  if (!name || !phone) {
+    showError('กรุณากรอกชื่อและเบอร์โทรให้ครบ');
+    return;
+  }
+  responderName = name;
+  responderPhone = phone;
+  localStorage.setItem('responder_info', JSON.stringify({ name, phone }));
+  document.getElementById('setupScreen').style.display = 'none';
+  showMainScreen();
+}
+
+function resetResponderInfo() {
+  if (!confirm('เปลี่ยนผู้ใช้? งานที่กำลังทำอยู่จะยังอยู่ในระบบ (ใช้ชื่อ-เบอร์เดิมเพื่อทำงานต่อได้)')) return;
+  localStorage.removeItem('responder_info');
+  document.getElementById('mainScreen').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'block';
+  if (pollInterval) clearInterval(pollInterval);
+}
+
+function showMainScreen() {
+  document.getElementById('responderNameDisplay').innerText = responderName;
+  document.getElementById('responderPhoneDisplay').innerText = responderPhone;
+  document.getElementById('mainScreen').style.display = 'block';
+  refreshJobs();
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(refreshJobs, 5000);
+}
+
+function showError(msg) {
+  const banner = document.getElementById('errorBanner');
+  banner.innerText = msg;
+  banner.style.display = 'block';
+  setTimeout(() => { banner.style.display = 'none'; }, 5000);
+}
+
+async function fetchJobs() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/help_requests?select=*&agency_id=eq.${encodeURIComponent(AGENCY_ID)}&order=created_at.asc`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+async function refreshJobs() {
+  const all = await fetchJobs();
+  if (!all) return;
+
+  const myJobs = all.filter(r => r.responder_phone === responderPhone && r.status !== 'new' && r.status !== 'helped');
+  const availableJobs = all.filter(r => r.status === 'new');
+
+  const myJobsSection = document.getElementById('myJobsSection');
+  const myJobsList = document.getElementById('myJobsList');
+  if (myJobs.length === 0) {
+    myJobsSection.style.display = 'none';
+  } else {
+    myJobsSection.style.display = 'block';
+    myJobsList.innerHTML = myJobs.map(buildMyJobCard).join('');
+  }
+
+  const availableList = document.getElementById('availableJobsList');
+  if (availableJobs.length === 0) {
+    availableList.innerHTML = '<div class="empty-state">ยังไม่มีงานที่รอรับในตอนนี้</div>';
+  } else {
+    availableList.innerHTML = availableJobs.map(buildAvailableJobCard).join('');
+  }
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function buildAvailableJobCard(req) {
+  const need = NEED_META[req.need] || { emoji: '🆘', label: req.need || '-' };
+  const locText = req.loc ? escapeHtml(req.loc) : '(ไม่ระบุจุดสังเกต)';
+  const noteHtml = req.note ? `<div class="job-note">📝 ${escapeHtml(req.note)}</div>` : '';
+  const photoHtml = req.photo_url ? `<img class="job-photo" src="${req.photo_url}">` : '';
+  return `
+    <div class="job-card new">
+      <div class="job-top">
+        <span class="job-need">${need.emoji} ${need.label}</span>
+        <span class="job-badge" style="background:#facc15;color:#1a1a2e;">🆕 ใหม่</span>
+      </div>
+      <div class="job-loc">📍 ${locText}</div>
+      <div class="job-meta">👥 ${req.people || 1} คน${req.phone ? ' · 📞 ' + req.phone : ''}</div>
+      ${noteHtml}${photoHtml}
+      <button class="btn-claim" onclick="claimJob(${req.id})">✋ รับงานนี้</button>
+    </div>`;
+}
+
+function buildMyJobCard(req) {
+  const need = NEED_META[req.need] || { emoji: '🆘', label: req.need || '-' };
+  const locText = req.loc ? escapeHtml(req.loc) : '(ไม่ระบุจุดสังเกต)';
+  const statusLabels = { claimed: '✋ รับงานแล้ว', enroute: '🚤 กำลังเดินทาง', arrived: '📍 ถึงจุดแล้ว' };
+  const noteHtml = req.note ? `<div class="job-note">📝 ${escapeHtml(req.note)}</div>` : '';
+  const photoHtml = req.photo_url ? `<img class="job-photo" src="${req.photo_url}">` : '';
+
+  let actionHtml = '';
+  if (req.status === 'claimed') {
+    actionHtml = `<button class="btn-action enroute" onclick="markEnroute(${req.id})">🚤 ออกเดินทางแล้ว</button>`;
+  } else if (req.status === 'enroute') {
+    actionHtml = `
+      <div style="font-size:0.8rem;color:#cbd5e1;margin-bottom:6px;">ถึงที่แล้ว? ขอรหัส 4 หลักจากผู้ขอความช่วยเหลือ:</div>
+      <div class="verify-input-row">
+        <input type="text" inputmode="numeric" maxlength="4" id="verify_${req.id}" placeholder="0000">
+      </div>
+      <button class="btn-action arrived" onclick="markArrived(${req.id})">✅ ยืนยันถึงจุดแล้ว</button>`;
+  } else if (req.status === 'arrived') {
+    actionHtml = `<button class="btn-action helped" onclick="markHelped(${req.id})">🎉 ช่วยเหลือเสร็จแล้ว</button>`;
+  }
+
+  return `
+    <div class="job-card mine">
+      <div class="job-top">
+        <span class="job-need">${need.emoji} ${need.label}</span>
+        <span class="job-badge" style="background:#2563eb;color:white;">${statusLabels[req.status] || req.status}</span>
+      </div>
+      <div class="job-loc">📍 ${locText}</div>
+      <div class="job-meta">👥 ${req.people || 1} คน${req.phone ? ' · 📞 ' + req.phone : ''}</div>
+      ${noteHtml}${photoHtml}
+      ${actionHtml}
+      <button class="btn-cancel" onclick="cancelJob(${req.id})">ยกเลิกงานนี้ (ให้คนอื่นรับต่อ)</button>
+    </div>`;
+}
+
+async function callWorker(action, payload) {
+  const res = await fetch(`${WORKER_URL}/?action=${action}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) {
+    throw new Error(data.error || 'เกิดข้อผิดพลาด');
+  }
+  return data;
+}
+
+async function claimJob(id) {
+  try {
+    await callWorker('claimRequest', { id, responderName, responderPhone });
+    refreshJobs();
+  } catch (e) {
+    showError('⚠️ ' + e.message);
+    refreshJobs(); // รีเฟรชเผื่อมีคนรับไปแล้ว (race condition)
+  }
+}
+
+async function markEnroute(id) {
+  try {
+    await callWorker('markEnroute', { id, responderPhone });
+    refreshJobs();
+  } catch (e) {
+    showError('⚠️ ' + e.message);
+  }
+}
+
+async function markArrived(id) {
+  const input = document.getElementById('verify_' + id);
+  const code = input ? input.value.trim() : '';
+  if (!code || code.length !== 4) {
+    showError('กรุณากรอกรหัสยืนยันตัว 4 หลักจากผู้ขอความช่วยเหลือ');
+    return;
+  }
+  try {
+    await callWorker('markArrived', { id, responderPhone, verifyCode: code });
+    refreshJobs();
+  } catch (e) {
+    showError('⚠️ ' + e.message);
+  }
+}
+
+async function markHelped(id) {
+  try {
+    await callWorker('markHelped', { id, responderPhone });
+    refreshJobs();
+  } catch (e) {
+    showError('⚠️ ' + e.message);
+  }
+}
+
+async function cancelJob(id) {
+  if (!confirm('ยกเลิกงานนี้? งานจะกลับไปให้คนอื่นรับต่อได้')) return;
+  try {
+    await callWorker('cancelClaim', { id, responderPhone });
+    refreshJobs();
+  } catch (e) {
+    showError('⚠️ ' + e.message);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
