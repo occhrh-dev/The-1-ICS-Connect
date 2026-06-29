@@ -612,6 +612,9 @@ if (detected) {
 <button id="dashboard_join_link_btn" onclick="showJoinLinkPopup()" style="display:none;background:#16a34a;color:white;border:none;border-radius:6px;padding:6px 12px;margin-right:6px;font-size:0.82rem;font-weight:900;cursor:pointer;align-self:center;white-space:nowrap;">
 <i class="fas fa-share-alt"></i> Join Link จนท.
 </button>
+<button id="citizen_checkin_link_btn" onclick="showCitizenCheckinLinkPopup()" style="display:none;background:#f59e0b;color:white;border:none;border-radius:6px;padding:6px 12px;margin-right:6px;font-size:0.82rem;font-weight:900;cursor:pointer;align-self:center;white-space:nowrap;">
+<i class="fas fa-life-ring"></i> Link ขอความช่วยเหลือ
+</button>
 <button id="dashboard_share_link_btn" data-require-feature="share_link" data-min-tier="2" onclick="copyDashboardViewLink(event)" style="display:none;background:#2563eb;color:white;border:none;border-radius:6px;padding:6px 12px;margin-right:12px;font-size:0.82rem;font-weight:900;cursor:pointer;align-self:center;white-space:nowrap;">
 <i class="fas fa-link"></i> แชร์ลิงก์ดูอย่างเดียว
 </button>
@@ -4365,6 +4368,8 @@ if (!url) return;
 window._currentJoinUrl = url;
 var btn = document.getElementById('dashboard_join_link_btn');
 if (btn && APP_ACCESS_ROLE === 'admin') btn.style.display = 'inline-flex';
+var ccBtn = document.getElementById('citizen_checkin_link_btn');
+if (ccBtn && APP_ACCESS_ROLE === 'admin') ccBtn.style.display = 'inline-flex';
 }
 function showJoinLinkPopup() {
 var url = window._currentJoinUrl || sessionStorage.getItem('EOC_JOIN_URL') || '';
@@ -4430,6 +4435,41 @@ preDeny: function() { return false; }
 if (r.isConfirmed || r.isDismissed) {
 if (r.isConfirmed) prompt('คัดลอก link นี้ (Ctrl+A แล้ว Ctrl+C):', url);
 }
+});
+}
+
+// ============================================================
+// 🆘 Link ขอความช่วยเหลือ (ประชาชน) — Citizen Check-in
+// ผูกกับ agency_id ปัจจุบัน ใช้แสดง QR code สำหรับติดป้ายประกาศ
+// ============================================================
+function showCitizenCheckinLinkPopup() {
+var agencyId = APP_AGENCY_ID || '';
+if (!agencyId) {
+Swal.fire({ icon: 'warning', title: 'ยังไม่พร้อม', text: 'ระบบยังไม่พบรหัสหน่วยงาน กรุณาลองใหม่หลังเหตุการณ์เปิดสมบูรณ์', confirmButtonText: 'ปิด' });
+return;
+}
+var baseUrl = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
+var ccUrl = baseUrl + 'citizen-checkin/checkin-form.html?agency=' + encodeURIComponent(agencyId);
+var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(ccUrl);
+Swal.fire({
+title: '🆘 Link ขอความช่วยเหลือ (ประชาชน)',
+html:
+'<div style="font-size:0.82rem;color:#475569;margin-bottom:10px;">สำหรับติดป้ายประกาศหรือแจกให้ประชาชนในพื้นที่ — <b>ไม่ต้อง login</b> กรอกแล้วขึ้นบนแผนที่ทันที</div>' +
+'<input id="citizen_checkin_link_input" value="' + ccUrl + '" readonly onclick="this.select()" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #e2e8f0;border-radius:8px;font-size:0.72rem;color:#334155;margin-bottom:8px;cursor:pointer;">' +
+'<img src="' + qrUrl + '" style="width:180px;height:180px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:6px;" alt="QR Code"/>' +
+'<div style="font-size:0.78rem;color:#64748b;margin-bottom:6px;">พิมพ์ QR นี้ติดป้ายประกาศ หรือกดที่ช่อง link เพื่อ copy</div>',
+showCancelButton: true,
+confirmButtonText: '📋 คัดลอก Link',
+cancelButtonText: 'ปิด',
+confirmButtonColor: '#f59e0b',
+didOpen: function() {
+setTimeout(function() {
+var inp = document.getElementById('citizen_checkin_link_input');
+if (inp) inp.select();
+}, 100);
+}
+}).then(function(r) {
+if (r.isConfirmed) prompt('คัดลอก link นี้ (Ctrl+A แล้ว Ctrl+C):', ccUrl);
 });
 }
 
@@ -5982,6 +6022,8 @@ if (shareBtn) shareBtn.style.display = APP_ACCESS_ROLE === 'admin' ? 'inline-fle
 // แสดงปุ่ม Join Link เฉพาะ admin
 var joinBtn = document.getElementById('dashboard_join_link_btn');
 if (joinBtn) joinBtn.style.display = APP_ACCESS_ROLE === 'admin' ? 'inline-flex' : 'none';
+var ccLinkBtn = document.getElementById('citizen_checkin_link_btn');
+if (ccLinkBtn) ccLinkBtn.style.display = APP_ACCESS_ROLE === 'admin' ? 'inline-flex' : 'none';
 // ดึง join url จาก session ถ้ามี
 var savedJoinUrl = sessionStorage.getItem('EOC_JOIN_URL') || '';
 if (savedJoinUrl) window._currentJoinUrl = savedJoinUrl;
@@ -6092,6 +6134,8 @@ window._currentJoinUrl = '';
 try { sessionStorage.removeItem('EOC_JOIN_URL'); } catch(e) {}
 var jBtn = document.getElementById('dashboard_join_link_btn');
 if (jBtn) jBtn.style.display = 'none';
+var ccBtnClose = document.getElementById('citizen_checkin_link_btn');
+if (ccBtnClose) ccBtnClose.style.display = 'none';
 });
 return;
 }
