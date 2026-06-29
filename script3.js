@@ -170,8 +170,12 @@ _maptiler: mapObj,
 Overlays: {
 add: function(overlay) {
 if (!overlay) return;
+try {
 if (typeof overlay._addToMap === 'function') overlay._addToMap(mapObj);
 else if (typeof overlay.addTo === 'function') overlay.addTo(mapObj);
+} catch(e) {
+console.warn('[dashMap.Overlays.add] failed to add overlay', e);
+}
 },
 remove: function(overlay) {
 if (!overlay) return;
@@ -644,8 +648,10 @@ window._icOCZoneCircles = [];
 window._icOCReqAlertOverlays = [];
 window._icOCZoneDrawKey = '';
 dashMap._maptiler.setStyle(style);
-dashMap._maptiler.once('styledata', function() {
-setTimeout(function() {
+var styleSwitchRendered = false;
+function renderAfterStyleSwitch() {
+if (styleSwitchRendered) return; // กันเรียกซ้ำถ้าทั้ง idle event และ fallback timeout ทำงานทั้งคู่
+styleSwitchRendered = true;
 try {
 if (window._lastEmergState) applyDashboardEmergencyState(window._lastEmergState);
 if (typeof updateLiveMarkers === 'function') updateLiveMarkers();
@@ -655,8 +661,9 @@ drawHazmatZonesOnDashMap(window._lastHazmatZoneData);
 }
 } catch(e) {
 }
-}, 150);
-});
+}
+dashMap._maptiler.once('idle', renderAfterStyleSwitch);
+setTimeout(renderAfterStyleSwitch, 2000); // fallback กันเคส idle ไม่ยิง (เคยทำให้หมุดหายค้างตลอดไป)
 }
 function getDashboardIncidentPoint() {
 if (incidentCenter && incidentCenter.lat && incidentCenter.lng) {
