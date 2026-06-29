@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>ระบบรับงานช่วยเหลือ</title>
+<link rel="preconnect" href="https://cdn.maptiler.com">
+<script src="https://cdn.maptiler.com/maptiler-sdk-js/v4.0.2/maptiler-sdk.umd.min.js" defer></script>
+<link href="https://cdn.maptiler.com/maptiler-sdk-js/v4.0.2/maptiler-sdk.css" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;900&display=swap');
 
@@ -269,6 +272,42 @@ body{
   display:none;
 }
 
+.job-map{
+  width:100%;
+  height:140px;
+  border-radius:10px;
+  margin-bottom:10px;
+  overflow:hidden;
+  background:var(--bg-input);
+  position:relative;
+}
+.job-map.no-coords{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--gray);
+  font-size:0.75rem;
+}
+.btn-navigate{
+  width:100%;
+  background:#0ea5e9;
+  border:none;
+  color:white;
+  font-family:inherit;
+  font-size:0.95rem;
+  font-weight:900;
+  padding:12px;
+  border-radius:10px;
+  cursor:pointer;
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  text-decoration:none;
+}
+.btn-navigate:active{transform:scale(0.98);}
+
 .spinner-inline{
   display:inline-block;
   width:14px;height:14px;
@@ -359,6 +398,7 @@ const SUPABASE_URL = 'https://cpdhykeogdgjjxmwvnkt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_ziI_yJath2uIPrurZkhHtw_HlTOv1bq';
 const WORKER_URL = 'https://citizen-checkin-worker.occ-hrh.workers.dev';
 const ICS_WORKER_URL = 'https://the-1-ics-connect.occ-hrh.workers.dev';
+const MAPTILER_API_KEY = 'XOw46Ht6gxyHhSCkLXPf';
 
 // รองรับ URL เดิม (?agency=xxx) ไว้เผื่อใครยังใช้ลิงก์เก่าอยู่ — แต่ flow หลักใหม่คือกรอกรหัสเหตุการณ์
 const URL_PARAMS = new URLSearchParams(window.location.search);
@@ -375,6 +415,31 @@ const NEED_META = {
 let responderName = '';
 let responderPhone = '';
 let pollInterval = null;
+let myLat = null;
+let myLng = null;
+const activeJobMaps = {}; // job id -> { map, responderMarker }
+
+function startWatchingMyLocation() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.watchPosition(
+    (pos) => {
+      myLat = pos.coords.latitude;
+      myLng = pos.coords.longitude;
+      // อัปเดตหมุดตัวเองบนแผนที่ที่เปิดอยู่ (ไม่ต้อง redraw ทั้ง map)
+      Object.values(activeJobMaps).forEach(entry => {
+        if (entry.responderMarker) {
+          entry.responderMarker.setLngLat([myLng, myLat]);
+        } else if (entry.map && typeof maptilersdk !== 'undefined') {
+          entry.responderMarker = new maptilersdk.Marker({ color: '#0ea5e9' })
+            .setLngLat([myLng, myLat])
+            .addTo(entry.map);
+        }
+      });
+    },
+    () => { /* ไม่ได้ permission ก็ไม่เป็นไร — mini-map ยังโชว์หมุดชาวบ้านได้ */ },
+    { enableHighAccuracy: true, maximumAge: 10000 }
+  );
+}
 
 function init() {
   // ถ้ามาจากลิงก์เก่าที่มี ?agency= ติดมา ใช้ได้เลยไม่ต้องกรอกรหัส (backward compatible)
@@ -514,9 +579,58 @@ function showMainScreen() {
   document.getElementById('responderPhoneDisplay').innerText = responderPhone;
   document.getElementById('currentIncidentDisplay').innerText = currentIncidentName || 'เหตุการณ์ปัจจุบัน';
   document.getElementById('mainScreen').style.display = 'block';
+  startWatchingMyLocation();
   refreshJobs();
   if (pollInterval) clearInterval(pollInterval);
   pollInterval = setInterval(refreshJobs, 5000);
+}
+
+function initJobMaps(jobs) {
+  if (typeof maptilersdk === 'undefined') return; // SDK ยังโหลดไม่เสร็จ — รอบถัดไปของ poll จะลองใหม่
+  jobs.forEach(req => {
+    if (!hasValidCoords(req)) return;
+    const container = document.getElementById(`map_${req.id}`);
+    if (!container) return;
+
+    const existing = activeJobMaps[req.id];
+    if (existing && existing.map && existing.container === container) return; // map ยังผูกกับ DOM เดิม ไม่ต้องสร้างซ้ำ
+    if (existing && existing.map) {
+      // innerHTML refresh ทำให้ container เดิมหลุดจากหน้าเว็บไปแล้ว ต้องสร้าง map ใหม่ผูกกับ container ใหม่
+      try { existing.map.remove(); } catch (e) {}
+    }
+
+    maptilersdk.config.apiKey = MAPTILER_API_KEY;
+    const map = new maptilersdk.Map({
+      container,
+      style: maptilersdk.MapStyle.STREETS,
+      center: [req.lng, req.lat],
+      zoom: 14,
+      interactive: true,
+      navigationControl: false
+    });
+    new maptilersdk.Marker({ color: '#ef4444' })
+      .setLngLat([req.lng, req.lat])
+      .addTo(map);
+
+    const entry = { map, container, responderMarker: null };
+    if (myLat != null && myLng != null) {
+      entry.responderMarker = new maptilersdk.Marker({ color: '#0ea5e9' })
+        .setLngLat([myLng, myLat])
+        .addTo(map);
+      // ขยับมุมมองให้เห็นทั้งสองหมุด
+      map.fitBounds([[req.lng, req.lat], [myLng, myLat]], { padding: 30, maxZoom: 16 });
+    }
+    activeJobMaps[req.id] = entry;
+  });
+
+  // ลบ map ของ job ที่ไม่ได้อยู่ในลิสต์แล้ว (เช่น ช่วยเสร็จ/ยกเลิกไปแล้ว) กันหน่วยความจำรั่ว
+  const currentIds = new Set(jobs.map(r => r.id));
+  Object.keys(activeJobMaps).forEach(id => {
+    if (!currentIds.has(Number(id))) {
+      try { activeJobMaps[id].map.remove(); } catch (e) {}
+      delete activeJobMaps[id];
+    }
+  });
 }
 
 function showError(msg) {
@@ -553,7 +667,13 @@ async function refreshJobs() {
     myJobsSection.style.display = 'none';
   } else {
     myJobsSection.style.display = 'block';
-    myJobsList.innerHTML = myJobs.map(buildMyJobCard).join('');
+    const jobsFingerprint = myJobs.map(r => `${r.id}:${r.status}:${r.lat}:${r.lng}:${r.note}:${r.photo_url}`).join('|');
+    if (jobsFingerprint !== window._lastMyJobsFingerprint) {
+      window._lastMyJobsFingerprint = jobsFingerprint;
+      myJobsList.innerHTML = myJobs.map(buildMyJobCard).join('');
+      // ต้องรอ DOM แทรกเสร็จก่อนค่อย init map (innerHTML เป็น sync แต่กัน edge case ของ layout)
+      requestAnimationFrame(() => initJobMaps(myJobs));
+    }
   }
 
   // ถ้ามีงานของตัวเองอยู่ — ซ่อนลิสต์งานอื่นไว้ก่อน (กันกดผิดในชั่วโมงเร่งด่วน) ต้องกดเปิดดูเอง
@@ -614,12 +734,25 @@ function buildAvailableJobCard(req) {
     </div>`;
 }
 
+function hasValidCoords(req) {
+  return req.lat != null && req.lng != null && !(req.lat === 0 && req.lng === 0);
+}
+
 function buildMyJobCard(req) {
   const need = NEED_META[req.need] || { emoji: '🆘', label: req.need || '-' };
   const locText = req.loc ? escapeHtml(req.loc) : '(ไม่ระบุจุดสังเกต)';
   const statusLabels = { claimed: '✋ รับงานแล้ว', enroute: '🚤 กำลังเดินทาง', arrived: '📍 ถึงจุดแล้ว' };
   const noteHtml = req.note ? `<div class="job-note">📝 ${escapeHtml(req.note)}</div>` : '';
   const photoHtml = req.photo_url ? `<img class="job-photo" src="${req.photo_url}" onclick="window.open(this.src,'_blank')">` : '';
+
+  const coordsOk = hasValidCoords(req);
+  const mapId = `map_${req.id}`;
+  const mapHtml = coordsOk
+    ? `<div class="job-map" id="${mapId}" data-lat="${req.lat}" data-lng="${req.lng}"></div>`
+    : `<div class="job-map no-coords">📍 ไม่มีพิกัด GPS — ใช้จุดสังเกตด้านบนแทน</div>`;
+  const navigateHtml = coordsOk
+    ? `<a class="btn-navigate" href="https://www.google.com/maps/dir/?api=1&destination=${req.lat},${req.lng}" target="_blank" rel="noopener">🧭 นำทางไปจุดนี้</a>`
+    : '';
 
   let actionHtml = '';
   if (req.status === 'claimed') {
@@ -644,6 +777,8 @@ function buildMyJobCard(req) {
       <div class="job-loc">📍 ${locText}</div>
       <div class="job-meta">👥 ${req.people || 1} คน${req.phone ? ' · 📞 ' + req.phone : ''}</div>
       ${noteHtml}${photoHtml}
+      ${mapHtml}
+      ${navigateHtml}
       ${actionHtml}
       <button class="btn-cancel" onclick="cancelJob(${req.id})">ยกเลิกงานนี้ (ให้คนอื่นรับต่อ)</button>
     </div>`;
