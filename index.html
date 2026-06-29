@@ -606,7 +606,7 @@ if (detected) {
 
 </div>
 </div>
-<div id="scene_Dashboard" style="min-height:100vh;display:none;flex-direction:column;background:#c7d2dc;">
+<div id="scene_Dashboard" style="height:100vh;display:none;flex-direction:column;overflow:hidden;background:#c7d2dc;">
 <div style="background:linear-gradient(90deg,#1a1a2e 0%,#2c3e50 100%);border-bottom:3px solid #e74c3c;padding:8px 20px;display:flex;align-items:stretch;gap:0;flex-shrink:0;z-index:10;">
 <div style="background:#e74c3c;padding:6px 16px;border-radius:6px;display:flex;align-items:center;margin-right:20px;box-shadow:0 0 12px rgba(231,76,60,0.5);">
 <span style="font-size:1.1rem;font-weight:900;color:white;letter-spacing:2px;"><i class="fas fa-shield-alt"></i> EOC</span>
@@ -4813,15 +4813,15 @@ grid.style.maxWidth = '';
 grid.style.margin = '';
 grid.style.display = '';
 grid.style.gridTemplateColumns = '';
-grid.style.gridTemplateRows = 'minmax(0,1fr)';
+grid.style.gridTemplateRows = '';
 grid.style.height = '';
-grid.style.minHeight = '0';
+grid.style.minHeight = '';
 grid.style.overflow = '';
 grid.style.padding = '';
 grid.style.gap = '';
-Array.prototype.forEach.call(grid.children, function(panel, panelIdx) {
+Array.prototype.forEach.call(grid.children, function(panel) {
 panel.style.gridColumn = '';
-panel.style.height = (panelIdx === 2) ? 'auto' : '100%';
+panel.style.height = '';
 panel.style.minHeight = '';
 panel.style.borderRadius = '';
 panel.style.order = '';
