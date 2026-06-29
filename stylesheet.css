@@ -70,3 +70,12 @@ gap:10px !important;
 @media (max-width:640px){.dash-map-wrap{height:240px !important;flex:0 0 auto !important;}}
 @media (max-width:420px){.dash-map-wrap{height:200px !important;flex:0 0 auto !important;}}
 @media (max-height:700px){#scene_Dashboard > div:nth-child(2){padding:4px 15px !important}#scene_Dashboard #dash_end_btn{padding:4px 10px !important}#scene_Dashboard [style*="border-radius:8px"][style*="flex-shrink:0"]{padding:3px 10px !important}#scene_Dashboard .ic-grid{padding-top:6px !important}}
+/* Citizen Check-in — หมุดคำขอช่วยเหลือจากประชาชน */
+.help-req-marker-core{position:relative;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);z-index:2;}
+.help-req-ring{position:absolute;top:50%;left:50%;width:34px;height:34px;margin-left:-17px;margin-top:-17px;border-radius:50%;background:rgba(250,204,21,0.5);animation:help-req-pulse 1.4s ease-out infinite;}
+@keyframes help-req-pulse{0%{transform:scale(0.8);opacity:0.9;}100%{transform:scale(2.4);opacity:0;}}
+#help_request_panel{background:linear-gradient(135deg,#1a1a2e 0%,#2c1810 100%);border:1px solid #facc15;border-radius:10px;padding:12px;margin-bottom:10px;}
+#help_request_panel .hr-title{font-size:0.82rem;font-weight:bold;color:#facc15;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+#help_request_waiting_count{font-size:1.6rem;font-weight:900;color:#facc15;text-align:center;display:block;line-height:1;margin-bottom:2px;}
+#help_request_waiting_label{font-size:0.65rem;color:#ccc;text-align:center;display:block;margin-bottom:10px;}
+#help_request_list{max-height:220px;overflow-y:auto;}
