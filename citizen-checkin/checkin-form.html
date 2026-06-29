@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ขอความช่วยเหลือ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;900&display=swap');
+
+:root{
+  --bg:#0B1220;
+  --bg-card:#121A2B;
+  --bg-input:#1A2438;
+  --red:#DC2626;
+  --red-dark:#991B1B;
+  --yellow:#FACC15;
+  --green:#16A34A;
+  --white:#F8FAFC;
+  --gray:#94A3B8;
+  --border:#26324A;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:'Noto Sans Thai',sans-serif;
+  min-height:100vh;
+  -webkit-tap-highlight-color:transparent;
+}
+body{
+  padding:16px;
+  padding-bottom:40px;
+  max-width:480px;
+  margin:0 auto;
+}
+
+/* Header */
+.header{
+  text-align:center;
+  padding:20px 0 16px;
+}
+.header .badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:var(--red-dark);
+  border:1px solid var(--red);
+  color:var(--yellow);
+  font-size:0.72rem;
+  font-weight:700;
+  padding:5px 14px;
+  border-radius:999px;
+  letter-spacing:0.5px;
+  margin-bottom:10px;
+}
+.header h1{
+  font-size:1.5rem;
+  font-weight:900;
+  line-height:1.3;
+}
+.header p{
+  color:var(--gray);
+  font-size:0.85rem;
+  margin-top:6px;
+  line-height:1.5;
+}
+
+/* Card sections */
+.card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:18px;
+  margin-bottom:14px;
+}
+.card-label{
+  font-size:0.95rem;
+  font-weight:700;
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.card-label .req{
+  color:var(--red);
+  font-size:0.7rem;
+  font-weight:700;
+  background:rgba(220,38,38,0.15);
+  padding:2px 8px;
+  border-radius:6px;
+}
+.card-label .opt{
+  color:var(--gray);
+  font-size:0.7rem;
+  font-weight:400;
+}
+
+/* GPS button */
+.gps-btn{
+  width:100%;
+  background:var(--bg-input);
+  border:2px solid var(--border);
+  color:var(--white);
+  font-family:inherit;
+  font-size:0.95rem;
+  font-weight:700;
+  padding:16px;
+  border-radius:12px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  cursor:pointer;
+  transition:border-color 0.2s;
+}
+.gps-btn:active{transform:scale(0.98);}
+.gps-btn.located{
+  border-color:var(--green);
+  background:rgba(22,163,74,0.1);
+}
+.gps-btn .icon{font-size:1.3rem;}
+.gps-status{
+  font-size:0.8rem;
+  color:var(--gray);
+  text-align:center;
+  margin-top:8px;
+  min-height:18px;
+}
+.gps-status.success{color:var(--green);font-weight:700;}
+.gps-status.error{color:var(--yellow);}
+
+.loc-text-input{
+  width:100%;
+  background:var(--bg-input);
+  border:2px solid var(--border);
+  color:var(--white);
+  font-family:inherit;
+  font-size:0.95rem;
+  padding:14px;
+  border-radius:12px;
+  margin-top:10px;
+}
+.loc-text-input::placeholder{color:var(--gray);}
+.loc-text-input:focus{outline:none;border-color:var(--yellow);}
+
+/* Need type grid */
+.need-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.need-btn{
+  background:var(--bg-input);
+  border:2px solid var(--border);
+  color:var(--white);
+  font-family:inherit;
+  border-radius:12px;
+  padding:16px 8px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.need-btn .emoji{font-size:1.8rem;}
+.need-btn .label{font-size:0.82rem;font-weight:700;}
+.need-btn:active{transform:scale(0.96);}
+.need-btn.selected{
+  border-color:var(--red);
+  background:rgba(220,38,38,0.18);
+}
+
+/* People count stepper */
+.stepper{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:20px;
+}
+.stepper button{
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  border:2px solid var(--border);
+  background:var(--bg-input);
+  color:var(--white);
+  font-size:1.5rem;
+  font-weight:700;
+  cursor:pointer;
+}
+.stepper button:active{transform:scale(0.92);}
+.stepper .count{
+  font-size:2rem;
+  font-weight:900;
+  min-width:60px;
+  text-align:center;
+}
+
+/* Phone input */
+.phone-input{
+  width:100%;
+  background:var(--bg-input);
+  border:2px solid var(--border);
+  color:var(--white);
+  font-family:inherit;
+  font-size:1.1rem;
+  font-weight:700;
+  padding:14px;
+  border-radius:12px;
+  letter-spacing:1px;
+}
+.phone-input::placeholder{color:var(--gray);font-weight:400;letter-spacing:0;}
+.phone-input:focus{outline:none;border-color:var(--yellow);}
+
+/* Note textarea */
+.note-input{
+  width:100%;
+  background:var(--bg-input);
+  border:2px solid var(--border);
+  color:var(--white);
+  font-family:inherit;
+  font-size:0.9rem;
+  padding:14px;
+  border-radius:12px;
+  resize:none;
+  min-height:70px;
+}
+.note-input::placeholder{color:var(--gray);}
+.note-input:focus{outline:none;border-color:var(--yellow);}
+
+/* Photo upload */
+.photo-zone{
+  border:2px dashed var(--border);
+  border-radius:12px;
+  padding:20px;
+  text-align:center;
+  cursor:pointer;
+}
+.photo-zone .icon{font-size:1.8rem;margin-bottom:6px;}
+.photo-zone .text{font-size:0.85rem;color:var(--gray);}
+.photo-preview{
+  position:relative;
+  border-radius:12px;
+  overflow:hidden;
+}
+.photo-preview img{
+  width:100%;
+  display:block;
+  max-height:200px;
+  object-fit:cover;
+}
+.photo-preview .remove{
+  position:absolute;
+  top:8px;
+  right:8px;
+  background:rgba(0,0,0,0.7);
+  color:white;
+  border:none;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  font-size:1rem;
+  cursor:pointer;
+}
+.compress-status{
+  font-size:0.75rem;
+  color:var(--gray);
+  text-align:center;
+  margin-top:6px;
+}
+
+/* Submit button */
+.submit-btn{
+  width:100%;
+  background:var(--red);
+  border:none;
+  color:white;
+  font-family:inherit;
+  font-size:1.15rem;
+  font-weight:900;
+  padding:20px;
+  border-radius:14px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  box-shadow:0 4px 20px rgba(220,38,38,0.4);
+  position:relative;
+  animation:pulse 2.2s infinite;
+}
+@keyframes pulse{
+  0%,100%{box-shadow:0 4px 20px rgba(220,38,38,0.4);}
+  50%{box-shadow:0 4px 30px rgba(220,38,38,0.7);}
+}
+.submit-btn:active{transform:scale(0.98);}
+.submit-btn:disabled{
+  background:var(--border);
+  box-shadow:none;
+  animation:none;
+  cursor:not-allowed;
+  color:var(--gray);
+}
+.submit-btn .spinner{
+  width:20px;height:20px;
+  border:3px solid rgba(255,255,255,0.3);
+  border-top-color:white;
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.error-banner{
+  background:rgba(250,204,21,0.12);
+  border:1px solid var(--yellow);
+  color:var(--yellow);
+  font-size:0.85rem;
+  font-weight:700;
+  padding:12px 14px;
+  border-radius:10px;
+  margin-bottom:14px;
+  display:none;
+}
+
+/* Success screen */
+.success-screen{
+  display:none;
+  text-align:center;
+  padding:60px 20px;
+}
+.success-screen .icon{
+  font-size:4rem;
+  margin-bottom:16px;
+}
+.success-screen h2{
+  font-size:1.4rem;
+  font-weight:900;
+  color:var(--green);
+  margin-bottom:10px;
+}
+.success-screen p{
+  color:var(--gray);
+  font-size:0.95rem;
+  line-height:1.6;
+}
+.success-screen .id-box{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px;
+  margin-top:20px;
+  font-size:0.85rem;
+  color:var(--white);
+}
+
+.footer-note{
+  text-align:center;
+  color:var(--gray);
+  font-size:0.72rem;
+  margin-top:20px;
+  line-height:1.6;
+}
+</style>
+</head>
+<body>
+
+<div id="formScreen">
+  <div class="header">
+    <div class="badge">🆘 ระบบขอความช่วยเหลือฉุกเฉิน</div>
+    <h1>ต้องการความช่วยเหลือ?</h1>
+    <p>กรอกข้อมูลสั้นๆ ทีมช่วยเหลือจะเห็นตำแหน่งและรีบไปหาคุณ</p>
+  </div>
+
+  <div id="errorBanner" class="error-banner"></div>
+
+  <!-- พิกัด -->
+  <div class="card">
+    <div class="card-label">📍 ตำแหน่งของคุณ <span class="req">จำเป็น</span></div>
+    <button type="button" class="gps-btn" id="gpsBtn" onclick="getGPSLocation()">
+      <span class="icon">📡</span>
+      <span id="gpsBtnText">กดเพื่อส่งตำแหน่งปัจจุบัน</span>
+    </button>
+    <div class="gps-status" id="gpsStatus"></div>
+    <input type="text" class="loc-text-input" id="locText" placeholder="หรือพิมพ์จุดสังเกต เช่น ซอย 5 หน้าวัด...">
+  </div>
+
+  <!-- ความต้องการ -->
+  <div class="card">
+    <div class="card-label">ต้องการความช่วยเหลือแบบไหน <span class="req">จำเป็น</span></div>
+    <div class="need-grid" id="needGrid">
+      <button type="button" class="need-btn" data-need="boat">
+        <span class="emoji">🚤</span><span class="label">ต้องการเรือ</span>
+      </button>
+      <button type="button" class="need-btn" data-need="medical">
+        <span class="emoji">💊</span><span class="label">ช่วยทางการแพทย์</span>
+      </button>
+      <button type="button" class="need-btn" data-need="supplies">
+        <span class="emoji">🍚</span><span class="label">อาหาร / น้ำ</span>
+      </button>
+      <button type="button" class="need-btn" data-need="trapped">
+        <span class="emoji">🆘</span><span class="label">ติดอยู่ ออกไม่ได้</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- จำนวนคน -->
+  <div class="card">
+    <div class="card-label">จำนวนคนที่ต้องการช่วย</div>
+    <div class="stepper">
+      <button type="button" onclick="changePeople(-1)">−</button>
+      <div class="count" id="peopleCount">1</div>
+      <button type="button" onclick="changePeople(1)">+</button>
+    </div>
+  </div>
+
+  <!-- เบอร์โทร -->
+  <div class="card">
+    <div class="card-label">เบอร์โทรติดต่อกลับ <span class="opt">ไม่บังคับ แต่ช่วยให้ทีมโทรกลับได้</span></div>
+    <input type="tel" class="phone-input" id="phoneInput" placeholder="08X-XXX-XXXX" inputmode="numeric">
+  </div>
+
+  <!-- รูปภาพ -->
+  <div class="card">
+    <div class="card-label">แนบรูปภาพ <span class="opt">ไม่บังคับ</span></div>
+    <div id="photoZone" class="photo-zone" onclick="document.getElementById('photoInput').click()">
+      <div class="icon">📷</div>
+      <div class="text">แตะเพื่อถ่ายรูปหรือเลือกจากเครื่อง</div>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoSelect(event)">
+    <div id="compressStatus" class="compress-status"></div>
+  </div>
+
+  <!-- บันทึกเพิ่มเติม -->
+  <div class="card">
+    <div class="card-label">รายละเอียดเพิ่มเติม <span class="opt">ไม่บังคับ</span></div>
+    <textarea class="note-input" id="noteInput" placeholder="เช่น มีผู้สูงอายุ/เด็กเล็ก/คนป่วยติดเตียง..."></textarea>
+  </div>
+
+  <button type="button" class="submit-btn" id="submitBtn" onclick="submitRequest()">
+    <span id="submitBtnContent">🆘 ส่งขอความช่วยเหลือ</span>
+  </button>
+
+  <div class="footer-note">
+    ข้อมูลของคุณจะถูกส่งไปยังทีมบัญชาการเหตุการณ์ทันที<br>
+    หากเป็นเหตุฉุกเฉินถึงชีวิต โทร 191 หรือ 1669 ควบคู่ไปด้วย
+  </div>
+</div>
+
+<div id="successScreen" class="success-screen">
+  <div class="icon">✅</div>
+  <h2>ส่งคำขอเรียบร้อย</h2>
+  <p>ทีมช่วยเหลือได้รับข้อมูลแล้ว<br>กรุณารอ ทีมจะติดต่อกลับหรือเดินทางไปหาคุณ</p>
+  <div class="id-box">หมายเลขคำขอ: <strong id="requestIdDisplay">-</strong></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://cpdhykeogdgjjxmwvnkt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ziI_yJath2uIPrurZkhHtw_HlTOv1bq';
+
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const AGENCY_ID = URL_PARAMS.get('agency') || '';
+
+let selectedNeed = null;
+let peopleCount = 1;
+let gpsLat = null, gpsLng = null;
+let compressedPhotoBlob = null;
+
+// ---- เช็คว่ามี agency_id ในลิงก์หรือไม่ (ลิงก์นี้ต้องมาจากปุ่มที่ IC สร้างเท่านั้น) ----
+if (!AGENCY_ID) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const banner = document.getElementById('errorBanner');
+    if (banner) {
+      banner.innerText = '⚠️ ลิงก์นี้ไม่สมบูรณ์ (ไม่พบรหัสหน่วยงาน) กรุณาขอลิงก์ใหม่จากทีมบัญชาการเหตุการณ์ หรือสแกน QR code จากป้ายประกาศโดยตรง';
+      banner.style.display = 'block';
+    }
+  });
+}
+
+// ---- ปุ่มเลือกความต้องการ ----
+document.querySelectorAll('.need-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.need-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedNeed = btn.dataset.need;
+  });
+});
+
+// ---- ตัวนับจำนวนคน ----
+function changePeople(delta) {
+  peopleCount = Math.max(1, Math.min(50, peopleCount + delta));
+  document.getElementById('peopleCount').innerText = peopleCount;
+}
+
+// ---- GPS ----
+function getGPSLocation() {
+  const btn = document.getElementById('gpsBtn');
+  const status = document.getElementById('gpsStatus');
+  const btnText = document.getElementById('gpsBtnText');
+
+  if (!navigator.geolocation) {
+    status.className = 'gps-status error';
+    status.innerText = '⚠️ เบราว์เซอร์นี้ไม่รองรับ GPS กรุณาพิมพ์จุดสังเกตด้านล่างแทน';
+    return;
+  }
+
+  btnText.innerText = 'กำลังค้นหาตำแหน่ง...';
+  status.className = 'gps-status';
+  status.innerText = 'รอสักครู่...';
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      gpsLat = pos.coords.latitude;
+      gpsLng = pos.coords.longitude;
+      btn.classList.add('located');
+      btnText.innerText = 'พบตำแหน่งแล้ว ✓';
+      status.className = 'gps-status success';
+      status.innerText = `ความแม่นยำ ~${Math.round(pos.coords.accuracy)} เมตร`;
+    },
+    (err) => {
+      btnText.innerText = 'กดเพื่อส่งตำแหน่งปัจจุบัน';
+      status.className = 'gps-status error';
+      if (err.code === 1) {
+        status.innerText = '⚠️ ไม่ได้รับอนุญาตเข้าถึงตำแหน่ง กรุณาพิมพ์จุดสังเกตด้านล่างแทน';
+      } else {
+        status.innerText = '⚠️ หาตำแหน่งไม่ได้ กรุณาพิมพ์จุดสังเกตด้านล่างแทน';
+      }
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+  );
+}
+
+// ---- บีบอัดรูปภาพ (client-side, ใช้ Canvas) ----
+function handlePhotoSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const compressStatus = document.getElementById('compressStatus');
+  const photoZone = document.getElementById('photoZone');
+  compressStatus.innerText = 'กำลังบีบอัดรูป...';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const MAX_DIM = 1280;
+      let w = img.width, h = img.height;
+      if (w > h && w > MAX_DIM) { h = h * (MAX_DIM / w); w = MAX_DIM; }
+      else if (h > MAX_DIM) { w = w * (MAX_DIM / h); h = MAX_DIM; }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+
+      canvas.toBlob((blob) => {
+        compressedPhotoBlob = blob;
+        const sizeKB = Math.round(blob.size / 1024);
+        compressStatus.innerText = `✓ บีบอัดแล้ว (${sizeKB} KB)`;
+
+        const url = URL.createObjectURL(blob);
+        photoZone.outerHTML = `
+          <div class="photo-preview" id="photoZone">
+            <img src="${url}">
+            <button type="button" class="remove" onclick="removePhoto()">✕</button>
+          </div>`;
+      }, 'image/jpeg', 0.7);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto() {
+  compressedPhotoBlob = null;
+  document.getElementById('compressStatus').innerText = '';
+  document.getElementById('photoZone').outerHTML = `
+    <div id="photoZone" class="photo-zone" onclick="document.getElementById('photoInput').click()">
+      <div class="icon">📷</div>
+      <div class="text">แตะเพื่อถ่ายรูปหรือเลือกจากเครื่อง</div>
+    </div>`;
+}
+
+// ---- ส่งคำขอ ----
+async function submitRequest() {
+  const errorBanner = document.getElementById('errorBanner');
+  errorBanner.style.display = 'none';
+
+  const locText = document.getElementById('locText').value.trim();
+
+  // validation
+  if (gpsLat === null && !locText) {
+    showError('กรุณากดส่งตำแหน่ง GPS หรือพิมพ์จุดสังเกตอย่างน้อย 1 อย่าง');
+    return;
+  }
+  if (!selectedNeed) {
+    showError('กรุณาเลือกประเภทความช่วยเหลือที่ต้องการ');
+    return;
+  }
+
+  const submitBtn = document.getElementById('submitBtn');
+  const submitBtnContent = document.getElementById('submitBtnContent');
+  submitBtn.disabled = true;
+  submitBtnContent.innerHTML = '<span class="spinner"></span> กำลังส่ง...';
+
+  try {
+    let photoUrl = null;
+
+    // อัปโหลดรูปก่อน (ถ้ามี)
+    if (compressedPhotoBlob) {
+      const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+      const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/help-request-photos/${fileName}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'apikey': SUPABASE_KEY,
+          'Content-Type': 'image/jpeg'
+        },
+        body: compressedPhotoBlob
+      });
+      if (uploadRes.ok) {
+        photoUrl = `${SUPABASE_URL}/storage/v1/object/public/help-request-photos/${fileName}`;
+      }
+      // ถ้าอัปโหลดรูปไม่สำเร็จ ไม่ block การส่งคำขอหลัก — รูปเป็นแค่ข้อมูลเสริม
+    }
+
+    const phone = document.getElementById('phoneInput').value.trim();
+    const note = document.getElementById('noteInput').value.trim();
+
+    const payload = {
+      lat: gpsLat !== null ? gpsLat : 0,
+      lng: gpsLng !== null ? gpsLng : 0,
+      loc: locText || null,
+      need: selectedNeed,
+      people: peopleCount,
+      phone: phone || null,
+      photo_url: photoUrl,
+      note: note || null,
+      status: 'new',
+      agency_id: AGENCY_ID || null
+    };
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/help_requests`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'apikey': SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      throw new Error('ส่งคำขอไม่สำเร็จ');
+    }
+
+    const result = await res.json();
+    const requestId = result[0] && result[0].id ? result[0].id : '-';
+
+    document.getElementById('formScreen').style.display = 'none';
+    document.getElementById('successScreen').style.display = 'block';
+    document.getElementById('requestIdDisplay').innerText = '#' + requestId;
+
+  } catch (err) {
+    showError('⚠️ ส่งคำขอไม่สำเร็จ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง');
+    submitBtn.disabled = false;
+    submitBtnContent.innerHTML = '🆘 ส่งขอความช่วยเหลือ';
+  }
+}
+
+function showError(msg) {
+  const errorBanner = document.getElementById('errorBanner');
+  errorBanner.innerText = msg;
+  errorBanner.style.display = 'block';
+  errorBanner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+</script>
+</body>
+</html>
