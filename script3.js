@@ -272,9 +272,10 @@ supplies: { emoji: '🍚', label: 'อาหาร / น้ำ', color: '#16a085
 trapped: { emoji: '🆘', label: 'ติดอยู่ ออกไม่ได้', color: '#e67e22' }
 };
 var HELP_STATUS_META = {
-new: { label: '🆕 ใหม่', color: '#facc15' },
-ack: { label: '👀 รับทราบ', color: '#3498db' },
-enroute: { label: '🚤 กำลังไป', color: '#9b59b6' },
+new: { label: '🆕 รอคนรับ', color: '#facc15' },
+claimed: { label: '✋ มีคนรับแล้ว', color: '#3498db' },
+enroute: { label: '🚤 กำลังเดินทาง', color: '#9b59b6' },
+arrived: { label: '📍 ถึงจุดแล้ว', color: '#ea580c' },
 helped: { label: '✅ ช่วยแล้ว', color: '#27ae60' }
 };
 
@@ -425,30 +426,54 @@ return String(s == null ? '' : s).replace(/</g, '&lt;').replace(/>/g, '&gt;');
 function buildHelpRequestDetailCard(req) {
 var need = HELP_NEED_META[req.need] || { emoji: '🆘', label: req.need || '-' };
 var statusMeta = HELP_STATUS_META[req.status] || { label: req.status || '-', color: '#888' };
-var isNew = req.status === 'new';
 var locText = req.loc ? escapeHtml(req.loc) : '(ไม่ระบุจุดสังเกต)';
 var phoneHtml = req.phone ? '<div style="font-size:0.78rem;color:#2563eb;margin-top:2px;">📞 <a href="tel:' + req.phone + '" style="color:#2563eb;text-decoration:none;">' + req.phone + '</a></div>' : '';
 var noteHtml = req.note ? '<div style="font-size:0.75rem;color:#777;margin-top:4px;">📝 ' + escapeHtml(req.note) + '</div>' : '';
 var photoHtml = req.photo_url ? '<img src="' + req.photo_url + '" style="max-width:100%;max-height:220px;width:auto;border-radius:6px;margin-top:6px;display:block;object-fit:cover;cursor:pointer;" onclick="window.open(this.src,\'_blank\')">' : '';
 
-var statusBtns = ['new', 'ack', 'enroute', 'helped'].map(function(s) {
+// โชว์ว่ากู้ภัยคนไหนรับงานนี้อยู่ (ไม่มีถ้ายัง status=new)
+var responderHtml = '';
+if (req.responder_name && req.status !== 'new') {
+responderHtml = '<div style="background:rgba(255,255,255,0.5);border-radius:6px;padding:6px 8px;margin-top:6px;font-size:0.76rem;">' +
+'🚑 ผู้รับงาน: <b>' + escapeHtml(req.responder_name) + '</b>' +
+(req.responder_phone ? ' · <a href="tel:' + req.responder_phone + '" style="color:#2563eb;text-decoration:none;">' + req.responder_phone + '</a>' : '') +
+'</div>';
+}
+
+// ปุ่ม admin override — ใช้กรณี IC ต้องแก้สถานะเองด้วยมือ (เช่น กู้ภัยลืมอัปเดต)
+var statusBtns = ['new', 'claimed', 'enroute', 'arrived', 'helped'].map(function(s) {
 var meta = HELP_STATUS_META[s];
 var active = s === req.status;
 return '<button onclick="updateHelpRequestStatus(' + req.id + ',\'' + s + '\')" ' +
-'style="font-size:0.68rem;padding:4px 9px;border-radius:6px;border:1px solid ' + meta.color + ';' +
+'style="font-size:0.66rem;padding:4px 8px;border-radius:6px;border:1px solid ' + meta.color + ';' +
 'background:' + (active ? meta.color : 'white') + ';color:' + (active ? 'white' : meta.color) + ';cursor:pointer;margin:2px 2px 0 0;font-family:inherit;">' +
 meta.label + '</button>';
 }).join('');
 
-return '<div style="border:1px solid ' + (isNew ? '#facc15' : '#eee') + ';background:' + (isNew ? 'rgba(250,204,21,0.08)' : 'white') + ';border-radius:8px;padding:10px;margin-bottom:8px;text-align:left;">' +
+// ย้อมสีทั้งการ์ดตามสถานะ ให้เห็นชัดจากระยะไกล ไม่ต้องอ่านป้ายเล็กๆ
+var cardBg = 'rgba(' + hexToRgbParts(statusMeta.color) + ',0.10)';
+var cardBorder = statusMeta.color;
+
+return '<div style="border:2px solid ' + cardBorder + ';background:' + cardBg + ';border-radius:8px;padding:10px;margin-bottom:8px;text-align:left;">' +
 '<div style="display:flex;justify-content:space-between;align-items:center;">' +
 '<b style="font-size:0.85rem;">' + need.emoji + ' ' + need.label + '</b>' +
-'<span style="font-size:0.7rem;font-weight:700;color:' + statusMeta.color + ';">' + statusMeta.label + '</span>' +
+'<span style="font-size:0.72rem;font-weight:900;color:white;background:' + statusMeta.color + ';padding:2px 8px;border-radius:999px;">' + statusMeta.label + '</span>' +
 '</div>' +
 '<div style="font-size:0.78rem;color:#555;margin-top:4px;">📍 ' + locText + ' · 👥 ' + (req.people || 1) + ' คน</div>' +
-phoneHtml + noteHtml + photoHtml +
-'<div style="margin-top:8px;">' + statusBtns + '</div>' +
+phoneHtml + noteHtml + responderHtml + photoHtml +
+'<div style="margin-top:8px;border-top:1px solid rgba(0,0,0,0.08);padding-top:6px;">' +
+'<div style="font-size:0.62rem;color:#999;margin-bottom:3px;">แก้สถานะด้วยมือ (admin):</div>' +
+statusBtns +
+'</div>' +
 '</div>';
+}
+
+function hexToRgbParts(hex) {
+hex = (hex || '#888888').replace('#', '');
+var r = parseInt(hex.substring(0, 2), 16) || 136;
+var g = parseInt(hex.substring(2, 4), 16) || 136;
+var b = parseInt(hex.substring(4, 6), 16) || 136;
+return r + ',' + g + ',' + b;
 }
 
 function renderHelpRequestModalBody(requests, tab) {
