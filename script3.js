@@ -253,6 +253,185 @@ return buildDashboardPointMarkerHtml(
 { iconSize: 39, scale: true, zIndex: 10 }
 );
 }
+
+// ==========================================
+// CITIZEN CHECK-IN — หมุดคำขอช่วยเหลือจากประชาชน
+// อ่านข้อมูลตรงจาก Supabase ใหม่ (citizen-checkin) ไม่ผ่าน worker หลักของ ICS Connect
+// ==========================================
+var CITIZEN_CHECKIN_SUPABASE_URL = 'https://cpdhykeogdgjjxmwvnkt.supabase.co';
+var CITIZEN_CHECKIN_SUPABASE_KEY = 'sb_publishable_ziI_yJath2uIPrurZkhHtw_HlTOv1bq';
+var CITIZEN_CHECKIN_WORKER_URL = 'https://citizen-checkin-worker.occ-hrh.workers.dev';
+
+var helpRequestMarkers = {};
+window._lastHelpRequests = [];
+
+var HELP_NEED_META = {
+boat: { emoji: '🚤', label: 'ต้องการเรือ', color: '#2980b9' },
+medical: { emoji: '💊', label: 'ช่วยทางการแพทย์', color: '#c0392b' },
+supplies: { emoji: '🍚', label: 'อาหาร / น้ำ', color: '#16a085' },
+trapped: { emoji: '🆘', label: 'ติดอยู่ ออกไม่ได้', color: '#e67e22' }
+};
+var HELP_STATUS_META = {
+new: { label: '🆕 ใหม่', color: '#facc15' },
+ack: { label: '👀 รับทราบ', color: '#3498db' },
+enroute: { label: '🚤 กำลังไป', color: '#9b59b6' },
+helped: { label: '✅ ช่วยแล้ว', color: '#27ae60' }
+};
+
+function buildHelpRequestMarkerHtml(req) {
+var need = HELP_NEED_META[req.need] || { emoji: '🆘', color: '#888' };
+var isNew = req.status === 'new';
+var bg = isNew ? '#facc15' : (HELP_STATUS_META[req.status] || {}).color || need.color;
+var pulseHtml = isNew
+? '<div class="help-req-ring"></div>'
+: '';
+var iconHtml =
+'<div class="help-req-marker-body" style="position:relative;">' +
+pulseHtml +
+'<div class="help-req-marker-core" style="background:' + bg + ';border-color:' + need.color + ';">' + need.emoji + '</div>' +
+'</div>';
+return buildDashboardPointMarkerHtml(iconHtml, '', { iconSize: 36, scale: true, zIndex: 9 });
+}
+
+function buildHelpRequestPopupHtml(req) {
+var need = HELP_NEED_META[req.need] || { emoji: '🆘', label: req.need || '-' };
+var statusMeta = HELP_STATUS_META[req.status] || { label: req.status || '-' };
+var locText = req.loc ? req.loc.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '(ไม่ระบุจุดสังเกต)';
+var phoneHtml = req.phone ? '<br>📞 <a href="tel:' + req.phone + '" style="color:#2980b9;">' + req.phone + '</a>' : '';
+var photoHtml = req.photo_url ? '<br><img src="' + req.photo_url + '" style="max-width:200px;border-radius:6px;margin-top:6px;">' : '';
+var noteHtml = req.note ? '<br><span style="color:#777;font-size:0.8rem;">' + req.note.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>' : '';
+
+var statusButtons = ['new', 'ack', 'enroute', 'helped'].map(function(s) {
+var meta = HELP_STATUS_META[s];
+var active = s === req.status;
+return '<button onclick="updateHelpRequestStatus(' + req.id + ',\'' + s + '\')" ' +
+'style="font-size:0.7rem;padding:4px 8px;border-radius:6px;border:1px solid ' + meta.color + ';' +
+'background:' + (active ? meta.color : 'white') + ';color:' + (active ? 'white' : meta.color) + ';cursor:pointer;margin:2px;">' +
+meta.label + '</button>';
+}).join('');
+
+return '<div style="min-width:180px;">' +
+'<b>' + need.emoji + ' ' + need.label + '</b> (' + (req.people || 1) + ' คน)<br>' +
+'📍 ' + locText +
+phoneHtml + noteHtml + photoHtml +
+'<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:2px;">' + statusButtons + '</div>' +
+'<div style="font-size:0.65rem;color:#aaa;margin-top:4px;">สถานะปัจจุบัน: ' + statusMeta.label + '</div>' +
+'</div>';
+}
+
+async function fetchHelpRequests() {
+try {
+var res = await fetch(
+CITIZEN_CHECKIN_SUPABASE_URL + '/rest/v1/help_requests?select=*&order=created_at.desc&limit=200',
+{
+headers: {
+'apikey': CITIZEN_CHECKIN_SUPABASE_KEY,
+'Authorization': 'Bearer ' + CITIZEN_CHECKIN_SUPABASE_KEY
+}
+}
+);
+if (!res.ok) return null;
+return await res.json();
+} catch (e) {
+return null;
+}
+}
+
+async function updateHelpRequestMarkers() {
+if (!dashMap) return;
+var requests = await fetchHelpRequests();
+if (!requests) return; // fetch ล้มเหลว — เก็บหมุดเดิมไว้ ไม่ลบทิ้งเปล่าๆ
+window._lastHelpRequests = requests;
+renderHelpRequestPanel(requests);
+
+var nextMarkers = {};
+requests.forEach(function(req) {
+if (!req.lat || !req.lng) return;
+var signature = [req.status, req.need, req.people, req.loc, req.photo_url].join('|');
+var existing = helpRequestMarkers[req.id];
+if (existing && existing._signature === signature) {
+nextMarkers[req.id] = existing;
+return;
+}
+if (existing) {
+removeLongdoOverlay(dashMap, existing);
+}
+var html = buildHelpRequestMarkerHtml(req);
+var marker = makeLongdoHtmlMarker({ lon: req.lng, lat: req.lat }, html, {
+offset: { x: 0, y: 0 },
+weight: 60,
+title: (HELP_NEED_META[req.need] || {}).label || 'คำขอช่วยเหลือ',
+scaleMode: 'none',
+markerOptions: { detail: buildHelpRequestPopupHtml(req) }
+});
+marker._signature = signature;
+dashMap.Overlays.add(marker);
+nextMarkers[req.id] = marker;
+});
+
+Object.keys(helpRequestMarkers).forEach(function(id) {
+if (nextMarkers[id]) return;
+removeLongdoOverlay(dashMap, helpRequestMarkers[id]);
+});
+helpRequestMarkers = nextMarkers;
+}
+
+async function updateHelpRequestStatus(id, status) {
+try {
+var res = await fetch(CITIZEN_CHECKIN_WORKER_URL + '/?action=updateStatus', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({
+id: id,
+status: status,
+updatedBy: (typeof USER_NAME !== 'undefined' && USER_NAME) || 'IC'
+})
+});
+if (!res.ok) throw new Error('update failed');
+updateHelpRequestMarkers();
+} catch (e) {
+alert('⚠️ อัปเดตสถานะไม่สำเร็จ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง');
+}
+}
+
+function renderHelpRequestPanel(requests) {
+var panel = document.getElementById('help_request_list');
+var countEl = document.getElementById('help_request_waiting_count');
+if (!panel) return;
+
+var waiting = requests.filter(function(r) { return r.status !== 'helped'; });
+if (countEl) countEl.innerText = waiting.length;
+
+if (waiting.length === 0) {
+panel.innerHTML = '<div style="font-size:0.72rem;color:#aaa;text-align:center;padding:10px 0;">ยังไม่มีคำขอความช่วยเหลือ</div>';
+return;
+}
+
+panel.innerHTML = waiting.map(function(req) {
+var need = HELP_NEED_META[req.need] || { emoji: '🆘', label: req.need || '-' };
+var statusMeta = HELP_STATUS_META[req.status] || { label: req.status || '-', color: '#888' };
+var isNew = req.status === 'new';
+var locText = req.loc ? req.loc.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '(ไม่ระบุจุดสังเกต)';
+return '<div style="background:' + (isNew ? 'rgba(250,204,21,0.12)' : '#f8f9fa') + ';border:1px solid ' + (isNew ? '#facc15' : '#eee') + ';border-radius:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;" onclick="flyToHelpRequest(' + req.lat + ',' + req.lng + ')">' +
+'<div style="display:flex;justify-content:space-between;align-items:center;">' +
+'<b style="font-size:0.8rem;">' + need.emoji + ' ' + need.label + '</b>' +
+'<span style="font-size:0.68rem;font-weight:700;color:' + statusMeta.color + ';">' + statusMeta.label + '</span>' +
+'</div>' +
+'<div style="font-size:0.72rem;color:#666;margin-top:2px;">📍 ' + locText + ' · 👥 ' + (req.people || 1) + ' คน</div>' +
+'</div>';
+}).join('');
+}
+
+function flyToHelpRequest(lat, lng) {
+if (!dashMap || !dashMap._maptiler) return;
+dashMap._maptiler.flyTo({ center: [lng, lat], zoom: 17, duration: 800 });
+}
+
+function startHelpRequestPolling() {
+updateHelpRequestMarkers();
+if (window._helpRequestPollInterval) clearInterval(window._helpRequestPollInterval);
+window._helpRequestPollInterval = setInterval(updateHelpRequestMarkers, 5000);
+}
 function getDashboardScreenDistance(locA, locB) {
 var mapObj = dashMap && dashMap._maptiler;
 if (!mapObj || !mapObj.project || !locA || !locB) return null;
@@ -339,8 +518,10 @@ clearLongdoOverlayList(dashMap, zoneCircles);
 clearLongdoOverlayList(dashMap, window._icOCZoneOverlays || []);
 clearLongdoOverlayList(dashMap, window._icOCZoneCircles || []);
 clearLongdoOverlayList(dashMap, window._icOCReqAlertOverlays || []);
+clearLongdoOverlayList(dashMap, Object.values(helpRequestMarkers || {}));
 otherMarkers = [];
 zoneCircles = [];
+helpRequestMarkers = {};
 window._dashboardLiveMarkerRecords = {};
 window._icOCZoneOverlayRecords = {};
 window._icOCZoneOverlays = [];
@@ -353,6 +534,7 @@ setTimeout(function() {
 try {
 if (window._lastEmergState) applyDashboardEmergencyState(window._lastEmergState);
 if (typeof updateLiveMarkers === 'function') updateLiveMarkers();
+if (typeof updateHelpRequestMarkers === 'function') updateHelpRequestMarkers();
 if (typeof drawHazmatZonesOnDashMap === 'function' && window._lastHazmatZoneData) {
 drawHazmatZonesOnDashMap(window._lastHazmatZoneData);
 }
