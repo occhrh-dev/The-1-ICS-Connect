@@ -150,7 +150,7 @@ body{
 .job-loc{font-size:0.85rem;color:#cbd5e1;margin-bottom:4px;}
 .job-meta{font-size:0.78rem;color:var(--gray);margin-bottom:10px;}
 .job-note{font-size:0.78rem;color:#888;margin-bottom:10px;font-style:italic;}
-.job-photo{max-width:100%;border-radius:8px;margin-bottom:10px;display:block;}
+.job-photo{max-width:100%;max-height:200px;width:auto;object-fit:cover;border-radius:8px;margin-bottom:10px;display:block;cursor:pointer;}
 
 .btn-claim{
   width:100%;
@@ -406,7 +406,7 @@ function buildAvailableJobCard(req) {
   const need = NEED_META[req.need] || { emoji: '🆘', label: req.need || '-' };
   const locText = req.loc ? escapeHtml(req.loc) : '(ไม่ระบุจุดสังเกต)';
   const noteHtml = req.note ? `<div class="job-note">📝 ${escapeHtml(req.note)}</div>` : '';
-  const photoHtml = req.photo_url ? `<img class="job-photo" src="${req.photo_url}">` : '';
+  const photoHtml = req.photo_url ? `<img class="job-photo" src="${req.photo_url}" onclick="window.open(this.src,'_blank')">` : '';
   return `
     <div class="job-card new">
       <div class="job-top">
@@ -425,7 +425,7 @@ function buildMyJobCard(req) {
   const locText = req.loc ? escapeHtml(req.loc) : '(ไม่ระบุจุดสังเกต)';
   const statusLabels = { claimed: '✋ รับงานแล้ว', enroute: '🚤 กำลังเดินทาง', arrived: '📍 ถึงจุดแล้ว' };
   const noteHtml = req.note ? `<div class="job-note">📝 ${escapeHtml(req.note)}</div>` : '';
-  const photoHtml = req.photo_url ? `<img class="job-photo" src="${req.photo_url}">` : '';
+  const photoHtml = req.photo_url ? `<img class="job-photo" src="${req.photo_url}" onclick="window.open(this.src,'_blank')">` : '';
 
   let actionHtml = '';
   if (req.status === 'claimed') {
