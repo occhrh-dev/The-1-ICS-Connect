@@ -451,7 +451,7 @@ meta.label + '</button>';
 }).join('');
 
 // ย้อมสีทั้งการ์ดตามสถานะ ให้เห็นชัดจากระยะไกล ไม่ต้องอ่านป้ายเล็กๆ
-var cardBg = 'rgba(' + hexToRgbParts(statusMeta.color) + ',0.10)';
+var cardBg = 'rgba(' + hexToRgbParts(statusMeta.color) + ',0.25)';
 var cardBorder = statusMeta.color;
 
 return '<div style="border:2px solid ' + cardBorder + ';background:' + cardBg + ';border-radius:8px;padding:10px;margin-bottom:8px;text-align:left;">' +
