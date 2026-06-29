@@ -124,6 +124,21 @@ body{
   text-transform:uppercase;
   letter-spacing:0.5px;
 }
+.available-toggle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:10px 14px;
+  margin-top:14px;
+  cursor:pointer;
+  font-size:0.78rem;
+  font-weight:700;
+  color:var(--gray);
+}
+.available-toggle:active{transform:scale(0.98);}
 
 .job-card{
   background:var(--bg-card);
@@ -279,7 +294,11 @@ body{
     <div id="myJobsList"></div>
   </div>
 
-  <div class="section-label">งานที่ยังไม่มีคนรับ</div>
+  <div id="availableJobsToggle" class="available-toggle" style="display:none;" onclick="toggleAvailableJobs()">
+    <span>📋 งานที่ยังไม่มีคนรับ (<span id="availableJobsCount">0</span>)</span>
+    <span id="availableJobsToggleIcon">▼</span>
+  </div>
+  <div class="section-label" id="availableJobsSection">งานที่ยังไม่มีคนรับ</div>
   <div id="availableJobsList">
     <div class="empty-state">กำลังโหลด...</div>
   </div>
@@ -380,21 +399,50 @@ async function refreshJobs() {
 
   const myJobs = all.filter(r => r.responder_phone === responderPhone && r.status !== 'new' && r.status !== 'helped');
   const availableJobs = all.filter(r => r.status === 'new');
+  const hasMyJobs = myJobs.length > 0;
 
   const myJobsSection = document.getElementById('myJobsSection');
   const myJobsList = document.getElementById('myJobsList');
-  if (myJobs.length === 0) {
+  if (!hasMyJobs) {
     myJobsSection.style.display = 'none';
   } else {
     myJobsSection.style.display = 'block';
     myJobsList.innerHTML = myJobs.map(buildMyJobCard).join('');
   }
 
+  // ถ้ามีงานของตัวเองอยู่ — ซ่อนลิสต์งานอื่นไว้ก่อน (กันกดผิดในชั่วโมงเร่งด่วน) ต้องกดเปิดดูเอง
+  const availableToggle = document.getElementById('availableJobsToggle');
+  const availableLabel = document.getElementById('availableJobsSection');
   const availableList = document.getElementById('availableJobsList');
+  const availableCountBadge = document.getElementById('availableJobsCount');
+
+  if (availableCountBadge) availableCountBadge.innerText = availableJobs.length;
+
+  const shouldCollapse = hasMyJobs && !window._availableJobsForceOpen;
+  availableList.style.display = shouldCollapse ? 'none' : 'block';
+  availableLabel.style.display = shouldCollapse ? 'none' : 'block';
+  availableToggle.style.display = hasMyJobs ? 'flex' : 'none';
+
   if (availableJobs.length === 0) {
     availableList.innerHTML = '<div class="empty-state">ยังไม่มีงานที่รอรับในตอนนี้</div>';
   } else {
     availableList.innerHTML = availableJobs.map(buildAvailableJobCard).join('');
+  }
+}
+
+function toggleAvailableJobs() {
+  window._availableJobsForceOpen = !window._availableJobsForceOpen;
+  const availableList = document.getElementById('availableJobsList');
+  const availableLabel = document.getElementById('availableJobsSection');
+  const icon = document.getElementById('availableJobsToggleIcon');
+  if (window._availableJobsForceOpen) {
+    availableList.style.display = 'block';
+    availableLabel.style.display = 'block';
+    if (icon) icon.innerText = '▲';
+  } else {
+    availableList.style.display = 'none';
+    availableLabel.style.display = 'none';
+    if (icon) icon.innerText = '▼';
   }
 }
 
