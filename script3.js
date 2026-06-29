@@ -286,16 +286,17 @@ helped: { label: '✅ ช่วยแล้ว', color: '#27ae60' }
 function buildHelpRequestMarkerHtml(req) {
 var need = HELP_NEED_META[req.need] || { emoji: '🆘', color: '#888' };
 var isNew = req.status === 'new';
+var isHelped = req.status === 'helped';
 var bg = isNew ? '#facc15' : (HELP_STATUS_META[req.status] || {}).color || need.color;
 var pulseHtml = isNew
 ? '<div class="help-req-ring"></div>'
 : '';
 var iconHtml =
-'<div class="help-req-marker-body" style="position:relative;">' +
+'<div class="help-req-marker-body" style="position:relative;' + (isHelped ? 'opacity:0.45;transform:scale(0.72);' : '') + '">' +
 pulseHtml +
 '<div class="help-req-marker-core" style="background:' + bg + ';border-color:' + need.color + ';">' + need.emoji + '</div>' +
 '</div>';
-return buildDashboardPointMarkerHtml(iconHtml, '', { iconSize: 36, scale: true, zIndex: 9 });
+return buildDashboardPointMarkerHtml(iconHtml, '', { iconSize: 36, scale: true, zIndex: isHelped ? 5 : 9 });
 }
 
 function buildHelpRequestPopupHtml(req) {
@@ -412,7 +413,10 @@ var countEl = document.getElementById('help_request_waiting_count');
 if (!countEl) return;
 
 var waiting = requests.filter(function(r) { return r.status !== 'helped'; });
+var helpedList = requests.filter(function(r) { return r.status === 'helped'; });
 countEl.innerText = waiting.length;
+var helpedCountEl = document.getElementById('help_request_helped_count');
+if (helpedCountEl) helpedCountEl.innerText = helpedList.length;
 
 var counts = { boat: 0, medical: 0, supplies: 0, trapped: 0 };
 waiting.forEach(function(r) {
