@@ -353,6 +353,31 @@ body{
   font-size:0.85rem;
   color:var(--white);
 }
+.verify-code-box{
+  background:rgba(250,204,21,0.1);
+  border:2px solid var(--yellow);
+  border-radius:14px;
+  padding:18px;
+  margin-top:14px;
+}
+.verify-code-label{
+  font-size:0.85rem;
+  font-weight:700;
+  color:var(--yellow);
+  margin-bottom:8px;
+}
+.verify-code-value{
+  font-size:2.4rem;
+  font-weight:900;
+  color:var(--white);
+  letter-spacing:6px;
+  margin-bottom:8px;
+}
+.verify-code-hint{
+  font-size:0.78rem;
+  color:var(--gray);
+  line-height:1.5;
+}
 
 .footer-note{
   text-align:center;
@@ -452,6 +477,11 @@ body{
   <h2>ส่งคำขอเรียบร้อย</h2>
   <p>ทีมช่วยเหลือได้รับข้อมูลแล้ว<br>กรุณารอ ทีมจะติดต่อกลับหรือเดินทางไปหาคุณ</p>
   <div class="id-box">หมายเลขคำขอ: <strong id="requestIdDisplay">-</strong></div>
+  <div class="verify-code-box">
+    <div class="verify-code-label">🔑 รหัสยืนยันตัวของคุณ</div>
+    <div class="verify-code-value" id="verifyCodeDisplay">----</div>
+    <div class="verify-code-hint">จำหรือเขียนรหัสนี้ไว้ — แจ้งให้ทีมที่มาช่วยตอนถึงที่ เพื่อยืนยันว่าเป็นคุณจริง</div>
+  </div>
 </div>
 
 <script>
@@ -583,6 +613,28 @@ function removePhoto() {
 }
 
 // ---- ส่งคำขอ ----
+// ---- สุ่มรหัสยืนยันตัว 4 หลัก เช็คไม่ให้ซ้ำกับคำขออื่นในเหตุการณ์เดียวกัน ----
+async function generateUniqueVerifyCode() {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const code = String(Math.floor(1000 + Math.random() * 9000)); // 1000-9999
+    try {
+      const checkUrl = `${SUPABASE_URL}/rest/v1/help_requests?select=id&agency_id=eq.${encodeURIComponent(AGENCY_ID)}&verify_code=eq.${code}&status=neq.helped`;
+      const res = await fetch(checkUrl, {
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (rows.length === 0) return code; // ไม่ซ้ำ ใช้ได้
+      }
+    } catch (e) {
+      // เช็คซ้ำไม่ได้ (เช่นเน็ตหลุดชั่วครู่) — ใช้รหัสนี้ไปเลย ดีกว่าบล็อกการส่งคำขอ
+      return code;
+    }
+  }
+  // สุ่มไม่ผ่าน 5 รอบ (โอกาสน้อยมาก) — ใช้รหัสสุดท้ายไปเลย
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
 async function submitRequest() {
   const errorBanner = document.getElementById('errorBanner');
   errorBanner.style.display = 'none';
@@ -627,6 +679,7 @@ async function submitRequest() {
 
     const phone = document.getElementById('phoneInput').value.trim();
     const note = document.getElementById('noteInput').value.trim();
+    const verifyCode = await generateUniqueVerifyCode();
 
     const payload = {
       lat: gpsLat !== null ? gpsLat : 0,
@@ -638,7 +691,8 @@ async function submitRequest() {
       photo_url: photoUrl,
       note: note || null,
       status: 'new',
-      agency_id: AGENCY_ID || null
+      agency_id: AGENCY_ID || null,
+      verify_code: verifyCode
     };
 
     const res = await fetch(`${SUPABASE_URL}/rest/v1/help_requests`, {
@@ -662,6 +716,7 @@ async function submitRequest() {
     document.getElementById('formScreen').style.display = 'none';
     document.getElementById('successScreen').style.display = 'block';
     document.getElementById('requestIdDisplay').innerText = '#' + requestId;
+    document.getElementById('verifyCodeDisplay').innerText = verifyCode;
 
   } catch (err) {
     showError('⚠️ ส่งคำขอไม่สำเร็จ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง');
