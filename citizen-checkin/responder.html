@@ -391,6 +391,10 @@ body{
     <div style="font-size:0.85rem;color:#cbd5e1;margin-bottom:14px;">กรอกชื่อและเบอร์โทรของคุณก่อนเริ่มรับงาน — ใช้ยืนยันตัวตอนอัปเดตสถานะ</div>
     <input type="text" id="setupName" class="input-field" placeholder="ชื่อ-สกุล หรือชื่อทีม">
     <input type="tel" id="setupPhone" class="input-field" placeholder="เบอร์โทร" inputmode="numeric">
+    <div style="background:rgba(14,165,233,0.12);border:1px solid rgba(14,165,233,0.35);border-radius:8px;padding:9px 11px;margin:10px 0;font-size:0.72rem;color:#7dd3fc;line-height:1.5;">
+      📍 ระบบจำเป็นต้องใช้ <b>ตำแหน่งของคุณ</b> เพื่อให้ผู้บัญชาการเหตุการณ์ (IC) เห็นว่าคุณอยู่ใกล้จุดไหน จะได้สั่งงานได้ตรงจุด — กดปุ่มด้านล่างแล้วเลือก "อนุญาต" เมื่อเบราว์เซอร์ถาม
+    </div>
+    <div id="setupLocationStatus" style="font-size:0.75rem;color:#fbbf24;min-height:18px;margin-bottom:6px;"></div>
     <button class="btn-primary" onclick="saveResponderInfo()">เริ่มรับงาน</button>
   </div>
 </div>
@@ -450,6 +454,34 @@ let myLat = null;
 let myLng = null;
 const activeJobMaps = {}; // job id -> { map, responderMarker }
 
+let lastLocationPushAt = 0;
+const LOCATION_PUSH_INTERVAL_MS = 20000; // push ตำแหน่งขึ้น server ทุก 20 วิ กันยิง API ถี่เกินไป (watchPosition ส่งมาบ่อยกว่านี้มาก)
+
+async function pushMyLocationToServer() {
+  if (!AGENCY_ID || !responderPhone || myLat == null || myLng == null) return;
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/responder_locations`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates' // upsert ตาม unique constraint (agency_id, responder_phone)
+      },
+      body: JSON.stringify({
+        agency_id: AGENCY_ID,
+        responder_phone: responderPhone,
+        responder_name: responderName,
+        lat: myLat,
+        lng: myLng,
+        updated_at: new Date().toISOString()
+      })
+    });
+  } catch (e) {
+    // เงียบไว้ — ตำแหน่งไม่อัปเดตรอบนี้ไม่ใช่เรื่องคอขาดบาดตาย รอบถัดไปลองใหม่
+  }
+}
+
 function startWatchingMyLocation() {
   if (!navigator.geolocation) return;
   navigator.geolocation.watchPosition(
@@ -473,6 +505,12 @@ function startWatchingMyLocation() {
         document.querySelectorAll('[id^="legend_"]').forEach(el => {
           el.innerHTML = el.innerHTML.replace(' (รอ GPS...)', '');
         });
+      }
+      // push ตำแหน่งขึ้น server แบบ throttle (ครั้งแรกส่งทันที ครั้งถัดไปเว้นระยะ)
+      const now = Date.now();
+      if (isFirstFix || now - lastLocationPushAt >= LOCATION_PUSH_INTERVAL_MS) {
+        lastLocationPushAt = now;
+        pushMyLocationToServer();
       }
     },
     () => {
@@ -603,15 +641,49 @@ function saveResponderInfo() {
     showError('กรุณากรอกชื่อและเบอร์โทรให้ครบ');
     return;
   }
-  responderName = name;
-  responderPhone = phone;
-  localStorage.setItem('responder_info', JSON.stringify({ name, phone }));
-  document.getElementById('setupScreen').style.display = 'none';
-  showMainScreen();
+  if (!navigator.geolocation) {
+    showError('อุปกรณ์นี้ไม่รองรับการระบุตำแหน่ง — ไม่สามารถใช้งานระบบได้');
+    return;
+  }
+
+  const statusEl = document.getElementById('setupLocationStatus');
+  const btn = document.querySelector('#setupScreen .btn-primary');
+  if (statusEl) statusEl.textContent = '📍 กำลังขอสิทธิ์เข้าถึงตำแหน่ง... กรุณากด "อนุญาต" บนหน้าจอ';
+  if (btn) btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      // ได้ตำแหน่งสำเร็จ — เข้าระบบได้ตามปกติ
+      myLat = pos.coords.latitude;
+      myLng = pos.coords.longitude;
+      responderName = name;
+      responderPhone = phone;
+      localStorage.setItem('responder_info', JSON.stringify({ name, phone }));
+      if (statusEl) statusEl.textContent = '';
+      if (btn) btn.disabled = false;
+      document.getElementById('setupScreen').style.display = 'none';
+      showMainScreen();
+    },
+    (err) => {
+      // ปฏิเสธ/ไม่ได้ permission — ไม่ให้เข้าระบบ เพราะ IC ต้องเห็นตำแหน่งกู้ภัยเพื่อสั่งงานได้ตรงจุด
+      if (statusEl) {
+        statusEl.innerHTML = '⚠️ ต้องอนุญาตการเข้าถึงตำแหน่งก่อนถึงจะใช้งานได้<br>กรุณาเปิดสิทธิ์ตำแหน่งในตั้งค่าเบราว์เซอร์ แล้วลองอีกครั้ง';
+      }
+      if (btn) btn.disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
 }
 
 function resetResponderInfo() {
   if (!confirm('เปลี่ยนผู้ใช้? งานที่กำลังทำอยู่จะยังอยู่ในระบบ (ใช้ชื่อ-เบอร์เดิมเพื่อทำงานต่อได้)')) return;
+  // ลบตำแหน่งของผู้ใช้เดิมออกจากเซิร์ฟเวอร์ กันค้างผิดที่หลังเปลี่ยนคน
+  if (AGENCY_ID && responderPhone) {
+    fetch(`${SUPABASE_URL}/rest/v1/responder_locations?agency_id=eq.${encodeURIComponent(AGENCY_ID)}&responder_phone=eq.${encodeURIComponent(responderPhone)}`, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    }).catch(() => {});
+  }
   localStorage.removeItem('responder_info');
   document.getElementById('mainScreen').style.display = 'none';
   document.getElementById('setupScreen').style.display = 'block';
