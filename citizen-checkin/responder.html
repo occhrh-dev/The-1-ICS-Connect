@@ -439,6 +439,7 @@ const MAPTILER_API_KEY = 'XOw46Ht6gxyHhSCkLXPf';
 const URL_PARAMS = new URLSearchParams(window.location.search);
 let AGENCY_ID = URL_PARAMS.get('agency') || '';
 let currentIncidentName = '';
+let currentIncidentStartTime = URL_PARAMS.get('ist') || '';
 
 const NEED_META = {
   boat: { emoji: '🚤', label: 'ต้องการเรือ' },
@@ -526,6 +527,8 @@ function startWatchingMyLocation() {
 function init() {
   // ถ้ามาจากลิงก์เก่าที่มี ?agency= ติดมา ใช้ได้เลยไม่ต้องกรอกรหัส (backward compatible)
   if (AGENCY_ID) {
+    localStorage.setItem('responder_agency_id', AGENCY_ID);
+    localStorage.setItem('responder_incident_start_time', currentIncidentStartTime);
     proceedAfterAgencySet();
     return;
   }
@@ -533,9 +536,11 @@ function init() {
   // เช็คว่าเคยกรอกรหัสไว้แล้วหรือยัง (จำเหตุการณ์ล่าสุดไว้ใน localStorage)
   const savedAgency = localStorage.getItem('responder_agency_id');
   const savedIncident = localStorage.getItem('responder_incident_name');
+  const savedStartTime = localStorage.getItem('responder_incident_start_time');
   if (savedAgency) {
     AGENCY_ID = savedAgency;
     currentIncidentName = savedIncident || '';
+    currentIncidentStartTime = savedStartTime || '';
     proceedAfterAgencySet();
     return;
   }
@@ -596,6 +601,7 @@ async function submitEventCode() {
     document.getElementById('confirmScreen').style.display = 'block';
     window._pendingAgencyId = data.agencyId;
     window._pendingIncidentName = data.evtName || '';
+    window._pendingIncidentStartTime = data.incidentStartTime || '';
 
   } catch (e) {
     showError('⚠️ ตรวจสอบรหัสไม่สำเร็จ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง');
@@ -607,8 +613,10 @@ async function submitEventCode() {
 function confirmIncidentCorrect() {
   AGENCY_ID = window._pendingAgencyId;
   currentIncidentName = window._pendingIncidentName;
+  currentIncidentStartTime = window._pendingIncidentStartTime || '';
   localStorage.setItem('responder_agency_id', AGENCY_ID);
   localStorage.setItem('responder_incident_name', currentIncidentName);
+  localStorage.setItem('responder_incident_start_time', currentIncidentStartTime);
   document.getElementById('confirmScreen').style.display = 'none';
   proceedAfterAgencySet();
 }
@@ -787,8 +795,18 @@ function showError(msg) {
 
 async function fetchJobs() {
   try {
+    let query = `select=*&agency_id=eq.${encodeURIComponent(AGENCY_ID)}`;
+    // กรองเฉพาะงานที่สร้างหลังเหตุการณ์ปัจจุบันเปิด กันงานเก่าจากเหตุการณ์ก่อนหน้าของหน่วยงานเดียวกันปนมา
+    // (buffer 5 นาทีย้อนหลัง กันนาฬิกาเครื่องผู้กรอกฟอร์ม/server คลาดเคลื่อนเล็กน้อย เหมือน dashboard ฝั่ง IC)
+    if (currentIncidentStartTime) {
+      const startMs = new Date(currentIncidentStartTime).getTime();
+      if (!isNaN(startMs)) {
+        const sinceIso = new Date(startMs - 5 * 60 * 1000).toISOString();
+        query += `&created_at=gte.${encodeURIComponent(sinceIso)}`;
+      }
+    }
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/help_requests?select=*&agency_id=eq.${encodeURIComponent(AGENCY_ID)}&order=created_at.asc`,
+      `${SUPABASE_URL}/rest/v1/help_requests?${query}&order=created_at.asc`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
     if (!res.ok) return null;
