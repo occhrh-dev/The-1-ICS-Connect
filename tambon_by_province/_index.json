@@ -1,0 +1,849 @@
+{
+  "amnat_charoen": {
+    "name_en": "Amnat Charoen",
+    "tambon_count": 42,
+    "size_kb": 16.7,
+    "bbox": [
+      104.4218,
+      15.541,
+      105.0628,
+      16.2775
+    ]
+  },
+  "ang_thong": {
+    "name_en": "Ang Thong",
+    "tambon_count": 66,
+    "size_kb": 18.8,
+    "bbox": [
+      100.196,
+      14.4391,
+      100.5167,
+      14.7994
+    ]
+  },
+  "bangkok_metropolis": {
+    "name_en": "Bangkok Metropolis",
+    "tambon_count": 50,
+    "size_kb": 15.5,
+    "bbox": [
+      100.32,
+      13.4931,
+      100.939,
+      13.9526
+    ]
+  },
+  "bueng_kan": {
+    "name_en": "Bueng Kan",
+    "tambon_count": 41,
+    "size_kb": 16.6,
+    "bbox": [
+      103.2487,
+      17.7687,
+      104.1915,
+      18.4462
+    ]
+  },
+  "buri_ram": {
+    "name_en": "Buri Ram",
+    "tambon_count": 146,
+    "size_kb": 52.8,
+    "bbox": [
+      102.4335,
+      14.1295,
+      103.5062,
+      15.794
+    ]
+  },
+  "chachoengsao": {
+    "name_en": "Chachoengsao",
+    "tambon_count": 91,
+    "size_kb": 30.6,
+    "bbox": [
+      100.8501,
+      13.1797,
+      101.9903,
+      13.9756
+    ]
+  },
+  "chai_nat": {
+    "name_en": "Chai Nat",
+    "tambon_count": 48,
+    "size_kb": 16.4,
+    "bbox": [
+      99.7169,
+      14.9059,
+      100.3475,
+      15.4166
+    ]
+  },
+  "chaiyaphum": {
+    "name_en": "Chaiyaphum",
+    "tambon_count": 91,
+    "size_kb": 40.4,
+    "bbox": [
+      101.3186,
+      15.3153,
+      102.4608,
+      16.7287
+    ]
+  },
+  "chanthaburi": {
+    "name_en": "Chanthaburi",
+    "tambon_count": 58,
+    "size_kb": 23.3,
+    "bbox": [
+      101.6867,
+      12.3056,
+      102.5325,
+      13.3322
+    ]
+  },
+  "chiang_mai": {
+    "name_en": "Chiang Mai",
+    "tambon_count": 161,
+    "size_kb": 68.2,
+    "bbox": [
+      98.012,
+      17.2727,
+      99.5739,
+      20.1436
+    ]
+  },
+  "chiang_rai": {
+    "name_en": "Chiang Rai",
+    "tambon_count": 98,
+    "size_kb": 43.0,
+    "bbox": [
+      99.2602,
+      18.9976,
+      100.5798,
+      20.4631
+    ]
+  },
+  "chon_buri": {
+    "name_en": "Chon Buri",
+    "tambon_count": 72,
+    "size_kb": 27.1,
+    "bbox": [
+      100.7642,
+      12.5958,
+      101.7201,
+      13.5978
+    ]
+  },
+  "chumphon": {
+    "name_en": "Chumphon",
+    "tambon_count": 69,
+    "size_kb": 26.0,
+    "bbox": [
+      98.6341,
+      9.6011,
+      99.5197,
+      11.0324
+    ]
+  },
+  "kalasin": {
+    "name_en": "Kalasin",
+    "tambon_count": 101,
+    "size_kb": 37.7,
+    "bbox": [
+      103.1013,
+      16.1809,
+      104.2413,
+      17.0996
+    ]
+  },
+  "kamphaeng_phet": {
+    "name_en": "Kamphaeng Phet",
+    "tambon_count": 61,
+    "size_kb": 28.0,
+    "bbox": [
+      98.9873,
+      15.8566,
+      100.0566,
+      16.9068
+    ]
+  },
+  "kanchanaburi": {
+    "name_en": "Kanchanaburi",
+    "tambon_count": 91,
+    "size_kb": 42.3,
+    "bbox": [
+      98.1838,
+      13.7266,
+      99.8779,
+      15.6535
+    ]
+  },
+  "khon_kaen": {
+    "name_en": "Khon Kaen",
+    "tambon_count": 126,
+    "size_kb": 49.2,
+    "bbox": [
+      101.7497,
+      15.6311,
+      103.1881,
+      17.0869
+    ]
+  },
+  "krabi": {
+    "name_en": "Krabi",
+    "tambon_count": 53,
+    "size_kb": 19.8,
+    "bbox": [
+      98.6246,
+      7.4696,
+      99.4163,
+      8.6744
+    ]
+  },
+  "lampang": {
+    "name_en": "Lampang",
+    "tambon_count": 73,
+    "size_kb": 34.2,
+    "bbox": [
+      98.881,
+      17.2083,
+      100.1273,
+      19.416
+    ]
+  },
+  "lamphun": {
+    "name_en": "Lamphun",
+    "tambon_count": 43,
+    "size_kb": 16.8,
+    "bbox": [
+      98.6667,
+      17.4231,
+      99.3225,
+      18.7052
+    ]
+  },
+  "loei": {
+    "name_en": "Loei",
+    "tambon_count": 73,
+    "size_kb": 33.1,
+    "bbox": [
+      100.836,
+      16.7505,
+      102.1557,
+      18.2178
+    ]
+  },
+  "lop_buri": {
+    "name_en": "Lop Buri",
+    "tambon_count": 113,
+    "size_kb": 39.1,
+    "bbox": [
+      100.4233,
+      14.6537,
+      101.4133,
+      15.5779
+    ]
+  },
+  "mae_hong_son": {
+    "name_en": "Mae Hong Son",
+    "tambon_count": 39,
+    "size_kb": 22.8,
+    "bbox": [
+      97.3488,
+      17.6354,
+      98.6528,
+      19.8072
+    ]
+  },
+  "maha_sarakham": {
+    "name_en": "Maha Sarakham",
+    "tambon_count": 92,
+    "size_kb": 33.7,
+    "bbox": [
+      102.8472,
+      15.4069,
+      103.5055,
+      16.6421
+    ]
+  },
+  "mukdahan": {
+    "name_en": "Mukdahan",
+    "tambon_count": 49,
+    "size_kb": 19.0,
+    "bbox": [
+      104.0732,
+      16.1862,
+      104.9807,
+      16.9048
+    ]
+  },
+  "nakhon_nayok": {
+    "name_en": "Nakhon Nayok",
+    "tambon_count": 4,
+    "size_kb": 3.1,
+    "bbox": [
+      100.9149,
+      13.9587,
+      101.5062,
+      14.5027
+    ]
+  },
+  "nakhon_pathom": {
+    "name_en": "Nakhon Pathom",
+    "tambon_count": 90,
+    "size_kb": 28.4,
+    "bbox": [
+      99.8306,
+      13.6485,
+      100.3327,
+      14.2086
+    ]
+  },
+  "nakhon_phanom": {
+    "name_en": "Nakhon Phanom",
+    "tambon_count": 79,
+    "size_kb": 29.5,
+    "bbox": [
+      103.9925,
+      16.7922,
+      104.8057,
+      18.0205
+    ]
+  },
+  "nakhon_ratchasima": {
+    "name_en": "Nakhon Ratchasima",
+    "tambon_count": 188,
+    "size_kb": 81.0,
+    "bbox": [
+      101.186,
+      14.1197,
+      103.0142,
+      15.8019
+    ]
+  },
+  "nakhon_sawan": {
+    "name_en": "Nakhon Sawan",
+    "tambon_count": 124,
+    "size_kb": 47.9,
+    "bbox": [
+      99.0888,
+      15.0559,
+      100.8472,
+      16.1947
+    ]
+  },
+  "nakhon_si_thammarat": {
+    "name_en": "Nakhon Si Thammarat",
+    "tambon_count": 170,
+    "size_kb": 58.4,
+    "bbox": [
+      99.2345,
+      7.8363,
+      100.3367,
+      9.3227
+    ]
+  },
+  "nan": {
+    "name_en": "Nan",
+    "tambon_count": 80,
+    "size_kb": 37.3,
+    "bbox": [
+      100.3389,
+      18.0148,
+      101.3589,
+      19.6295
+    ]
+  },
+  "narathiwat": {
+    "name_en": "Narathiwat",
+    "tambon_count": 74,
+    "size_kb": 25.3,
+    "bbox": [
+      101.3789,
+      5.7372,
+      102.0929,
+      6.6353
+    ]
+  },
+  "nong_bua_lam_phu": {
+    "name_en": "Nong Bua Lam Phu",
+    "tambon_count": 50,
+    "size_kb": 20.2,
+    "bbox": [
+      101.9867,
+      16.7661,
+      102.6832,
+      17.6767
+    ]
+  },
+  "nong_khai": {
+    "name_en": "Nong Khai",
+    "tambon_count": 41,
+    "size_kb": 15.7,
+    "bbox": [
+      102.058,
+      17.5913,
+      103.416,
+      18.3024
+    ]
+  },
+  "nonthaburi": {
+    "name_en": "Nonthaburi",
+    "tambon_count": 37,
+    "size_kb": 10.8,
+    "bbox": [
+      100.2652,
+      13.7951,
+      100.5651,
+      14.1387
+    ]
+  },
+  "pathum_thani": {
+    "name_en": "Pathum Thani",
+    "tambon_count": 49,
+    "size_kb": 15.0,
+    "bbox": [
+      100.335,
+      13.9168,
+      100.9529,
+      14.2733
+    ]
+  },
+  "pattani": {
+    "name_en": "Pattani",
+    "tambon_count": 105,
+    "size_kb": 28.6,
+    "bbox": [
+      101.0203,
+      6.5505,
+      101.7252,
+      6.9035
+    ]
+  },
+  "phangnga": {
+    "name_en": "Phangnga",
+    "tambon_count": 48,
+    "size_kb": 17.9,
+    "bbox": [
+      98.2059,
+      7.9131,
+      98.7063,
+      9.3516
+    ]
+  },
+  "phatthalung": {
+    "name_en": "Phatthalung",
+    "tambon_count": 59,
+    "size_kb": 21.8,
+    "bbox": [
+      99.7364,
+      7.0903,
+      100.4285,
+      7.8934
+    ]
+  },
+  "phayao": {
+    "name_en": "Phayao",
+    "tambon_count": 40,
+    "size_kb": 18.6,
+    "bbox": [
+      99.6847,
+      18.8035,
+      100.6489,
+      19.7339
+    ]
+  },
+  "phetchabun": {
+    "name_en": "Phetchabun",
+    "tambon_count": 105,
+    "size_kb": 45.1,
+    "bbox": [
+      100.6452,
+      15.3186,
+      101.7874,
+      17.1242
+    ]
+  },
+  "phetchaburi": {
+    "name_en": "Phetchaburi",
+    "tambon_count": 72,
+    "size_kb": 25.5,
+    "bbox": [
+      99.0998,
+      12.5399,
+      100.1039,
+      13.343
+    ]
+  },
+  "phichit": {
+    "name_en": "Phichit",
+    "tambon_count": 69,
+    "size_kb": 24.8,
+    "bbox": [
+      99.9845,
+      15.9191,
+      100.7716,
+      16.6457
+    ]
+  },
+  "phitsanulok": {
+    "name_en": "Phitsanulok",
+    "tambon_count": 88,
+    "size_kb": 37.1,
+    "bbox": [
+      99.8577,
+      16.3158,
+      101.1097,
+      17.7416
+    ]
+  },
+  "phra_nakhon_si_ayutthaya": {
+    "name_en": "Phra Nakhon Si Ayutthaya",
+    "tambon_count": 162,
+    "size_kb": 48.8,
+    "bbox": [
+      100.2432,
+      14.1111,
+      100.8253,
+      14.673
+    ]
+  },
+  "phrae": {
+    "name_en": "Phrae",
+    "tambon_count": 62,
+    "size_kb": 25.0,
+    "bbox": [
+      99.3682,
+      17.7042,
+      100.5524,
+      18.8325
+    ]
+  },
+  "phuket": {
+    "name_en": "Phuket",
+    "tambon_count": 17,
+    "size_kb": 4.8,
+    "bbox": [
+      98.2609,
+      7.7622,
+      98.4404,
+      8.1961
+    ]
+  },
+  "prachin_buri": {
+    "name_en": "Prachin Buri",
+    "tambon_count": 15,
+    "size_kb": 9.0,
+    "bbox": [
+      101.1387,
+      13.5807,
+      102.1082,
+      14.4609
+    ]
+  },
+  "prachuap_khiri_khan": {
+    "name_en": "Prachuap Khiri Khan",
+    "tambon_count": 35,
+    "size_kb": 15.7,
+    "bbox": [
+      99.1512,
+      10.955,
+      100.0174,
+      12.6525
+    ]
+  },
+  "ranong": {
+    "name_en": "Ranong",
+    "tambon_count": 30,
+    "size_kb": 11.9,
+    "bbox": [
+      98.3868,
+      9.3076,
+      98.9626,
+      10.7795
+    ]
+  },
+  "ratchaburi": {
+    "name_en": "Ratchaburi",
+    "tambon_count": 90,
+    "size_kb": 29.8,
+    "bbox": [
+      99.1672,
+      13.148,
+      100.068,
+      13.9483
+    ]
+  },
+  "rayong": {
+    "name_en": "Rayong",
+    "tambon_count": 45,
+    "size_kb": 18.1,
+    "bbox": [
+      100.9857,
+      12.5921,
+      101.8303,
+      13.1631
+    ]
+  },
+  "roi_et": {
+    "name_en": "Roi Et",
+    "tambon_count": 150,
+    "size_kb": 53.0,
+    "bbox": [
+      103.2752,
+      15.4055,
+      104.3533,
+      16.4686
+    ]
+  },
+  "sa_kaeo": {
+    "name_en": "Sa Kaeo",
+    "tambon_count": 25,
+    "size_kb": 15.0,
+    "bbox": [
+      101.8621,
+      13.2373,
+      102.941,
+      14.1947
+    ]
+  },
+  "sakon_nakhon": {
+    "name_en": "Sakon Nakhon",
+    "tambon_count": 97,
+    "size_kb": 39.9,
+    "bbox": [
+      103.2545,
+      16.7707,
+      104.4371,
+      18.0854
+    ]
+  },
+  "samut_prakan": {
+    "name_en": "Samut Prakan",
+    "tambon_count": 35,
+    "size_kb": 10.9,
+    "bbox": [
+      100.4474,
+      13.4786,
+      100.9611,
+      13.717
+    ]
+  },
+  "samut_sakhon": {
+    "name_en": "Samut Sakhon",
+    "tambon_count": 40,
+    "size_kb": 12.0,
+    "bbox": [
+      100.0304,
+      13.4249,
+      100.4198,
+      13.7327
+    ]
+  },
+  "samut_songkhram": {
+    "name_en": "Samut Songkhram",
+    "tambon_count": 36,
+    "size_kb": 10.2,
+    "bbox": [
+      99.8543,
+      13.2464,
+      100.0796,
+      13.5103
+    ]
+  },
+  "saraburi": {
+    "name_en": "Saraburi",
+    "tambon_count": 94,
+    "size_kb": 30.5,
+    "bbox": [
+      100.5801,
+      14.2426,
+      101.4541,
+      15.044
+    ]
+  },
+  "satun": {
+    "name_en": "Satun",
+    "tambon_count": 34,
+    "size_kb": 11.8,
+    "bbox": [
+      99.1896,
+      6.4159,
+      100.2207,
+      7.1301
+    ]
+  },
+  "si_sa_ket": {
+    "name_en": "Si Sa Ket",
+    "tambon_count": 142,
+    "size_kb": 50.9,
+    "bbox": [
+      103.9045,
+      14.3444,
+      104.9094,
+      15.567
+    ]
+  },
+  "sing_buri": {
+    "name_en": "Sing Buri",
+    "tambon_count": 38,
+    "size_kb": 11.5,
+    "bbox": [
+      100.1835,
+      14.7147,
+      100.4897,
+      15.1097
+    ]
+  },
+  "songkhla": {
+    "name_en": "Songkhla",
+    "tambon_count": 119,
+    "size_kb": 41.1,
+    "bbox": [
+      100.0565,
+      6.2967,
+      101.1123,
+      7.9368
+    ]
+  },
+  "sukhothai": {
+    "name_en": "Sukhothai",
+    "tambon_count": 79,
+    "size_kb": 28.9,
+    "bbox": [
+      99.3112,
+      16.6812,
+      100.1118,
+      17.8198
+    ]
+  },
+  "suphan_buri": {
+    "name_en": "Suphan Buri",
+    "tambon_count": 98,
+    "size_kb": 34.7,
+    "bbox": [
+      99.2833,
+      14.0584,
+      100.2823,
+      15.0793
+    ]
+  },
+  "surat_thani": {
+    "name_en": "Surat Thani",
+    "tambon_count": 131,
+    "size_kb": 50.1,
+    "bbox": [
+      98.4427,
+      8.3007,
+      100.0894,
+      10.1261
+    ]
+  },
+  "surin": {
+    "name_en": "Surin",
+    "tambon_count": 118,
+    "size_kb": 43.3,
+    "bbox": [
+      103.1016,
+      14.329,
+      104.0923,
+      15.4793
+    ]
+  },
+  "tak": {
+    "name_en": "Tak",
+    "tambon_count": 53,
+    "size_kb": 29.7,
+    "bbox": [
+      97.7467,
+      15.1806,
+      99.4465,
+      17.8662
+    ]
+  },
+  "trang": {
+    "name_en": "Trang",
+    "tambon_count": 86,
+    "size_kb": 28.9,
+    "bbox": [
+      99.2511,
+      7.069,
+      99.9982,
+      8.0121
+    ]
+  },
+  "trat": {
+    "name_en": "Trat",
+    "tambon_count": 30,
+    "size_kb": 12.5,
+    "bbox": [
+      102.2544,
+      11.5628,
+      102.9112,
+      12.7559
+    ]
+  },
+  "ubon_ratchathani": {
+    "name_en": "Ubon Ratchathani",
+    "tambon_count": 168,
+    "size_kb": 68.8,
+    "bbox": [
+      104.3748,
+      14.2131,
+      105.6391,
+      16.0956
+    ]
+  },
+  "udon_thani": {
+    "name_en": "Udon Thani",
+    "tambon_count": 119,
+    "size_kb": 48.7,
+    "bbox": [
+      102.0182,
+      16.8017,
+      103.6692,
+      18.0829
+    ]
+  },
+  "uthai_thani": {
+    "name_en": "Uthai Thani",
+    "tambon_count": 64,
+    "size_kb": 24.4,
+    "bbox": [
+      98.9846,
+      14.9385,
+      100.1042,
+      15.7944
+    ]
+  },
+  "uttaradit": {
+    "name_en": "Uttaradit",
+    "tambon_count": 67,
+    "size_kb": 26.7,
+    "bbox": [
+      99.8984,
+      17.1625,
+      101.193,
+      18.3785
+    ]
+  },
+  "yala": {
+    "name_en": "Yala",
+    "tambon_count": 58,
+    "size_kb": 20.3,
+    "bbox": [
+      100.8352,
+      5.6162,
+      101.6085,
+      6.6802
+    ]
+  },
+  "yasothon": {
+    "name_en": "Yasothon",
+    "tambon_count": 70,
+    "size_kb": 26.2,
+    "bbox": [
+      104.0041,
+      15.2883,
+      104.8266,
+      16.3477
+    ]
+  }
+}
