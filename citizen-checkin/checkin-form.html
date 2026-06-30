@@ -378,6 +378,27 @@ body{
   color:var(--gray);
   line-height:1.5;
 }
+.check-status-btn{
+  display:block;
+  margin-top:18px;
+  background:var(--green);
+  color:#0a1a0f;
+  font-weight:900;
+  font-size:0.95rem;
+  text-decoration:none;
+  border-radius:10px;
+  padding:14px;
+  text-align:center;
+}
+.check-status-btn:active{
+  transform:scale(0.98);
+}
+.check-status-hint{
+  font-size:0.72rem;
+  color:var(--gray);
+  margin-top:8px;
+  line-height:1.5;
+}
 
 .footer-note{
   text-align:center;
@@ -482,6 +503,8 @@ body{
     <div class="verify-code-value" id="verifyCodeDisplay">----</div>
     <div class="verify-code-hint">จำหรือเขียนรหัสนี้ไว้ — แจ้งให้ทีมที่มาช่วยตอนถึงที่ เพื่อยืนยันว่าเป็นคุณจริง</div>
   </div>
+  <a id="checkStatusLink" href="#" class="check-status-btn">📍 เช็คสถานะคำขอนี้</a>
+  <div class="check-status-hint">บันทึกลิงก์นี้ไว้ — เปิดดูได้ตลอดว่าทีมไปถึงไหนแล้ว</div>
 </div>
 
 <script>
@@ -717,6 +740,7 @@ async function submitRequest() {
     document.getElementById('successScreen').style.display = 'block';
     document.getElementById('requestIdDisplay').innerText = '#' + requestId;
     document.getElementById('verifyCodeDisplay').innerText = verifyCode;
+    document.getElementById('checkStatusLink').href = 'status.html?id=' + encodeURIComponent(requestId) + '&code=' + encodeURIComponent(verifyCode);
 
   } catch (err) {
     showError('⚠️ ส่งคำขอไม่สำเร็จ กรุณาตรวจสอบสัญญาณอินเทอร์เน็ตแล้วลองอีกครั้ง');
