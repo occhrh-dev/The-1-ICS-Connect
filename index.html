@@ -2455,7 +2455,15 @@ adminBox.style.display = APP_ACCESS_ROLE === 'admin' ? 'block' : 'none';
 viewerBox.style.display = APP_ACCESS_ROLE === 'viewer' ? 'block' : 'none';
 if (APP_ACCESS_ROLE === 'admin') { try { renderPreAdminTierBadge(); } catch(e) {} }
 // ถ้ามีสิทธิ์แล้ว ให้โชว์ adminLoginBox เสมอ (ไม่ใช่ entryCodeBox)
-if (APP_ACCESS_ROLE) showAdminLoginBox();
+// ถ้าไม่มีสิทธิ์ (เพิ่ง logout เช่นหลังปิดเหตุการณ์) — กลับไปหน้า admin login ถ้าเคยเข้าทาง ?admin มาก่อน
+// (กันสับสน IC ที่เพิ่งปิดเหตุแล้วต้องไปงมหาปุ่ม "เข้าสู่ระบบ" ใหม่) ไม่งั้น default ไปหน้ากรอกรหัสเหตุการณ์
+if (APP_ACCESS_ROLE) {
+showAdminLoginBox();
+} else if (window._wasAdminBefore) {
+showAdminLoginBox();
+} else {
+showEntryCodeBox();
+}
 }
 function showAdminLoginBox() {
 var eb = document.getElementById('entryCodeBox');
@@ -2473,6 +2481,7 @@ function initDeclareScreen() {
 // ถ้ามี ?admin ในลิงก์ → ไปหน้า admin login ทันที ไม่แสดงกล่องรหัส
 var params = new URLSearchParams(window.location.search);
 if (params.has('admin')) {
+window._wasAdminBefore = true; // จำไว้ใช้ตัดสินใจหน้าที่จะกลับไปหลัง logout (เช่นหลังปิดเหตุการณ์)
 showAdminLoginBox();
 } else {
 showEntryCodeBox();
