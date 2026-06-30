@@ -2501,8 +2501,8 @@ if (!data.ok || !data.agencyId) {
 if (hint) hint.textContent = 'ไม่พบรหัสนี้ หรือเหตุการณ์ไม่ได้ Active อยู่';
 return;
 }
-// redirect ไป responder.html พร้อม agencyId (responder.html รองรับ ?agency= แบบ backward-compatible อยู่แล้ว เข้าได้ทันทีไม่ต้องกรอกรหัสซ้ำ)
-window.location.href = 'citizen-checkin/responder.html?agency=' + encodeURIComponent(data.agencyId);
+// redirect ไป responder.html พร้อม agencyId และเวลาที่เหตุการณ์เปิด (ใช้กรองคำขอช่วยเหลือไม่ให้ปนกับเหตุการณ์เก่าของหน่วยงานเดียวกัน)
+window.location.href = 'citizen-checkin/responder.html?agency=' + encodeURIComponent(data.agencyId) + '&ist=' + encodeURIComponent(data.incidentStartTime || '');
 } catch(e) {
 if (hint) hint.textContent = 'เชื่อมต่อไม่ได้ ลองใหม่อีกครั้ง';
 }
