@@ -274,12 +274,32 @@ body{
 
 .job-map{
   width:100%;
-  height:140px;
+  height:260px;
   border-radius:10px;
-  margin-bottom:10px;
+  margin-bottom:6px;
   overflow:hidden;
   background:var(--bg-input);
   position:relative;
+}
+.job-map-legend{
+  display:flex;
+  gap:14px;
+  align-items:center;
+  font-size:0.7rem;
+  color:#94a3b8;
+  margin-bottom:10px;
+  padding:0 2px;
+}
+.job-map-legend-item{
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+.job-map-legend-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  flex-shrink:0;
 }
 .job-map.no-coords{
   display:flex;
@@ -423,6 +443,7 @@ function startWatchingMyLocation() {
   if (!navigator.geolocation) return;
   navigator.geolocation.watchPosition(
     (pos) => {
+      const isFirstFix = myLat == null;
       myLat = pos.coords.latitude;
       myLng = pos.coords.longitude;
       // อัปเดตหมุดตัวเองบนแผนที่ที่เปิดอยู่ (ไม่ต้อง redraw ทั้ง map)
@@ -435,8 +456,19 @@ function startWatchingMyLocation() {
             .addTo(entry.map);
         }
       });
+      // ครั้งแรกที่ได้ตำแหน่งสำเร็จ — ลบข้อความ "(รอ GPS...)" ออกจาก legend ทันที ไม่ต้องรอ poll รอบถัดไป
+      if (isFirstFix) {
+        document.querySelectorAll('[id^="legend_"]').forEach(el => {
+          el.innerHTML = el.innerHTML.replace(' (รอ GPS...)', '');
+        });
+      }
     },
-    () => { /* ไม่ได้ permission ก็ไม่เป็นไร — mini-map ยังโชว์หมุดชาวบ้านได้ */ },
+    () => {
+      // ไม่ได้ permission (ปฏิเสธ/ปิด location) — แจ้งให้ผู้ใช้รู้ชัดเจนแทนที่จะค้างคำว่า "รอ GPS..." ตลอดไป
+      document.querySelectorAll('[id^="legend_"]').forEach(el => {
+        el.innerHTML = el.innerHTML.replace(' (รอ GPS...)', ' (ไม่ได้เปิด GPS)');
+      });
+    },
     { enableHighAccuracy: true, maximumAge: 10000 }
   );
 }
@@ -747,8 +779,13 @@ function buildMyJobCard(req) {
 
   const coordsOk = hasValidCoords(req);
   const mapId = `map_${req.id}`;
+  const legendId = `legend_${req.id}`;
   const mapHtml = coordsOk
-    ? `<div class="job-map" id="${mapId}" data-lat="${req.lat}" data-lng="${req.lng}"></div>`
+    ? `<div class="job-map" id="${mapId}" data-lat="${req.lat}" data-lng="${req.lng}"></div>
+       <div class="job-map-legend" id="${legendId}">
+         <span class="job-map-legend-item"><span class="job-map-legend-dot" style="background:#ef4444;"></span>จุดของชาวบ้าน</span>
+         <span class="job-map-legend-item"><span class="job-map-legend-dot" style="background:#0ea5e9;"></span>ตำแหน่งคุณ${myLat == null ? ' (รอ GPS...)' : ''}</span>
+       </div>`
     : `<div class="job-map no-coords">📍 ไม่มีพิกัด GPS — ใช้จุดสังเกตด้านบนแทน</div>`;
   const navigateHtml = coordsOk
     ? `<a class="btn-navigate" href="https://www.google.com/maps/dir/?api=1&destination=${req.lat},${req.lng}" target="_blank" rel="noopener">🧭 นำทางไปจุดนี้</a>`
