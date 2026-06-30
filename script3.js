@@ -329,8 +329,16 @@ async function fetchHelpRequests() {
 var agencyId = (typeof APP_AGENCY_ID !== 'undefined' && APP_AGENCY_ID) || '';
 if (!agencyId) return []; // ไม่มี agency ปัจจุบัน — ไม่ดึงอะไรเลย กันข้อมูลปนกัน
 try {
+var query = 'select=*&agency_id=eq.' + encodeURIComponent(agencyId);
+// กรองเฉพาะคำขอที่สร้างหลังจากเหตุการณ์ปัจจุบันเปิด กันคำขอจากเหตุการณ์เก่าของหน่วยงานเดียวกันค้างมาแสดง
+var startMs = (typeof getEmergencyStartMs === 'function') ? getEmergencyStartMs() : 0;
+if (startMs > 0) {
+// หัก buffer 5 นาทีย้อนหลัง กันเคสนาฬิกาเครื่องผู้กรอกฟอร์ม/server คลาดเคลื่อนเล็กน้อย
+var sinceIso = new Date(startMs - 5 * 60 * 1000).toISOString();
+query += '&created_at=gte.' + encodeURIComponent(sinceIso);
+}
 var res = await fetch(
-CITIZEN_CHECKIN_SUPABASE_URL + '/rest/v1/help_requests?select=*&agency_id=eq.' + encodeURIComponent(agencyId) + '&order=created_at.desc&limit=200',
+CITIZEN_CHECKIN_SUPABASE_URL + '/rest/v1/help_requests?' + query + '&order=created_at.desc&limit=200',
 {
 headers: {
 'apikey': CITIZEN_CHECKIN_SUPABASE_KEY,
