@@ -301,6 +301,17 @@ body{
   border-radius:50%;
   flex-shrink:0;
 }
+.job-proximity-notice{
+  background:rgba(34,197,94,0.15);
+  border:1px solid rgba(34,197,94,0.4);
+  border-radius:8px;
+  padding:7px 10px;
+  font-size:0.72rem;
+  color:#86efac;
+  font-weight:600;
+  align-items:center;
+  margin-bottom:8px;
+}
 .job-map.no-coords{
   display:flex;
   align-items:center;
@@ -447,7 +458,7 @@ function startWatchingMyLocation() {
       myLat = pos.coords.latitude;
       myLng = pos.coords.longitude;
       // อัปเดตหมุดตัวเองบนแผนที่ที่เปิดอยู่ (ไม่ต้อง redraw ทั้ง map)
-      Object.values(activeJobMaps).forEach(entry => {
+      Object.entries(activeJobMaps).forEach(([jobId, entry]) => {
         if (entry.responderMarker) {
           entry.responderMarker.setLngLat([myLng, myLat]);
         } else if (entry.map && typeof maptilersdk !== 'undefined') {
@@ -455,6 +466,7 @@ function startWatchingMyLocation() {
             .setLngLat([myLng, myLat])
             .addTo(entry.map);
         }
+        if (entry.req) updateProximityNotice(jobId, entry.req);
       });
       // ครั้งแรกที่ได้ตำแหน่งสำเร็จ — ลบข้อความ "(รอ GPS...)" ออกจาก legend ทันที ไม่ต้องรอ poll รอบถัดไป
       if (isFirstFix) {
@@ -617,6 +629,16 @@ function showMainScreen() {
   pollInterval = setInterval(refreshJobs, 5000);
 }
 
+function calcDistanceMeters(lat1, lng1, lat2, lng2) {
+  // Haversine formula แบบง่าย เพียงพอสำหรับระยะใกล้ (ไม่ต้องแม่นยำระดับ GPS survey)
+  const R = 6371000; // รัศมีโลก หน่วยเมตร
+  const toRad = (deg) => deg * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function initJobMaps(jobs) {
   if (typeof maptilersdk === 'undefined') return; // SDK ยังโหลดไม่เสร็จ — รอบถัดไปของ poll จะลองใหม่
   jobs.forEach(req => {
@@ -625,7 +647,11 @@ function initJobMaps(jobs) {
     if (!container) return;
 
     const existing = activeJobMaps[req.id];
-    if (existing && existing.map && existing.container === container) return; // map ยังผูกกับ DOM เดิม ไม่ต้องสร้างซ้ำ
+    if (existing && existing.map && existing.container === container) {
+      // map สร้างไปแล้ว — เช็คระยะห่างใหม่ทุก poll เผื่อกู้ภัยเคลื่อนที่เข้าใกล้/ออกห่างจุดหมาย
+      updateProximityNotice(req.id, req);
+      return;
+    }
     if (existing && existing.map) {
       // innerHTML refresh ทำให้ container เดิมหลุดจากหน้าเว็บไปแล้ว ต้องสร้าง map ใหม่ผูกกับ container ใหม่
       try { existing.map.remove(); } catch (e) {}
@@ -644,7 +670,7 @@ function initJobMaps(jobs) {
       .setLngLat([req.lng, req.lat])
       .addTo(map);
 
-    const entry = { map, container, responderMarker: null };
+    const entry = { map, container, responderMarker: null, req };
     if (myLat != null && myLng != null) {
       entry.responderMarker = new maptilersdk.Marker({ color: '#0ea5e9' })
         .setLngLat([myLng, myLat])
@@ -653,6 +679,7 @@ function initJobMaps(jobs) {
       map.fitBounds([[req.lng, req.lat], [myLng, myLat]], { padding: 30, maxZoom: 16 });
     }
     activeJobMaps[req.id] = entry;
+    updateProximityNotice(req.id, req);
   });
 
   // ลบ map ของ job ที่ไม่ได้อยู่ในลิสต์แล้ว (เช่น ช่วยเสร็จ/ยกเลิกไปแล้ว) กันหน่วยความจำรั่ว
@@ -663,6 +690,20 @@ function initJobMaps(jobs) {
       delete activeJobMaps[id];
     }
   });
+}
+
+function updateProximityNotice(jobId, req) {
+  const noticeEl = document.getElementById(`proximity_${jobId}`);
+  if (!noticeEl) return;
+  if (myLat == null || myLng == null) { noticeEl.style.display = 'none'; return; }
+  const distM = calcDistanceMeters(req.lat, req.lng, myLat, myLng);
+  if (distM < 80) {
+    // ใกล้กันมากจนหมุดบนแผนที่จะซ้อนทับกันแทบมองไม่เห็นว่ามีสองจุด — แจ้งเตือนแทน
+    noticeEl.style.display = 'flex';
+    noticeEl.innerHTML = `🎯 คุณอยู่ใกล้จุดหมายมากแล้ว (~${Math.round(distM)} เมตร) หมุดบนแผนที่อาจซ้อนทับกัน`;
+  } else {
+    noticeEl.style.display = 'none';
+  }
 }
 
 function showError(msg) {
@@ -782,8 +823,10 @@ function buildMyJobCard(req) {
   const coordsOk = hasValidCoords(req);
   const mapId = `map_${req.id}`;
   const legendId = `legend_${req.id}`;
+  const proximityId = `proximity_${req.id}`;
   const mapHtml = coordsOk
     ? `<div class="job-map" id="${mapId}" data-lat="${req.lat}" data-lng="${req.lng}"></div>
+       <div class="job-proximity-notice" id="${proximityId}" style="display:none;"></div>
        <div class="job-map-legend" id="${legendId}">
          <span class="job-map-legend-item"><span class="job-map-legend-dot" style="background:#ef4444;"></span>จุดของชาวบ้าน</span>
          <span class="job-map-legend-item"><span class="job-map-legend-dot" style="background:#0ea5e9;"></span>ตำแหน่งคุณ${myLat == null ? ' (รอ GPS...)' : ''}</span>
