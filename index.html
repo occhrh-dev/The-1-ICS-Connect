@@ -2523,7 +2523,11 @@ return;
 window.EOC_JOIN_TOKEN = data.joinToken;
 try { sessionStorage.setItem('EOC_JOIN_TOKEN', data.joinToken); } catch(e) {}
 if (hint) hint.textContent = 'พบเหตุการณ์! กำลังเข้าสู่ระบบ...';
-setTimeout(function() { window.location.reload(); }, 600);
+// redirect ไป URL ที่มี ?join=token ติดไปจริง (เหมือนกดลิงก์ Join Link ตรงๆ)
+// ไม่ใช้ reload() เฉยๆ เพราะ URL เดิมไม่มี ?join= ติดไป ตัว parser ของ window.EOC_JOIN_TOKEN
+// (อ่านจาก location.search ตอนโหลดหน้าครั้งใหม่) จะได้ค่าว่างทับของเดิมไป
+var joinRedirectUrl = window.location.origin + window.location.pathname + '?join=' + encodeURIComponent(data.joinToken);
+setTimeout(function() { window.location.href = joinRedirectUrl; }, 600);
 } catch(e) {
 if (hint) hint.textContent = 'เชื่อมต่อไม่ได้ ลองใหม่อีกครั้ง';
 }
