@@ -6408,6 +6408,7 @@ drawOCSupportRequestAlertsOnMap(window._icZoneMarkers, window._icSupportReqs || 
 updateLiveMarkers();
 refreshICOCFeedsDirect();
 if (typeof startHelpRequestPolling === 'function') startHelpRequestPolling();
+if (typeof startResponderLocationPolling === 'function') startResponderLocationPolling();
 });
 } else {
 // map มีอยู่แล้ว — อัพเดท marker (รวมถึงกรณี dashMarker=null)
@@ -6417,6 +6418,7 @@ updateLiveMarkers();
 refreshICOCFeedsDirect();
 }, 450);
 if (typeof startHelpRequestPolling === 'function' && !window._helpRequestPollInterval) startHelpRequestPolling();
+if (typeof startResponderLocationPolling === 'function' && !window._responderLocationPollInterval) startResponderLocationPolling();
 }
 }
 document.getElementById('val_red').innerText = d.triage.red;
