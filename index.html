@@ -951,6 +951,7 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 <button id="dashStyleStreet" onclick="setDashboardMapStyle('streets')" style="border:0;background:#2563eb;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;">แผนที่</button>
 <button id="dashStyleSat" onclick="setDashboardMapStyle('satellite')" style="border:0;background:white;color:#334155;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;">ดาวเทียม</button>
 <button onclick="openLongdoTrafficMap()" style="border:0;background:#f97316;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-road"></i> จราจร</button>
+<button id="dashTambonToggleBtn" onclick="toggleTambonBoundary()" title="แสดง/ซ่อนเส้นแบ่งเขตตำบล" style="border:0;background:white;color:#334155;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-draw-polygon"></i> เขตตำบล</button>
 </div>
 <div class="dash-toolbar-left" style="position:absolute;top:6px;left:6px;z-index:11;">
 <button id="btn_add_building_structure" onclick="openAddBuildingStructure()" style="border:0;background:#0f766e;color:white;padding:7px 12px;border-radius:6px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;box-shadow:0 2px 6px rgba(15,23,42,0.18);"><i class="fas fa-building"></i> เพิ่มโครงสร้างอาคาร</button>
@@ -6418,6 +6419,7 @@ updateLiveMarkers();
 refreshICOCFeedsDirect();
 if (typeof startHelpRequestPolling === 'function') startHelpRequestPolling();
 if (typeof startResponderLocationPolling === 'function') startResponderLocationPolling();
+if (typeof initTambonBoundaryControls === 'function') initTambonBoundaryControls();
 });
 } else {
 // map มีอยู่แล้ว — อัพเดท marker (รวมถึงกรณี dashMarker=null)
