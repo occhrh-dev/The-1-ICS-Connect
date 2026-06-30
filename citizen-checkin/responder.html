@@ -703,9 +703,11 @@ async function refreshJobs() {
     if (jobsFingerprint !== window._lastMyJobsFingerprint) {
       window._lastMyJobsFingerprint = jobsFingerprint;
       myJobsList.innerHTML = myJobs.map(buildMyJobCard).join('');
-      // ต้องรอ DOM แทรกเสร็จก่อนค่อย init map (innerHTML เป็น sync แต่กัน edge case ของ layout)
-      requestAnimationFrame(() => initJobMaps(myJobs));
     }
+    // เรียกทุกครั้งที่ poll (ไม่ผูกกับ fingerprint) — initJobMaps เองมี logic skip ถ้า map
+    // สร้างสำเร็จไปแล้ว เรียกซ้ำไม่มีผลเสีย แต่ถ้า map พลาดไปครั้งแรก (เช่น SDK โหลดช้า)
+    // จะได้มีโอกาส retry ทุก poll จนกว่าจะสำเร็จ แทนที่จะไม่มีทาง retry เลยตลอดไป
+    requestAnimationFrame(() => initJobMaps(myJobs));
   }
 
   // ถ้ามีงานของตัวเองอยู่ — ซ่อนลิสต์งานอื่นไว้ก่อน (กันกดผิดในชั่วโมงเร่งด่วน) ต้องกดเปิดดูเอง
