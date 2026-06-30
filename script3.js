@@ -563,6 +563,118 @@ updateHelpRequestMarkers();
 if (window._helpRequestPollInterval) clearInterval(window._helpRequestPollInterval);
 window._helpRequestPollInterval = setInterval(updateHelpRequestMarkers, 5000);
 }
+
+// ==========================================
+// CITIZEN CHECK-IN — หมุดตำแหน่งกู้ภัย (responder_locations)
+// แสดงตำแหน่งสดของกู้ภัยที่กำลังใช้งานอยู่ ให้ IC เห็นว่าใครอยู่ใกล้จุดไหน
+// ==========================================
+var responderLocationMarkers = {};
+var RESPONDER_LOCATION_STALE_MS = 5 * 60 * 1000; // ไม่อัปเดตเกิน 5 นาที ถือว่า stale (จางลง)
+
+async function fetchResponderLocations() {
+var agencyId = (typeof APP_AGENCY_ID !== 'undefined' && APP_AGENCY_ID) || '';
+if (!agencyId) return [];
+try {
+var startMs = (typeof getEmergencyStartMs === 'function') ? getEmergencyStartMs() : 0;
+var query = 'select=*&agency_id=eq.' + encodeURIComponent(agencyId);
+if (startMs > 0) {
+// กรองเฉพาะตำแหน่งที่อัปเดตหลังเหตุการณ์ปัจจุบันเปิด กันตำแหน่งจากเหตุเก่าค้างมาแสดง (buffer 5 นาทีกันนาฬิกาคลาดเคลื่อน)
+var sinceIso = new Date(startMs - 5 * 60 * 1000).toISOString();
+query += '&updated_at=gte.' + encodeURIComponent(sinceIso);
+}
+var res = await fetch(
+CITIZEN_CHECKIN_SUPABASE_URL + '/rest/v1/responder_locations?' + query,
+{
+headers: {
+'apikey': CITIZEN_CHECKIN_SUPABASE_KEY,
+'Authorization': 'Bearer ' + CITIZEN_CHECKIN_SUPABASE_KEY
+}
+}
+);
+if (!res.ok) return null;
+return await res.json();
+} catch (e) {
+return null;
+}
+}
+
+function buildResponderMarkerHtml(loc) {
+var ageMs = Date.now() - new Date(loc.updated_at).getTime();
+var isStale = ageMs > RESPONDER_LOCATION_STALE_MS;
+var iconHtml =
+'<div class="help-req-marker-body" style="position:relative;' + (isStale ? 'opacity:0.4;transform:scale(0.75);' : '') + '">' +
+'<div class="help-req-marker-core" style="background:#0ea5e9;border-color:#0369a1;">🚑</div>' +
+'</div>';
+return buildDashboardPointMarkerHtml(iconHtml, '', { iconSize: 34, scale: true, zIndex: isStale ? 4 : 8 });
+}
+
+function buildResponderPopupHtml(loc) {
+var ageMs = Date.now() - new Date(loc.updated_at).getTime();
+var isStale = ageMs > RESPONDER_LOCATION_STALE_MS;
+var ageMin = Math.floor(ageMs / 60000);
+var ageText = ageMin < 1 ? 'เมื่อสักครู่' : (ageMin + ' นาทีที่แล้ว');
+var staleWarning = isStale
+? '<div style="margin-top:6px;font-size:0.7rem;color:#dc2626;background:#fef2f2;border-radius:6px;padding:4px 6px;">⚠️ ตำแหน่งนี้ไม่ได้อัปเดตมาเกิน 5 นาที อาจไม่ใช่ตำแหน่งปัจจุบันจริง</div>'
+: '';
+var phoneHtml = loc.responder_phone ? '<br>📞 <a href="tel:' + loc.responder_phone + '" style="color:#2980b9;">' + loc.responder_phone + '</a>' : '';
+return '<div style="min-width:160px;">' +
+'<b>🚑 ' + (loc.responder_name || 'กู้ภัย') + '</b>' +
+phoneHtml +
+'<div style="font-size:0.7rem;color:#888;margin-top:4px;">อัปเดต: ' + ageText + '</div>' +
+staleWarning +
+'</div>';
+}
+
+async function updateResponderMarkers() {
+if (!dashMap) return;
+var locations = await fetchResponderLocations();
+if (!locations) return; // fetch ล้มเหลว — เก็บหมุดเดิมไว้ ไม่ลบทิ้งเปล่าๆ
+
+var nextMarkers = {};
+locations.forEach(function(loc) {
+try {
+if (!loc.lat || !loc.lng) return;
+var ageMs = Date.now() - new Date(loc.updated_at).getTime();
+var isStale = ageMs > RESPONDER_LOCATION_STALE_MS;
+var signature = [loc.lat, loc.lng, loc.responder_name, isStale].join('|');
+var key = loc.responder_phone;
+var existing = responderLocationMarkers[key];
+if (existing && existing._signature === signature) {
+nextMarkers[key] = existing;
+return;
+}
+if (existing) {
+removeLongdoOverlay(dashMap, existing);
+}
+var html = buildResponderMarkerHtml(loc);
+var marker = makeLongdoHtmlMarker({ lon: loc.lng, lat: loc.lat }, html, {
+offset: { x: 0, y: 0 },
+weight: 60,
+title: loc.responder_name || 'กู้ภัย',
+scaleMode: 'none',
+markerOptions: { detail: buildResponderPopupHtml(loc) }
+});
+marker._signature = signature;
+dashMap.Overlays.add(marker);
+nextMarkers[key] = marker;
+} catch (markerErr) {
+console.error('[Citizen Check-in] สร้างหมุดกู้ภัย ' + loc.responder_phone + ' ไม่สำเร็จ:', markerErr);
+if (responderLocationMarkers[loc.responder_phone]) nextMarkers[loc.responder_phone] = responderLocationMarkers[loc.responder_phone];
+}
+});
+
+Object.keys(responderLocationMarkers).forEach(function(key) {
+if (nextMarkers[key]) return;
+removeLongdoOverlay(dashMap, responderLocationMarkers[key]);
+});
+responderLocationMarkers = nextMarkers;
+}
+
+function startResponderLocationPolling() {
+updateResponderMarkers();
+if (window._responderLocationPollInterval) clearInterval(window._responderLocationPollInterval);
+window._responderLocationPollInterval = setInterval(updateResponderMarkers, 10000); // ทุก 10 วิ (ไม่ต้องถี่เท่าคำขอช่วยเหลือ เพราะตำแหน่งกู้ภัยเปลี่ยนช้ากว่า)
+}
 function getDashboardScreenDistance(locA, locB) {
 var mapObj = dashMap && dashMap._maptiler;
 if (!mapObj || !mapObj.project || !locA || !locB) return null;
@@ -650,9 +762,11 @@ clearLongdoOverlayList(dashMap, window._icOCZoneOverlays || []);
 clearLongdoOverlayList(dashMap, window._icOCZoneCircles || []);
 clearLongdoOverlayList(dashMap, window._icOCReqAlertOverlays || []);
 clearLongdoOverlayList(dashMap, Object.values(helpRequestMarkers || {}));
+clearLongdoOverlayList(dashMap, Object.values(responderLocationMarkers || {}));
 otherMarkers = [];
 zoneCircles = [];
 helpRequestMarkers = {};
+responderLocationMarkers = {};
 window._dashboardLiveMarkerRecords = {};
 window._icOCZoneOverlayRecords = {};
 window._icOCZoneOverlays = [];
@@ -668,6 +782,7 @@ try {
 if (window._lastEmergState) applyDashboardEmergencyState(window._lastEmergState);
 if (typeof updateLiveMarkers === 'function') updateLiveMarkers();
 if (typeof updateHelpRequestMarkers === 'function') updateHelpRequestMarkers();
+if (typeof updateResponderMarkers === 'function') updateResponderMarkers();
 if (typeof drawHazmatZonesOnDashMap === 'function' && window._lastHazmatZoneData) {
 drawHazmatZonesOnDashMap(window._lastHazmatZoneData);
 }
