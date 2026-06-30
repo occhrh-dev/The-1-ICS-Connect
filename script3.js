@@ -2380,3 +2380,156 @@ document.querySelectorAll('.oc-tab').forEach(function(el) { el.classList.remove(
 document.getElementById('octab_' + tabId).style.display = 'block';
 btn.classList.add('active');
 }
+
+// ==========================================
+// เส้นแบ่งเขตตำบล (Tambon Boundaries) — โหลดจาก GitHub Pages static files
+// ออกแบบให้โหลดเฉพาะจังหวัดที่อยู่ในมุมมองปัจจุบัน (viewport-based) ไม่กิน Supabase storage
+// ==========================================
+var TAMBON_DATA_BASE_URL = 'https://occhrh-dev.github.io/The-1-ICS-Connect/tambon_by_province/';
+var TAMBON_AUTO_SHOW_ZOOM = 12; // ซูมถึงระดับนี้ขึ้นไป จะ auto-show เขตแดนถ้ายังไม่ได้ปิดไว้เอง
+var tambonBoundaryVisible = false; // สถานะปุ่ม toggle (ผู้ใช้กดเปิด/ปิดเอง)
+var tambonBoundaryAutoShown = false; // กำลังโชว์อยู่เพราะ auto-show ไม่ใช่ผู้ใช้กดเอง (กันสับสนตอนคำนวณว่าควรซ่อนไหม)
+var tambonIndexData = null; // cache ของ _index.json (โหลดครั้งเดียว)
+var tambonLoadedProvinces = {}; // กันโหลดไฟล์จังหวัดเดิมซ้ำ
+
+async function loadTambonIndex() {
+if (tambonIndexData) return tambonIndexData;
+try {
+var res = await fetch(TAMBON_DATA_BASE_URL + '_index.json');
+if (!res.ok) return null;
+tambonIndexData = await res.json();
+return tambonIndexData;
+} catch (e) {
+console.warn('[Tambon] โหลด index ไม่สำเร็จ', e);
+return null;
+}
+}
+
+function getProvincesInViewport(mapObj) {
+// คืนรายชื่อ slug จังหวัดที่ bounding box ทับกับมุมมองปัจจุบันของแผนที่ (กันโหลดทุกจังหวัดทั้งประเทศ)
+if (!tambonIndexData || !mapObj) return [];
+var bounds = mapObj.getBounds();
+var viewMinLon = bounds.getWest(), viewMaxLon = bounds.getEast();
+var viewMinLat = bounds.getSouth(), viewMaxLat = bounds.getNorth();
+var result = [];
+Object.keys(tambonIndexData).forEach(function(slug) {
+var bbox = tambonIndexData[slug].bbox; // [minlon, minlat, maxlon, maxlat]
+if (!bbox) return;
+var overlap = bbox[0] <= viewMaxLon && bbox[2] >= viewMinLon && bbox[1] <= viewMaxLat && bbox[3] >= viewMinLat;
+if (overlap) result.push(slug);
+});
+return result;
+}
+
+async function loadTambonProvince(slug) {
+if (tambonLoadedProvinces[slug]) return; // โหลดไปแล้ว ไม่โหลดซ้ำ
+tambonLoadedProvinces[slug] = true; // mark ไว้ก่อนยิง fetch กัน race condition ตอนเรียกซ้อนกัน
+var mapObj = dashMap && dashMap._maptiler;
+if (!mapObj) return;
+try {
+var res = await fetch(TAMBON_DATA_BASE_URL + slug + '.json');
+if (!res.ok) { delete tambonLoadedProvinces[slug]; return; }
+var geojson = await res.json();
+var sourceId = 'tambon-src-' + slug;
+var lineLayerId = 'tambon-line-' + slug;
+var fillLayerId = 'tambon-fill-' + slug;
+if (mapObj.getSource(sourceId)) return; // กันเพิ่มซ้ำ (เผื่อ race condition หลุดมา)
+mapObj.addSource(sourceId, { type: 'geojson', data: geojson });
+// fill บางๆ ให้คลิกเลือกง่าย + เห็นขอบเขตชัดขึ้นโดยไม่บังแผนที่ข้างใต้
+mapObj.addLayer({
+id: fillLayerId,
+type: 'fill',
+source: sourceId,
+paint: { 'fill-color': '#fbbf24', 'fill-opacity': 0.04 },
+layout: { visibility: tambonBoundaryVisible ? 'visible' : 'none' }
+});
+mapObj.addLayer({
+id: lineLayerId,
+type: 'line',
+source: sourceId,
+paint: { 'line-color': '#f59e0b', 'line-width': 1.4, 'line-opacity': 0.85 },
+layout: { visibility: tambonBoundaryVisible ? 'visible' : 'none' }
+});
+// คลิกที่ขอบเขต — โชว์ชื่อตำบล/อำเภอ/จังหวัด (อังกฤษไปก่อน รอแปลไทยทีละจังหวัด)
+mapObj.on('click', fillLayerId, function(e) {
+if (!e.features || !e.features[0]) return;
+var p = e.features[0].properties;
+new maptilersdk.Popup({ offset: 4 })
+.setLngLat(e.lngLat)
+.setHTML('<div style="font-size:0.8rem;"><b>ตำบล ' + (p.NAME_3 || '-') + '</b><br>อำเภอ ' + (p.NAME_2 || '-') + '<br>จังหวัด ' + (p.NAME_1 || '-') + '</div>')
+.addTo(mapObj);
+});
+mapObj.on('mouseenter', fillLayerId, function() { mapObj.getCanvas().style.cursor = 'pointer'; });
+mapObj.on('mouseleave', fillLayerId, function() { mapObj.getCanvas().style.cursor = ''; });
+} catch (e) {
+console.warn('[Tambon] โหลดจังหวัด ' + slug + ' ไม่สำเร็จ', e);
+delete tambonLoadedProvinces[slug];
+}
+}
+
+async function refreshTambonLayersForViewport() {
+var mapObj = dashMap && dashMap._maptiler;
+if (!mapObj) return;
+if (!tambonIndexData) await loadTambonIndex();
+if (!tambonIndexData) return;
+var slugs = getProvincesInViewport(mapObj);
+// จำกัดจำนวนจังหวัดที่โหลดพร้อมกันไม่ให้เกินไป (เผื่อ zoom out กว้างมากจนทับหลายสิบจังหวัด)
+slugs.slice(0, 12).forEach(function(slug) { loadTambonProvince(slug); });
+}
+
+function setTambonLayersVisibility(visible) {
+var mapObj = dashMap && dashMap._maptiler;
+if (!mapObj) return;
+Object.keys(tambonLoadedProvinces).forEach(function(slug) {
+var lineLayerId = 'tambon-line-' + slug;
+var fillLayerId = 'tambon-fill-' + slug;
+if (mapObj.getLayer(lineLayerId)) mapObj.setLayoutProperty(lineLayerId, 'visibility', visible ? 'visible' : 'none');
+if (mapObj.getLayer(fillLayerId)) mapObj.setLayoutProperty(fillLayerId, 'visibility', visible ? 'visible' : 'none');
+});
+}
+
+function toggleTambonBoundary() {
+tambonBoundaryVisible = !tambonBoundaryVisible;
+tambonBoundaryAutoShown = false; // ผู้ใช้กดเองแล้ว ไม่ใช่ auto-show อีกต่อไป
+setTambonLayersVisibility(tambonBoundaryVisible);
+if (tambonBoundaryVisible) refreshTambonLayersForViewport();
+var btn = document.getElementById('dashTambonToggleBtn');
+if (btn) {
+btn.style.background = tambonBoundaryVisible ? '#f59e0b' : 'white';
+btn.style.color = tambonBoundaryVisible ? 'white' : '#334155';
+}
+}
+
+function handleTambonAutoShowOnZoom() {
+var mapObj = dashMap && dashMap._maptiler;
+if (!mapObj || !mapObj.getZoom) return;
+var zoom = mapObj.getZoom();
+if (zoom >= TAMBON_AUTO_SHOW_ZOOM) {
+if (!tambonBoundaryVisible) {
+// auto-show เฉพาะตอนที่ผู้ใช้ยังไม่เคยกดปิดเอง (กันรบกวนถ้าผู้ใช้ตั้งใจปิดไว้)
+tambonBoundaryVisible = true;
+tambonBoundaryAutoShown = true;
+setTambonLayersVisibility(true);
+var btn = document.getElementById('dashTambonToggleBtn');
+if (btn) { btn.style.background = '#f59e0b'; btn.style.color = 'white'; }
+}
+refreshTambonLayersForViewport();
+} else if (tambonBoundaryAutoShown) {
+// ซูมออกจนต่ำกว่าระดับ auto-show และเป็นการโชว์แบบ auto (ไม่ใช่ผู้ใช้กดเอง) — ซ่อนกลับ
+tambonBoundaryVisible = false;
+tambonBoundaryAutoShown = false;
+setTambonLayersVisibility(false);
+var btn2 = document.getElementById('dashTambonToggleBtn');
+if (btn2) { btn2.style.background = 'white'; btn2.style.color = '#334155'; }
+}
+}
+
+function initTambonBoundaryControls() {
+var mapObj = dashMap && dashMap._maptiler;
+if (!mapObj) return;
+loadTambonIndex();
+mapObj.on('zoomend', handleTambonAutoShowOnZoom);
+mapObj.on('moveend', function() {
+if (tambonBoundaryVisible) refreshTambonLayersForViewport();
+});
+}
