@@ -573,14 +573,15 @@
   },
   "rayong": {
     "name_en": "Rayong",
-    "tambon_count": 45,
-    "size_kb": 18.1,
+    "tambon_count": 70,
+    "size_kb": 724.2,
     "bbox": [
-      100.9857,
-      12.5921,
-      101.8303,
-      13.1631
-    ]
+      100.9844,
+      12.5128,
+      101.8311,
+      13.1646
+    ],
+    "name_source": "DOPA_KML"
   },
   "roi_et": {
     "name_en": "Roi Et",
