@@ -706,6 +706,35 @@ if (nextMarkers[key]) return;
 removeLongdoOverlay(dashMap, responderLocationMarkers[key]);
 });
 responderLocationMarkers = nextMarkers;
+// อัปเดต summary จำนวนกู้ภัยในกล่องด้านขวา
+updateResponderStatusSummary(locations);
+}
+
+function updateResponderStatusSummary(locations) {
+var summaryEl = document.getElementById('responder_status_summary');
+if (!summaryEl) return;
+if (!locations || locations.length === 0) {
+summaryEl.style.display = 'none';
+return;
+}
+var idleCount = 0, busyCount = 0, staleCount = 0;
+locations.forEach(function(loc) {
+var ageMs = Date.now() - new Date(loc.updated_at).getTime();
+if (ageMs > RESPONDER_LOCATION_STALE_MS) {
+staleCount++;
+} else {
+var activeJob = getResponderActiveJob(loc);
+if (activeJob) busyCount++;
+else idleCount++;
+}
+});
+var idleEl = document.getElementById('resp_count_idle');
+var busyEl = document.getElementById('resp_count_busy');
+var staleEl = document.getElementById('resp_count_stale');
+if (idleEl) idleEl.textContent = idleCount;
+if (busyEl) busyEl.textContent = busyCount;
+if (staleEl) staleEl.textContent = staleCount;
+summaryEl.style.display = 'block';
 }
 
 function startResponderLocationPolling() {
