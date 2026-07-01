@@ -2456,7 +2456,7 @@ if (!e.features || !e.features[0]) return;
 var p = e.features[0].properties;
 new maptilersdk.Popup({ offset: 4 })
 .setLngLat(e.lngLat)
-.setHTML('<div style="font-size:0.8rem;"><b>ตำบล ' + (p.NAME_3 || '-') + '</b><br>อำเภอ ' + (p.NAME_2 || '-') + '<br>จังหวัด ' + (p.NAME_1 || '-') + '</div>')
+.setHTML('<div style="font-size:0.8rem;"><b>ตำบล ' + (p.NAME_TH_3 || p.NAME_3 || '-') + '</b><br>อำเภอ ' + (p.NAME_TH_2 || p.NAME_2 || '-') + '<br>จังหวัด ' + (p.NAME_TH_1 || p.NAME_1 || '-') + '</div>')
 .addTo(mapObj);
 });
 mapObj.on('mouseenter', fillLayerId, function() { mapObj.getCanvas().style.cursor = 'pointer'; });
