@@ -1064,6 +1064,14 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 </div>
 </div>
 <button type="button" onclick="openHelpRequestDetailModal()" style="width:100%;background:#f59e0b;border:none;color:#1a1a2e;font-weight:900;padding:5px;border-radius:6px;font-size:0.72rem;cursor:pointer;">📋 ดูรายละเอียดทั้งหมด</button>
+<div id="responder_status_summary" style="display:none;margin-top:6px;background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.25);border-radius:6px;padding:5px 8px;">
+<div style="font-size:0.62rem;color:#94a3b8;margin-bottom:3px;font-weight:700;">🚑 กู้ภัย/อาสาสมัคร</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;">
+<span style="font-size:0.68rem;color:#facc15;font-weight:700;"><span id="resp_count_idle">0</span> ว่าง</span>
+<span style="font-size:0.68rem;color:#0ea5e9;font-weight:700;"><span id="resp_count_busy">0</span> รับงาน</span>
+<span style="font-size:0.68rem;color:#94a3b8;font-weight:700;"><span id="resp_count_stale">0</span> offline</span>
+</div>
+</div>
 </div>
 <div id="dashboard_oc_support_panel" style="display:none;background:#fff7ed;border:1px solid #f97316;border-left:5px solid #dc2626;border-radius:10px;padding:8px 9px;margin-bottom:8px;box-shadow:0 3px 12px rgba(220,38,38,0.16);">
 <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;">
@@ -2560,7 +2568,14 @@ function submitPreIncidentLogin() {
 var input = document.getElementById('preLoginPass');
 var pass = input ? input.value : '';
 if (!pass) return Swal.fire('กรุณาใส่รหัสผ่าน', '', 'warning');
+// แสดง loading บนปุ่มระหว่างรอ GAS ตอบกลับ กันผู้ใช้สับสนว่ากดไปแล้วหรือยัง
+var loginBtn = document.querySelector('#adminLoginBox .btn-login');
+if (loginBtn) { loginBtn.disabled = true; loginBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> กำลังตรวจสอบ...'; }
+function _restoreLoginBtn_() {
+if (loginBtn) { loginBtn.disabled = false; loginBtn.innerHTML = '<i class="fas fa-lock"></i> เข้าสู่ระบบ'; }
+}
 google.script.run.withSuccessHandler(function(result) {
+_restoreLoginBtn_();
 if (!result || !result.ok) {
 var msg = '';
 if (result && result.reason === 'device_locked') msg = 'รหัสนี้ถูกผูกกับอุปกรณ์อื่นแล้ว กรุณาติดต่อผู้ดูแลระบบเพื่อ reset เครื่อง';
@@ -2589,6 +2604,9 @@ return;
 applyAccessSession(result);
 renderPreIncidentAccess();
 Swal.fire({ icon:'success', title: result.label || (result.role === 'admin' ? 'Admin' : 'View only'), timer:1200, showConfirmButton:false });
+}).withFailureHandler(function() {
+_restoreLoginBtn_();
+Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่', 'error');
 }).checkAppLogin(pass, getEOCDeviceId());
 }
 function logoutPreIncident() {
@@ -5094,10 +5112,12 @@ if (roleCode === 'IC') {
   document.getElementById('staffNameInput').value = '';
   document.getElementById('staffRoleInput').value = '';
   if (document.getElementById('staffPhoneInput')) document.getElementById('staffPhoneInput').value = '';
-  // set datalist ตำแหน่ง IC
+  // set datalist ตำแหน่ง IC — ดึงจาก position list ที่ admin ตั้งค่าไว้ก่อน ถ้าไม่มีค่อย fallback เป็น default
   var icDatalist = document.getElementById('roleList');
   if (icDatalist) icDatalist.innerHTML = '';
-  var icPositions = ['ผู้ว่าราชการจังหวัด','นายอำเภอ','นายกเทศมนตรี','นายก อบต.','ปลัดจังหวัด','หัวหน้าส่วนราชการ'];
+  var icPositions = (eocPositions && eocPositions['IC'] && eocPositions['IC'].length > 0)
+    ? eocPositions['IC']
+    : ['ผู้ว่าราชการจังหวัด','นายอำเภอ','นายกเทศมนตรี','นายก อบต.','ปลัดจังหวัด','หัวหน้าส่วนราชการ'];
   icPositions.forEach(function(pos) {
     var opt = document.createElement('option'); opt.value = pos; if (icDatalist) icDatalist.appendChild(opt);
   });
