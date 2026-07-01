@@ -821,7 +821,14 @@ async function refreshJobs() {
   if (!all) return;
 
   const myJobs = all.filter(r => r.responder_phone === responderPhone && r.status !== 'new' && r.status !== 'helped');
-  const availableJobs = all.filter(r => r.status === 'new');
+  // งานที่ยังรออยู่ — sort ตามระยะทางจากตำแหน่งปัจจุบัน (ใกล้สุดขึ้นก่อน)
+  // ถ้ายังไม่มี GPS ให้เรียงตาม created_at เดิม
+  const availableJobs = all.filter(r => r.status === 'new').sort((a, b) => {
+    if (myLat == null || myLng == null) return 0;
+    const da = (hasValidCoords(a)) ? calcDistanceMeters(myLat, myLng, a.lat, a.lng) : Infinity;
+    const db = (hasValidCoords(b)) ? calcDistanceMeters(myLat, myLng, b.lat, b.lng) : Infinity;
+    return da - db;
+  });
   const hasMyJobs = myJobs.length > 0;
 
   const myJobsSection = document.getElementById('myJobsSection');
@@ -886,12 +893,24 @@ function buildAvailableJobCard(req) {
   const locText = req.loc ? escapeHtml(req.loc) : '(ไม่ระบุจุดสังเกต)';
   const noteHtml = req.note ? `<div class="job-note">📝 ${escapeHtml(req.note)}</div>` : '';
   const photoHtml = req.photo_url ? `<img class="job-photo" src="${req.photo_url}" onclick="window.open(this.src,'_blank')">` : '';
+
+  // แสดงระยะทาง ถ้ามี GPS ของกู้ภัยและพิกัดของชาวบ้าน
+  let distHtml = '';
+  if (myLat != null && myLng != null && hasValidCoords(req)) {
+    const dm = calcDistanceMeters(myLat, myLng, req.lat, req.lng);
+    const distText = dm < 1000 ? Math.round(dm) + ' ม.' : (dm / 1000).toFixed(1) + ' กม.';
+    const distColor = dm < 1000 ? '#16a34a' : dm < 5000 ? '#d97706' : '#dc2626';
+    const distLabel = dm < 1000 ? 'ใกล้มาก' : dm < 3000 ? 'ใกล้' : dm < 8000 ? 'ปานกลาง' : 'ไกล';
+    distHtml = `<span style="font-size:0.78rem;font-weight:700;color:${distColor};background:${distColor}18;border-radius:6px;padding:2px 8px;">📏 ${distText} — ${distLabel}</span>`;
+  }
+
   return `
     <div class="job-card new">
       <div class="job-top">
         <span class="job-need">${need.emoji} ${need.label}</span>
         <span class="job-badge" style="background:#facc15;color:#1a1a2e;">🆕 ใหม่</span>
       </div>
+      ${distHtml ? `<div style="margin:4px 0;">${distHtml}</div>` : ''}
       <div class="job-loc">📍 ${locText}</div>
       <div class="job-meta">👥 ${req.people || 1} คน${req.phone ? ' · 📞 ' + req.phone : ''}</div>
       ${noteHtml}${photoHtml}
