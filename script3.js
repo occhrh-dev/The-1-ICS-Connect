@@ -291,12 +291,13 @@ var bg = isNew ? '#facc15' : (HELP_STATUS_META[req.status] || {}).color || need.
 var pulseHtml = isNew
 ? '<div class="help-req-ring"></div>'
 : '';
+var shadow = isHelped ? '' : 'filter:drop-shadow(0 2px 4px rgba(0,0,0,0.7));';
 var iconHtml =
-'<div class="help-req-marker-body" style="position:relative;' + (isHelped ? 'opacity:0.45;transform:scale(0.72);' : '') + '">' +
+'<div class="help-req-marker-body" style="position:relative;' + shadow + (isHelped ? 'opacity:0.45;transform:scale(0.72);' : '') + '">' +
 pulseHtml +
-'<div class="help-req-marker-core" style="background:' + bg + ';border-color:' + need.color + ';">' + need.emoji + '</div>' +
+'<div class="help-req-marker-core" style="background:' + bg + ';border-color:' + need.color + ';border-width:2.5px;">' + need.emoji + '</div>' +
 '</div>';
-return buildDashboardPointMarkerHtml(iconHtml, '', { iconSize: 36, scale: true, zIndex: isHelped ? 5 : 9 });
+return buildDashboardPointMarkerHtml(iconHtml, '', { iconSize: isNew ? 44 : (isHelped ? 28 : 38), scale: true, zIndex: isHelped ? 5 : (isNew ? 12 : 9) });
 }
 
 function buildHelpRequestPopupHtml(req) {
@@ -598,14 +599,33 @@ return null;
 }
 }
 
+function getResponderActiveJob(loc) {
+// ดูว่ากู้ภัยคนนี้กำลังทำงานอะไรอยู่ จาก _lastHelpRequests ที่โหลดไว้แล้ว
+var requests = window._lastHelpRequests || [];
+return requests.find(function(r) {
+return r.responder_phone === loc.responder_phone &&
+(r.status === 'claimed' || r.status === 'enroute' || r.status === 'arrived');
+}) || null;
+}
+
 function buildResponderMarkerHtml(loc) {
 var ageMs = Date.now() - new Date(loc.updated_at).getTime();
 var isStale = ageMs > RESPONDER_LOCATION_STALE_MS;
+var activeJob = getResponderActiveJob(loc);
+// สีบอกสถานะ: เหลือง=ว่าง, น้ำเงิน=กำลังไป/รับงาน, แดงส้ม=ถึงจุดแล้ว, เทา=หมดอายุ
+var bg = isStale ? '#94a3b8' : (
+!activeJob ? '#facc15' :
+activeJob.status === 'arrived' ? '#ea580c' : '#0ea5e9'
+);
+var border = isStale ? '#64748b' : (
+!activeJob ? '#d97706' :
+activeJob.status === 'arrived' ? '#c2410c' : '#0369a1'
+);
 var iconHtml =
-'<div class="help-req-marker-body" style="position:relative;' + (isStale ? 'opacity:0.4;transform:scale(0.75);' : '') + '">' +
-'<div class="help-req-marker-core" style="background:#0ea5e9;border-color:#0369a1;">🚑</div>' +
+'<div class="help-req-marker-body" style="position:relative;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));' + (isStale ? 'opacity:0.4;transform:scale(0.75);' : '') + '">' +
+'<div class="help-req-marker-core" style="background:' + bg + ';border-color:' + border + ';border-width:2.5px;">🚑</div>' +
 '</div>';
-return buildDashboardPointMarkerHtml(iconHtml, '', { iconSize: 34, scale: true, zIndex: isStale ? 4 : 8 });
+return buildDashboardPointMarkerHtml(iconHtml, '', { iconSize: 36, scale: true, zIndex: isStale ? 4 : 8 });
 }
 
 function buildResponderPopupHtml(loc) {
@@ -617,9 +637,25 @@ var staleWarning = isStale
 ? '<div style="margin-top:6px;font-size:0.7rem;color:#dc2626;background:#fef2f2;border-radius:6px;padding:4px 6px;">⚠️ ตำแหน่งนี้ไม่ได้อัปเดตมาเกิน 5 นาที อาจไม่ใช่ตำแหน่งปัจจุบันจริง</div>'
 : '';
 var phoneHtml = loc.responder_phone ? '<br>📞 <a href="tel:' + loc.responder_phone + '" style="color:#2980b9;">' + loc.responder_phone + '</a>' : '';
-return '<div style="min-width:160px;">' +
+// แสดงสถานะงานปัจจุบัน
+var activeJob = getResponderActiveJob(loc);
+var jobHtml = '';
+if (isStale) {
+jobHtml = '<div style="margin-top:5px;font-size:0.75rem;color:#64748b;">📴 ออฟไลน์</div>';
+} else if (!activeJob) {
+jobHtml = '<div style="margin-top:5px;font-size:0.75rem;background:#fef9c3;color:#854d0e;border-radius:6px;padding:3px 7px;display:inline-block;">✅ ว่าง — รอรับงาน</div>';
+} else {
+var NEED_LABELS = { boat:'🚤 ต้องการเรือ', medical:'💊 การแพทย์', supplies:'🍚 อาหาร/น้ำ', trapped:'🆘 ติดอยู่' };
+var statusLabels = { claimed:'✋ รับงานแล้ว', enroute:'🚤 กำลังเดินทาง', arrived:'📍 ถึงจุดแล้ว' };
+jobHtml = '<div style="margin-top:5px;font-size:0.75rem;background:#eff6ff;color:#1e40af;border-radius:6px;padding:4px 7px;">' +
+(statusLabels[activeJob.status] || '') + ' — ' + (NEED_LABELS[activeJob.need] || activeJob.need) +
+(activeJob.loc ? '<br>📍 ' + activeJob.loc : '') +
+'</div>';
+}
+return '<div style="min-width:170px;">' +
 '<b>🚑 ' + (loc.responder_name || 'กู้ภัย') + '</b>' +
 phoneHtml +
+jobHtml +
 '<div style="font-size:0.7rem;color:#888;margin-top:4px;">อัปเดต: ' + ageText + '</div>' +
 staleWarning +
 '</div>';
@@ -636,7 +672,9 @@ try {
 if (!loc.lat || !loc.lng) return;
 var ageMs = Date.now() - new Date(loc.updated_at).getTime();
 var isStale = ageMs > RESPONDER_LOCATION_STALE_MS;
-var signature = [loc.lat, loc.lng, loc.responder_name, isStale].join('|');
+var activeJob = getResponderActiveJob(loc);
+var activeJobKey = activeJob ? (activeJob.id + ':' + activeJob.status) : 'idle';
+var signature = [loc.lat, loc.lng, loc.responder_name, isStale, activeJobKey].join('|');
 var key = loc.responder_phone;
 var existing = responderLocationMarkers[key];
 if (existing && existing._signature === signature) {
