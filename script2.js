@@ -1059,6 +1059,46 @@ return '<div style="text-align:left;border-bottom:1px solid #eee;padding:7px 0;"
 }).join('') : '<div style="color:#999;padding:12px;">ยังไม่มีรายละเอียด</div>';
 Swal.fire({ title: cfg.label + ' ภายในพื้นที่', html: html, confirmButtonText: 'ปิด' });
 }
+var FLOOD_ZONE_CONFIG = {
+FloodDepth: { label:'จุดรายงานระดับน้ำ', short:'ระดับน้ำ', icon:'fa-water', color:'#0284c7', halo:'#7dd3fc', placeholder:'เช่น หน้า รพ.สต. บ้านค่าย' },
+RoadClosed: { label:'ถนนปิด / ผ่านไม่ได้', short:'ถนนปิด', icon:'fa-road-barrier', color:'#dc2626', halo:'#fca5a5', placeholder:'เช่น ถนนสุขุมวิท กม. 214' },
+RoadHighVehicle: { label:'รถสูง / 4x4 ผ่านได้', short:'รถสูงผ่าน', icon:'fa-truck-monster', color:'#d97706', halo:'#fcd34d', placeholder:'เช่น แยกตลาดบ้านฉาง' },
+BoatLaunch: { label:'จุดปล่อยเรือ', short:'จุดเรือ', icon:'fa-sailboat', color:'#0891b2', halo:'#67e8f9', placeholder:'เช่น ท่าน้ำวัด...' },
+HighGround: { label:'พื้นที่สูง / จุดปลอดภัย', short:'พื้นที่สูง', icon:'fa-mountain-sun', color:'#16a34a', halo:'#86efac', placeholder:'เช่น อาคารอเนกประสงค์...' },
+SupplyPoint: { label:'จุดแจกอาหารและน้ำ', short:'จุดแจกของ', icon:'fa-box-open', color:'#7c3aed', halo:'#c4b5fd', placeholder:'เช่น ศาลาประชาคม...' },
+ElectricHazard: { label:'จุดเสี่ยงไฟฟ้า', short:'ไฟฟ้าอันตราย', icon:'fa-bolt', color:'#b91c1c', halo:'#fde047', placeholder:'เช่น เสาไฟล้ม ซอย...' },
+PumpPoint: { label:'จุดสูบน้ำ', short:'จุดสูบน้ำ', icon:'fa-faucet-drip', color:'#0369a1', halo:'#93c5fd', placeholder:'เช่น สถานีสูบน้ำคลอง...' }
+};
+function getOCZoneTypeConfig(type) {
+if (FLOOD_ZONE_CONFIG[type]) return FLOOD_ZONE_CONFIG[type];
+var general = {
+ICP:{ label:'Command Post', short:'ICP', icon:'fa-shield-alt', color:'#1D4ED8', halo:'#60A5FA' },
+Decon:{ label:'Decon Station', short:'Decon', icon:'fa-shower', color:'#3498db', halo:'#93c5fd' },
+Treatment:{ label:'Treatment Area', short:'Treatment', icon:'fa-truck-medical', color:'#e74c3c', halo:'#fca5a5' },
+Staging:{ label:'Staging Area', short:'Staging', icon:'fa-boxes-stacked', color:'#ca8a04', halo:'#fde047' },
+Parking:{ label:'Parking', short:'Parking', icon:'fa-square-parking', color:'#27ae60', halo:'#86efac' },
+Loading:{ label:'Loading/Unload', short:'Loading', icon:'fa-truck-ramp-box', color:'#9b59b6', halo:'#d8b4fe' }
+};
+return general[type] || { label:type || 'จุดปฏิบัติการ', short:type || 'จุด', icon:'fa-location-dot', color:'#0F766E', halo:'#5EEAD4' };
+}
+function isFloodZoneType(type) {
+return !!FLOOD_ZONE_CONFIG[type];
+}
+function getZoneMarkerType(zone) {
+zone = zone || {};
+return zone.type || zone.ZoneType || zone.zone_type || '';
+}
+function updateOCZoneInputForType(type) {
+var cfg = getOCZoneTypeConfig(type);
+var input = document.getElementById('oc_zone_label');
+var hint = document.getElementById('oc_zone_type_hint');
+if (input) input.placeholder = cfg.placeholder || 'ชื่อจุดสั้นๆ';
+if (hint) {
+hint.innerHTML = isFloodZoneType(type)
+? '<span style="color:#0369a1;font-weight:800;">โหมดน้ำท่วม:</span> ระบบจะถามระดับน้ำ/สถานะเพิ่มเติมก่อนเปิดแผนที่'
+: 'เลือกชนิดจุด ใส่ชื่อสั้นๆ แล้วเลือกพิกัดบนแผนที่';
+}
+}
 function renderOCZones(list) {
 var el = document.getElementById('oc_zone_list');
 var icpHint = document.getElementById('oc_icp_hint');
@@ -1080,12 +1120,8 @@ quotaEl.innerHTML = '<div style="display:flex;align-items:center;justify-content
 quotaEl.innerHTML = '<div style="font-size:12px;color:#64748b;background:#f1f5f9;border-radius:8px;padding:8px 12px;">📍 ปักไปแล้ว ' + totalCount + ' จุด (ไม่จำกัดจำนวนสำหรับ Tier นี้)</div>';
 }
 }
-var zoneColor = {
-'ICP':'#e74c3c', 'Decon':'#3498db', 'Treatment':'#e74c3c',
-'Staging':'#f1c40f', 'Parking':'#27ae60', 'Loading':'#9b59b6'
-};
-var icp = (list || []).find(function(z) { return z.type === 'ICP'; });
-var others = (list || []).filter(function(z) { return z.type !== 'ICP'; });
+var icp = (list || []).find(function(z) { return getZoneMarkerType(z) === 'ICP'; });
+var others = (list || []).filter(function(z) { return getZoneMarkerType(z) !== 'ICP'; });
 if (icpHint) {
 icpHint.innerHTML = icp && icp.lat
 ? '<span style="color:#27ae60;font-weight:bold;">ตั้ง ICP แล้ว</span><br>' + icp.label + '<br>' + icp.lat.toFixed(5) + ', ' + icp.lng.toFixed(5)
@@ -1093,12 +1129,16 @@ icpHint.innerHTML = icp && icp.lat
 }
 if (!others.length) { el.innerHTML = '<div style="text-align:center;color:#aaa;padding:12px;font-size:13px;">ยังไม่มีจุดปฏิบัติการอื่น</div>'; return; }
 el.innerHTML = others.map(function(z) {
-var c = zoneColor[z.type] || '#888';
+var zoneType = getZoneMarkerType(z);
+var cfg = getOCZoneTypeConfig(zoneType);
+var c = cfg.color;
+var note = z.note || z.Note || '';
 return '<div class="oc-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;">' +
-'<div style="width:12px;height:12px;border-radius:50%;background:' + c + ';flex-shrink:0;"></div>' +
+'<div style="width:30px;height:30px;border-radius:50%;background:' + c + ';color:white;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas ' + cfg.icon + '"></i></div>' +
 '<div style="flex:1;">' +
-'<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' + z.type + '</div>' +
+'<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' + cfg.label + '</div>' +
 '<div style="font-size:12px;color:#666;">' + z.label + '</div>' +
+(note ? '<div style="font-size:11px;color:#0369a1;margin-top:2px;">' + note + '</div>' : '') +
 (z.lat ? '<div style="font-size:11px;color:#aaa;">' + z.lat.toFixed(5) + ', ' + z.lng.toFixed(5) + '</div>' : '') +
 '</div>' +
 '</div>';
@@ -1415,7 +1455,10 @@ html:
 '<button id="oc_pop_icp_gps" class="swal2-confirm swal2-styled" style="margin:0;background:#e74c3c;"><i class="fas fa-location-crosshairs"></i> ใช้ตำแหน่งปัจจุบันเป็น Command Post</button>' +
 '<button id="oc_pop_icp_map" class="swal2-confirm swal2-styled" style="margin:0;background:#1d4ed8;"><i class="fas fa-map-location-dot"></i> เลือก Command Post บนแผนที่</button>' +
 '<div style="height:1px;background:#e5e7eb;margin:4px 0;"></div>' +
-'<select id="oc_pop_zone_type" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box;"><option value="Decon">Decon Station</option><option value="Treatment">Treatment</option><option value="Staging">Staging</option><option value="Parking">Parking</option><option value="Loading">Loading/Unload</option></select>' +
+'<select id="oc_pop_zone_type" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box;">' +
+'<optgroup label="จุดปฏิบัติการทั่วไป"><option value="Decon">Decon Station</option><option value="Treatment">Treatment</option><option value="Staging">Staging</option><option value="Parking">Parking</option><option value="Loading">Loading/Unload</option></optgroup>' +
+'<optgroup label="สถานการณ์น้ำท่วม"><option value="FloodDepth">🌊 จุดรายงานระดับน้ำ</option><option value="RoadClosed">⛔ ถนนปิด / ผ่านไม่ได้</option><option value="RoadHighVehicle">🚙 รถสูง / 4x4 ผ่านได้</option><option value="BoatLaunch">🚤 จุดปล่อยเรือ</option><option value="HighGround">⛰️ พื้นที่สูง / จุดปลอดภัย</option><option value="SupplyPoint">📦 จุดแจกอาหารและน้ำ</option><option value="ElectricHazard">⚡ จุดเสี่ยงไฟฟ้า</option><option value="PumpPoint">💧 จุดสูบน้ำ</option></optgroup>' +
+'</select>' +
 '<input id="oc_pop_zone_label" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box;" placeholder="ชื่อจุดสั้นๆ">' +
 '<button id="oc_pop_zone_map" class="swal2-confirm swal2-styled" style="margin:0;background:#0f766e;"><i class="fas fa-map-pin"></i> เลือกจุดนี้บนแผนที่</button>' +
 '</div>',
@@ -1674,34 +1717,94 @@ var labelEl = document.getElementById('oc_icp_label');
 var label = (labelEl && labelEl.value.trim()) ? labelEl.value.trim() : 'ICP / Command';
 _saveIndoorZoneMarker_('ICP', label, 'บันทึก Command Post แล้ว');
 }
-function openZoneMapPicker() {
+function collectFloodZoneDetails(zoneType, currentLabel, callback) {
+var cfg = getOCZoneTypeConfig(zoneType);
+var depthHtml = (zoneType === 'FloodDepth' || zoneType === 'RoadHighVehicle')
+? '<label style="font-size:12px;font-weight:800;color:#334155;">ระดับน้ำโดยประมาณ (ซม.)</label><input id="flood_depth_cm" type="number" min="0" step="1" class="swal2-input" style="margin:3px 0 8px;width:100%;box-sizing:border-box;" placeholder="เช่น 40">'
+: '';
+var trendHtml = zoneType === 'FloodDepth'
+? '<label style="font-size:12px;font-weight:800;color:#334155;">แนวโน้มระดับน้ำ</label><select id="flood_trend" class="swal2-select" style="margin:3px 0 8px;width:100%;box-sizing:border-box;"><option value="">ยังไม่ทราบ</option><option value="เพิ่มขึ้น">เพิ่มขึ้น ↑</option><option value="ทรงตัว">ทรงตัว →</option><option value="ลดลง">ลดลง ↓</option></select>'
+: '';
+var vehicleHtml = zoneType === 'RoadHighVehicle'
+? '<label style="font-size:12px;font-weight:800;color:#334155;">ยานพาหนะที่ผ่านได้</label><select id="flood_vehicle" class="swal2-select" style="margin:3px 0 8px;width:100%;box-sizing:border-box;"><option value="รถยกสูง / 4x4">รถยกสูง / 4x4</option><option value="รถบรรทุก">รถบรรทุก</option><option value="รถกู้ภัยเท่านั้น">รถกู้ภัยเท่านั้น</option></select>'
+: '';
+Swal.fire({
+title: '<i class="fas ' + cfg.icon + '" style="color:' + cfg.color + ';"></i> ' + cfg.label,
+html: '<div style="text-align:left;">' +
+'<label style="font-size:12px;font-weight:800;color:#334155;">ชื่อจุด / ถนน / จุดสังเกต</label>' +
+'<input id="flood_zone_label" class="swal2-input" style="margin:3px 0 8px;width:100%;box-sizing:border-box;" placeholder="' + (cfg.placeholder || 'ชื่อจุดสั้นๆ') + '">' +
+depthHtml + trendHtml + vehicleHtml +
+'<label style="font-size:12px;font-weight:800;color:#334155;">หมายเหตุสำหรับทีมปฏิบัติการ</label>' +
+'<textarea id="flood_zone_note" class="swal2-textarea" style="margin:3px 0 0;width:100%;box-sizing:border-box;min-height:72px;" placeholder="เช่น กระแสน้ำแรง ต้องมีเชือกนิรภัย"></textarea>' +
+'</div>',
+showCancelButton: true,
+confirmButtonText: 'ต่อไป: เลือกพิกัด',
+cancelButtonText: 'ยกเลิก',
+confirmButtonColor: cfg.color,
+didOpen: function() {
+var labelEl = document.getElementById('flood_zone_label');
+if (labelEl && currentLabel && currentLabel !== zoneType) labelEl.value = currentLabel;
+},
+preConfirm: function() {
+var label = (document.getElementById('flood_zone_label').value || '').trim();
+if (!label) return Swal.showValidationMessage('กรุณาระบุชื่อจุด ถนน หรือจุดสังเกต');
+var details = [];
+var depthEl = document.getElementById('flood_depth_cm');
+var trendEl = document.getElementById('flood_trend');
+var vehicleEl = document.getElementById('flood_vehicle');
+var extraNote = (document.getElementById('flood_zone_note').value || '').trim();
+if (depthEl && depthEl.value !== '') details.push('ระดับน้ำ ' + Math.max(0, Number(depthEl.value) || 0) + ' ซม.');
+if (trendEl && trendEl.value) details.push('แนวโน้ม: ' + trendEl.value);
+if (vehicleEl && vehicleEl.value) details.push('ผ่านได้เฉพาะ: ' + vehicleEl.value);
+if (zoneType === 'RoadClosed') details.push('สถานะ: ปิดถนน / ผ่านไม่ได้');
+if (extraNote) details.push(extraNote);
+return { label:label, note:details.join(' | ') };
+}
+}).then(function(result) {
+if (result.isConfirmed && typeof callback === 'function') callback(result.value);
+});
+}
+function openZoneMapPickerWithData(zType, zLabel, zNote) {
+var cfg = getOCZoneTypeConfig(zType);
 mapPickerMode = 'zone';
 mapPickLockToCurrent = false;
 tempLat = "";
 tempLng = "";
 window._mapPickerContext = {
-titleHtml: '<i class="fas fa-map-location-dot"></i> เลือกจุดปฏิบัติการ',
-searchPlaceholder: 'ค้นหาตำแหน่งจุดปฏิบัติการ...',
-coordPlaceholder: 'วาง Google Maps link หรือ lat,lon ของจุดปฏิบัติการ',
-selectedText: 'ยังไม่ได้เลือกพิกัดจุดปฏิบัติการ'
+titleHtml: '<i class="fas ' + cfg.icon + '"></i> เลือกพิกัด: ' + cfg.label,
+searchPlaceholder: 'ค้นหาตำแหน่งหรือถนน...',
+coordPlaceholder: 'วาง Google Maps link หรือ lat,lon',
+selectedText: 'ยังไม่ได้เลือกพิกัด'
 };
 document.getElementById('selectedCoordText').innerText = 'พิกัด: ยังไม่ได้เลือก (กำลังตั้งจุดปฏิบัติการ)';
 window._zonePickerCallback = function(lat, lng) {
-var zType = document.getElementById('oc_zone_type_sel').value;
-var zLabel = document.getElementById('oc_zone_label').value.trim() || zType;
 showOCSending('กำลังบันทึกจุด...', 'กำลังส่งพิกัดจุดปฏิบัติการไปยัง EOC');
 google.script.run
 .withSuccessHandler(function() {
 refreshOCData();
-Swal.fire({ icon:'success', title:'บันทึกจุดแล้ว', timer:1500, showConfirmButton:false });
+Swal.fire({ icon:'success', title:'บันทึก ' + cfg.label + ' แล้ว', timer:1700, showConfirmButton:false });
 })
 .withFailureHandler(function(err) {
 Swal.close();
 Swal.fire('บันทึกจุดไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
 })
-.saveZoneMarker(zType, zLabel, lat, lng, '', ocCurrentUser, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
+.saveZoneMarker(zType, zLabel, lat, lng, zNote || '', ocCurrentUser, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 };
 openMap();
+}
+function openZoneMapPicker() {
+var typeEl = document.getElementById('oc_zone_type_sel');
+var labelEl = document.getElementById('oc_zone_label');
+var zType = typeEl ? typeEl.value : 'Staging';
+var zLabel = labelEl ? labelEl.value.trim() : '';
+if (isFloodZoneType(zType)) {
+collectFloodZoneDetails(zType, zLabel, function(data) {
+if (labelEl) labelEl.value = data.label;
+openZoneMapPickerWithData(zType, data.label, data.note);
+});
+return;
+}
+openZoneMapPickerWithData(zType, zLabel || zType, '');
 }
 function openICPMapPicker() {
 mapPickerMode = 'zone';
@@ -2722,9 +2825,49 @@ return '<div style="border-bottom:1px solid #e2e8f0;padding:6px 4px;">' +
 }).join('');
 box.style.display = 'block';
 }
+function updateFloodMapLayerUI(zones) {
+var visible = window._floodLayerVisible !== false;
+var floodZones = (zones || []).filter(function(z) { return isFloodZoneType(getZoneMarkerType(z)); });
+var btn = document.getElementById('dashFloodToggleBtn');
+if (btn) {
+btn.style.background = visible ? '#0369a1' : '#ffffff';
+btn.style.color = visible ? '#ffffff' : '#64748b';
+btn.style.textDecoration = visible ? 'none' : 'line-through';
+btn.title = visible ? 'ซ่อนจุดสถานการณ์น้ำท่วม' : 'แสดงจุดสถานการณ์น้ำท่วม';
+}
+var legend = document.getElementById('dash_flood_legend');
+if (!legend) return;
+if (!visible || !floodZones.length) {
+legend.style.display = 'none';
+legend.innerHTML = '';
+return;
+}
+var counts = {};
+floodZones.forEach(function(z) {
+var type = getZoneMarkerType(z);
+counts[type] = (counts[type] || 0) + 1;
+});
+var rows = Object.keys(counts).map(function(type) {
+var cfg = getOCZoneTypeConfig(type);
+return '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;"><span style="width:18px;height:18px;border-radius:50%;background:' + cfg.color + ';color:white;display:inline-flex;align-items:center;justify-content:center;"><i class="fas ' + cfg.icon + '" style="font-size:9px;"></i></span><span style="flex:1;">' + cfg.label + '</span><b>' + counts[type] + '</b></div>';
+}).join('');
+legend.innerHTML = '<div style="font-size:11px;font-weight:900;color:#075985;border-bottom:1px solid #bae6fd;padding-bottom:4px;"><i class="fas fa-water"></i> สถานการณ์น้ำท่วม <span style="font-weight:600;">(' + floodZones.length + ' จุด)</span></div>' + rows;
+legend.style.display = 'block';
+}
+function toggleFloodMapLayer() {
+window._floodLayerVisible = window._floodLayerVisible === false;
+window._icOCZoneDrawKey = '';
+var zones = window._icZoneMarkers || (window._lastOCState && window._lastOCState.zoneMarkers) || [];
+updateFloodMapLayerUI(zones);
+if (dashMap) drawOCZoneMarkersOnICMap(zones, window._icSupportReqs || []);
+}
 function drawOCZoneMarkersOnICMap(zones, supportReqs) {
-zones = (zones || []).filter(function(z) { return (z.locationKind || z.location_kind || 'outdoor') !== 'indoor'; });
-zones = normalizeICOCState({ zoneMarkers: zones }).zoneMarkers;
+var allZones = (zones || []).filter(function(z) { return (z.locationKind || z.location_kind || 'outdoor') !== 'indoor'; });
+allZones = normalizeICOCState({ zoneMarkers: allZones }).zoneMarkers;
+updateFloodMapLayerUI(allZones);
+zones = window._floodLayerVisible === false
+? allZones.filter(function(z) { return !isFloodZoneType(getZoneMarkerType(z)); })
+: allZones;
 supportReqs = dedupeOCSupportRequests(reconcileOCSupportRequestStatus(supportReqs || window._icSupportReqs || []));
 if (supportReqs && supportReqs.length) {
 window._icSupportReqs = supportReqs;
@@ -2738,8 +2881,8 @@ var reqKey = activeReqs.map(function(r) {
 return [(r.id||r.rowIndex) || '', r.type || '', r.status || 'pending', r.responseNote || ''].join(':');
 }).join(',');
 var drawKey = zones.map(function(z) {
-return [z.type || z.ZoneType || '', z.label || z.Label || '', z.lat || z.Lat || '', z.lng || z.Lng || '', z.loggedBy || z.by || '', z.phone || z.tel || ''].join('|');
-}).join('~') + '|marker-style-command-post-stable-v5-anchor-exact|' + reqKey;
+return [getZoneMarkerType(z), z.label || z.Label || '', z.lat || z.Lat || '', z.lng || z.Lng || '', z.note || z.Note || '', z.loggedBy || z.by || '', z.phone || z.tel || ''].join('|');
+}).join('~') + '|marker-style-flood-v1|flood=' + (window._floodLayerVisible !== false) + '|' + reqKey;
 if (window._icOCZoneDrawKey === drawKey && window._icOCZoneMapRef === dashMap && window._icOCZoneOverlays && window._icOCZoneOverlays.length) return;
 window._icOCZoneDrawKey = drawKey;
 window._icOCZoneMapRef = dashMap;
@@ -2753,15 +2896,17 @@ ensureOCRequestAlertStyle();
 zones.forEach(function(z) {
 var lat = parseFloat(z.lat || z.Lat);
 var lng = parseFloat(z.lng || z.Lng);
-var type = z.type || z.ZoneType || '-';
+var type = getZoneMarkerType(z) || '-';
 var label = z.label || z.Label || type;
+var note = z.note || z.Note || '';
 var isICP = type === 'ICP';
-var displayType = isICP ? 'ICP' : type;
+var typeCfg = getOCZoneTypeConfig(type);
+var displayType = typeCfg.short;
 var ocName = z.loggedBy || z.by || z.ocName || '-';
 var ocPhone = normalizeThaiPhone(z.phone || z.tel || findPhoneForStaffName(ocName) || '');
 if (!ocPhone) ocPhone = '-';
-var color = isICP ? '#1D4ED8' : '#0F766E';
-var halo = isICP ? '#60A5FA' : '#5EEAD4';
+var color = typeCfg.color;
+var halo = typeCfg.halo;
 var reqs = isICP ? activeReqs : [];
 var pendingCount = reqs.filter(function(r) { return String(r.status || 'pending').toLowerCase() === 'pending'; }).length;
 var ackCount = reqs.filter(function(r) { return String(r.status || '').toLowerCase() === 'acknowledged'; }).length;
@@ -2778,13 +2923,13 @@ lng.toFixed(6),
 ocName,
 ocPhone
 ].join('|');
-var zoneSignature = zoneKey + '|' + (isICP ? reqKey : '');
+var zoneSignature = zoneKey + '|' + note + '|' + (isICP ? reqKey : '');
 var existing = oldRecords[zoneKey];
 var iconSize = isICP ? 34 : 36;
 var labelTop = visual.y + (iconSize / 2) + 5;
 var html = '<div style="position:relative;width:0;height:0;overflow:visible;pointer-events:auto;">' +
 (reqs.length ? '<div style="position:absolute;left:' + (visual.x + 24) + 'px;top:' + (visual.y - 34) + 'px;transform:translateX(-50%) scale(var(--dash-marker-scale,1));transform-origin:bottom center;background:' + alertColor + ';color:white;border:3px solid white;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:900;box-shadow:0 4px 14px rgba(0,0,0,.55);white-space:nowrap;z-index:3;">' + alertText + '</div>' : '') +
-'<div style="position:absolute;left:' + visual.x + 'px;top:' + visual.y + 'px;width:' + iconSize + 'px;height:' + iconSize + 'px;transform:translate(-50%,-50%) scale(var(--dash-marker-scale,1));transform-origin:center center;transition:transform .12s ease-out;border-radius:50%;background:' + color + ';border:3px solid white;box-shadow:0 0 0 3px ' + halo + '88,0 4px 12px rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;color:white;font-size:' + (isICP ? 18:16) + 'px;z-index:2;"><i class="fas fa-shield-alt"></i></div>' +
+'<div class="dash-zone-marker" style="position:absolute;left:' + visual.x + 'px;top:' + visual.y + 'px;width:' + iconSize + 'px;height:' + iconSize + 'px;transform:translate(-50%,-50%) scale(var(--dash-marker-scale,1));transform-origin:center center;transition:transform .12s ease-out;border-radius:50%;background:' + color + ';border:3px solid white;box-shadow:0 0 0 3px ' + halo + '88,0 4px 12px rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;color:white;font-size:' + (isICP ? 18:16) + 'px;z-index:2;"><i class="fas ' + typeCfg.icon + '"></i></div>' +
 '<div style="position:absolute;left:' + visual.x + 'px;top:' + labelTop + 'px;transform:translateX(-50%) scale(var(--dash-marker-scale,1));transform-origin:top center;transition:transform .12s ease-out;background:' + color + ';color:white;font-weight:bold;font-size:10px;padding:2px 7px;border-radius:5px;white-space:nowrap;box-shadow:0 2px 7px rgba(0,0,0,.58);border:1px solid rgba(255,255,255,.92);z-index:2;">' + displayType + '</div>' +
 '</div>';
 var reqHtml = reqs.length ? '<hr><b>คำขอสนับสนุนจาก OC</b><br>' + reqs.map(function(r) {
@@ -2806,7 +2951,7 @@ var detailHtml = isICP
 '<span>หน้าที่: OC</span><br>' +
 '<span>โทร: ' + ocPhone + '</span><br>' +
 '<span style="color:#777;">' + label + '</span>' + reqHtml
-: '<b>' + displayType + '</b><br>' + label;
+: '<b>' + typeCfg.label + '</b><br>' + label + (note ? '<br><span style="color:#0369a1;">' + note + '</span>' : '');
 if (existing && existing.marker && typeof updateLongdoHtmlMarker === 'function') {
 if (updateLongdoHtmlMarker(existing.marker, { lon: lng, lat: lat }, html, detailHtml)) {
 existing.signature = zoneSignature;
@@ -2828,7 +2973,7 @@ offset: { x: 0, y: 0 },
 weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0,
 // 🔧 ตัวจริงที่ทำให้หมุด "เลื่อน" ตอนซูม คือ CSS scale (--dash-marker-scale) ที่ใส่ให้อัตโนมัติถ้าไม่ระบุ scaleMode — ใส่ 'none' เหมือนหมุดจุดเกิดเหตุ/EOC เพื่อตัดการ scale ผ่าน CSS ออก จุดจะได้นิ่งสนิทกับพิกัดจริงทุกระดับซูม
 scaleMode: 'none',
-title: displayType,
+title: typeCfg.label,
 markerOptions: { detail: detailHtml }
 });
 dashMap.Overlays.add(marker);
