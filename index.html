@@ -1811,6 +1811,7 @@ var mapPickLockToCurrent = false;
 var pickerFloodVertices = [];
 var pickerFloodDraftOverlay = null;
 var pickerRoadStartMarker = null;
+var pickerFloodVertexMarkers = [];
 var tempLat = "", tempLng = "";
 var dashMap, dashMarker, hatchedOverlay, zoneLabelMarker, radarCircle;
 var otherMarkers = [];
@@ -2840,6 +2841,33 @@ btn.disabled = count < minimumPoints;
 btn.style.opacity = count < minimumPoints ? '.45' : '1';
 }
 }
+function clearPickerFloodVertexMarkers() {
+(pickerFloodVertexMarkers || []).forEach(function(vertexMarker) {
+try { if (map && map.Overlays) map.Overlays.remove(vertexMarker); else if (vertexMarker && vertexMarker.remove) vertexMarker.remove(); } catch(e) {}
+});
+pickerFloodVertexMarkers = [];
+}
+function renderPickerFloodVertexMarkers() {
+clearPickerFloodVertexMarkers();
+if (!map || mapPickerMode !== 'flood-area' || !window._floodAreaVertexEditMode || typeof maptilersdk === 'undefined') return;
+pickerFloodVertices.forEach(function(point, index) {
+var el = document.createElement('div');
+el.title = 'ลากเพื่อย้ายจุดที่ ' + (index + 1);
+el.style.cssText = 'width:25px;height:25px;border-radius:50%;background:#ffffff;color:#0369a1;border:3px solid #0284c7;box-shadow:0 2px 7px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font:900 10px Prompt,sans-serif;cursor:grab;user-select:none;';
+el.textContent = String(index + 1);
+['pointerdown','mousedown','click','dblclick'].forEach(function(eventName) { el.addEventListener(eventName, function(event) { event.stopPropagation(); }); });
+var vertexMarker = new maptilersdk.Marker({ element:el, anchor:'center', draggable:true }).setLngLat([point[0], point[1]]);
+vertexMarker.on('dragstart', function() { el.style.cursor = 'grabbing'; });
+vertexMarker.on('dragend', function() {
+el.style.cursor = 'grab';
+var position = vertexMarker.getLngLat();
+pickerFloodVertices[index] = [Number(position.lng.toFixed(6)), Number(position.lat.toFixed(6))];
+renderPickerFloodDraft();
+});
+map.Overlays.add(vertexMarker);
+pickerFloodVertexMarkers.push(vertexMarker);
+});
+}
 function renderPickerFloodDraft() {
 if (!map) return;
 if (pickerFloodDraftOverlay) { try { map.Overlays.remove(pickerFloodDraftOverlay); } catch(e) {} }
@@ -2857,12 +2885,33 @@ if (pickerFloodVertices.length >= 2) {
 pickerFloodDraftOverlay = makePickerFloodPolygonOverlay(pickerFloodVertices);
 map.Overlays.add(pickerFloodDraftOverlay);
 }
+renderPickerFloodVertexMarkers();
 updatePickerFloodTools();
 }
 function addPickerFloodVertex(lng, lat) {
 lng = Number(lng); lat = Number(lat);
 if (!isFinite(lng) || !isFinite(lat)) return;
-pickerFloodVertices.push([Number(lng.toFixed(6)), Number(lat.toFixed(6))]);
+var nextPoint = [Number(lng.toFixed(6)), Number(lat.toFixed(6))];
+if (mapPickerMode === 'flood-area' && window._floodAreaVertexEditMode && pickerFloodVertices.length >= 3) {
+var scaleX = Math.max(0.1, Math.cos(lat * Math.PI / 180));
+var bestIndex = 0;
+var bestDistance = Infinity;
+pickerFloodVertices.forEach(function(start, index) {
+var end = pickerFloodVertices[(index + 1) % pickerFloodVertices.length];
+var ax = Number(start[0]) * scaleX, ay = Number(start[1]);
+var bx = Number(end[0]) * scaleX, by = Number(end[1]);
+var px = lng * scaleX, py = lat;
+var dx = bx - ax, dy = by - ay;
+var lengthSq = dx * dx + dy * dy;
+var t = lengthSq ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lengthSq)) : 0;
+var cx = ax + t * dx, cy = ay + t * dy;
+var distance = (px - cx) * (px - cx) + (py - cy) * (py - cy);
+if (distance < bestDistance) { bestDistance = distance; bestIndex = index; }
+});
+pickerFloodVertices.splice(bestIndex + 1, 0, nextPoint);
+} else {
+pickerFloodVertices.push(nextPoint);
+}
 tempLat = lat.toFixed(6);
 tempLng = lng.toFixed(6);
 renderPickerFloodDraft();
@@ -3842,6 +3891,7 @@ selectedText: 'แตะรอบขอบพื้นที่น้ำท่�
 window._floodAreaPickerStartCenter = context && context.startCenter ? context.startCenter : null;
 window._floodAreaPickerReferenceLabel = context && context.referenceLabel ? context.referenceLabel : '';
 window._floodAreaPickerSeverity = context && context.severity ? context.severity : 'moderate';
+window._floodAreaVertexEditMode = !!(context && context.editVertices);
 pickerFloodVertices = Array.isArray(initialPoints) ? initialPoints.map(function(p) { return [Number(p[0]), Number(p[1])]; }).filter(function(p) { return isFinite(p[0]) && isFinite(p[1]); }) : [];
 tempLat = '';
 tempLng = '';
@@ -3927,10 +3977,12 @@ if (pickerFloodDraftOverlay && map) { try { map.Overlays.remove(pickerFloodDraft
 pickerFloodDraftOverlay = null;
 if (pickerRoadStartMarker && map) { try { map.Overlays.remove(pickerRoadStartMarker); } catch(e) {} }
 pickerRoadStartMarker = null;
+clearPickerFloodVertexMarkers();
 pickerFloodVertices = [];
 window._floodAreaPickerStartCenter = null;
 window._floodAreaPickerReferenceLabel = '';
 window._floodAreaPickerSeverity = 'moderate';
+window._floodAreaVertexEditMode = false;
 window._roadClosurePickerStartCenter = null;
 clearPickerSearchMarkers();
 clearPickerErgOverlays();
@@ -6898,8 +6950,8 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }
 </script>
 
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260929_flood_roads4" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260929_flood_roads4" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260929_flood_roads5" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260929_flood_roads5" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {

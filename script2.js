@@ -3501,9 +3501,8 @@ return '<div style="display:grid;grid-template-columns:38px minmax(0,1fr) auto;g
 '<div style="width:34px;height:34px;border-radius:7px;background:#0284c7;color:white;display:flex;align-items:center;justify-content:center;"><i class="fas fa-draw-polygon"></i></div>' +
 '<div style="min-width:0;text-align:left;"><div style="font-size:13px;font-weight:900;color:#075985;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(area.name) + '</div><div style="font-size:11px;color:#64748b;">' + area.points.length + ' จุดขอบเขต · ' + (severityLabel[area.severity] || 'น้ำท่วม') + (area.depthCm !== '' ? ' · น้ำ ' + area.depthCm + ' ซม.' : '') + '</div></div>' +
 '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">' +
-'<button type="button" onclick="editAdminFloodArea(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#2563eb;color:white;padding:6px 8px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-pen"></i> ข้อมูล</button>' +
-'<button type="button" onclick="redrawAdminFloodArea(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#0f766e;color:white;padding:6px 8px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-draw-polygon"></i> วาดใหม่</button>' +
-'<button type="button" onclick="deleteAdminFloodArea(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#dc2626;color:white;padding:6px 8px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-trash"></i></button></div></div>';
+'<button type="button" onclick="editAdminFloodArea(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#2563eb;color:white;padding:7px 10px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-pen"></i> แก้ไข</button>' +
+'<button type="button" onclick="deleteAdminFloodArea(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#dc2626;color:white;padding:7px 10px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-trash"></i> ลบ</button></div></div>';
 }).join('') : '<div style="border:2px dashed #7dd3fc;border-radius:10px;padding:22px;text-align:center;color:#64748b;background:#f0f9ff;"><i class="fas fa-draw-polygon" style="font-size:28px;color:#0284c7;margin-bottom:7px;"></i><br>ยังไม่มีขอบเขตน้ำท่วม<br><span style="font-size:11px;">กด “วาดพื้นที่ใหม่” เพื่อระบายพื้นที่บนแผนที่</span></div>';
 Swal.fire({
 title:'<i class="fas fa-water" style="color:#0284c7;"></i> จัดการขอบเขตน้ำท่วม',
@@ -3560,28 +3559,53 @@ if (!requireFloodPointAdmin()) return;
 var marker = (window._adminFloodAreas || [])[index];
 var area = parseFloodAreaMarker(marker);
 if (!marker || !area) return;
-collectAdminFloodAreaDetails(area, function(updated) {
-updated.points = area.points;
-var center = getFloodAreaCentroid(updated.points);
+var severity = area.severity || 'moderate';
+Swal.fire({
+title:'<i class="fas fa-pen" style="color:#2563eb;"></i> แก้ไขพื้นที่น้ำท่วม',
+html:'<div style="text-align:left;display:grid;gap:7px;"><label style="font-size:12px;font-weight:800;color:#334155;">ชื่อพื้นที่</label><input id="admin_flood_edit_name" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box;" value="' + roleSafeText(area.name) + '"><label style="font-size:12px;font-weight:800;color:#334155;">ระดับน้ำโดยประมาณ (ซม.)</label><input id="admin_flood_edit_depth" type="number" min="0" step="1" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box;" value="' + (area.depthCm === '' ? '' : roleSafeText(area.depthCm)) + '"><label style="font-size:12px;font-weight:800;color:#334155;">ระดับสถานการณ์ / สีพื้นที่</label><select id="admin_flood_edit_severity" class="swal2-select" style="margin:0;width:100%;box-sizing:border-box;"><option value="monitor"' + (severity === 'monitor' ? ' selected' : '') + '>🟠 เฝ้าระวัง — สีส้ม</option><option value="moderate"' + (severity === 'moderate' ? ' selected' : '') + '>🔵 น้ำท่วม — สีฟ้า</option><option value="severe"' + (severity === 'severe' ? ' selected' : '') + '>🔴 รุนแรง/อันตราย — สีแดง</option></select><div style="margin-top:5px;padding:9px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:8px;"><div style="font-size:11px;color:#475569;margin-bottom:7px;"><i class="fas fa-draw-polygon"></i> ขอบเขตปัจจุบัน ' + area.points.length + ' จุด</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;"><button type="button" onclick="startAdminFloodAreaBoundaryEdit(' + index + ',false)" style="border:0;border-radius:7px;background:#0f766e;color:white;padding:9px 7px;font:800 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-up-down-left-right"></i> ปรับขอบเขตเดิม</button><button type="button" onclick="startAdminFloodAreaBoundaryEdit(' + index + ',true)" style="border:0;border-radius:7px;background:#d97706;color:white;padding:9px 7px;font:800 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-draw-polygon"></i> วาดใหม่ทั้งหมด</button></div></div><button type="button" onclick="saveAdminFloodAreaDetails(' + index + ')" style="border:0;border-radius:7px;background:#2563eb;color:white;padding:10px;font:900 12px Prompt,sans-serif;cursor:pointer;margin-top:2px;"><i class="fas fa-floppy-disk"></i> บันทึกชื่อ ระดับน้ำ และสี</button></div>',
+showConfirmButton:false,
+showCloseButton:true,
+width:560
+});
+}
+function readAdminFloodAreaEditForm(index) {
+var marker = (window._adminFloodAreas || [])[index];
+var area = parseFloodAreaMarker(marker);
+if (!marker || !area) return null;
+var nameEl = document.getElementById('admin_flood_edit_name');
+var depthEl = document.getElementById('admin_flood_edit_depth');
+var severityEl = document.getElementById('admin_flood_edit_severity');
+var name = (nameEl && nameEl.value || '').trim();
+if (!name) { Swal.showValidationMessage('กรุณาระบุชื่อพื้นที่'); return null; }
+var rawDepth = depthEl ? depthEl.value : '';
+return { marker:marker, original:area, updated:{ name:name, depthCm:rawDepth === '' ? '' : Number(rawDepth), severity:severityEl ? severityEl.value : area.severity, points:area.points } };
+}
+function saveAdminFloodAreaDetails(index) {
+if (!requireFloodPointAdmin()) return;
+var edit = readAdminFloodAreaEditForm(index);
+if (!edit) return;
+var center = getFloodAreaCentroid(edit.updated.points);
 Swal.fire({ title:'กำลังบันทึก...', allowOutsideClick:false, didOpen:function() { Swal.showLoading(); } });
 google.script.run.withSuccessHandler(function() { Swal.fire({ icon:'success', title:'แก้ไขพื้นที่แล้ว', timer:1000, showConfirmButton:false }); refreshFloodAreasAfterAdminChange(true); })
 .withFailureHandler(function(err) { Swal.fire('แก้ไขไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
-.updateZoneMarker(getFloodMarkerId(marker), 'FloodArea', updated.name, center.lat, center.lng, encodeFloodAreaNote(updated), getFloodAdminReporter(), APP_ACCESS_ROLE);
-});
+.updateZoneMarker(getFloodMarkerId(edit.marker), 'FloodArea', edit.updated.name, center.lat, center.lng, encodeFloodAreaNote(edit.updated), getFloodAdminReporter(), APP_ACCESS_ROLE);
 }
-function redrawAdminFloodArea(index) {
+function startAdminFloodAreaBoundaryEdit(index, redrawAll) {
 if (!requireFloodPointAdmin()) return;
-var marker = (window._adminFloodAreas || [])[index];
-var area = parseFloodAreaMarker(marker);
-if (!marker || !area) return;
+var edit = readAdminFloodAreaEditForm(index);
+if (!edit) return;
+var marker = edit.marker;
+var area = edit.updated;
+var originalPoints = edit.original.points;
+var startCenter = getFloodAreaCentroid(originalPoints);
 Swal.close();
 openFloodAreaMapPicker(function(points, center) {
 area.points = points;
 Swal.fire({ title:'กำลังบันทึกขอบเขต...', allowOutsideClick:false, didOpen:function() { Swal.showLoading(); } });
-google.script.run.withSuccessHandler(function() { Swal.fire({ icon:'success', title:'วาดขอบเขตใหม่แล้ว', timer:1000, showConfirmButton:false }); refreshFloodAreasAfterAdminChange(true); })
+google.script.run.withSuccessHandler(function() { Swal.fire({ icon:'success', title:redrawAll ? 'วาดขอบเขตใหม่แล้ว' : 'ปรับขอบเขตแล้ว', timer:1000, showConfirmButton:false }); refreshFloodAreasAfterAdminChange(true); })
 .withFailureHandler(function(err) { Swal.fire('บันทึกไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
 .updateZoneMarker(getFloodMarkerId(marker), 'FloodArea', area.name, center.lat, center.lng, encodeFloodAreaNote(area), getFloodAdminReporter(), APP_ACCESS_ROLE);
-}, area.points, { titleHtml:'<i class="fas fa-draw-polygon"></i> วาดใหม่: ' + roleSafeText(area.name), searchPlaceholder:'ค้นหาบริเวณน้ำท่วม...', coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังพื้นที่', selectedText:'ขอบเขตเดิมแสดงอยู่ — ล้างหรือแตะเพิ่มเพื่อปรับ', severity:area.severity });
+}, redrawAll ? [] : originalPoints, { titleHtml:'<i class="fas ' + (redrawAll ? 'fa-draw-polygon' : 'fa-up-down-left-right') + '"></i> ' + (redrawAll ? 'วาดใหม่ทั้งหมด: ' : 'ปรับขอบเขตเดิม: ') + roleSafeText(area.name), searchPlaceholder:'ค้นหาบริเวณน้ำท่วม...', coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังพื้นที่', selectedText:redrawAll ? 'แตะรอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด' : 'ลากจุดตัวเลขเพื่อปรับ หรือแตะบนแผนที่เพื่อเพิ่มจุดขอบเขต', severity:area.severity, editVertices:!redrawAll, startCenter:startCenter });
 }
 function deleteAdminFloodArea(index) {
 if (!requireFloodPointAdmin()) return;
