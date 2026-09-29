@@ -635,7 +635,7 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 </div>
 </div>
 <div id="pickerFloodDrawTools" style="display:none;padding:8px 10px;background:#e0f2fe;border-bottom:1px solid #7dd3fc;gap:8px;align-items:center;flex-wrap:wrap;">
-<div style="flex:1;min-width:180px;font-size:12px;color:#075985;font-weight:800;"><i class="fas fa-draw-polygon"></i> แตะรอบขอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด <span id="pickerFloodVertexCount" style="color:#dc2626;">(0 จุด)</span></div>
+<div id="pickerDrawToolText" style="flex:1;min-width:180px;font-size:12px;color:#075985;font-weight:800;"><i class="fas fa-draw-polygon"></i> แตะรอบขอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด <span id="pickerFloodVertexCount" style="color:#dc2626;">(0 จุด)</span></div>
 <button type="button" onclick="undoPickerFloodVertex()" style="border:0;border-radius:6px;background:#64748b;color:white;padding:6px 9px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-undo"></i> ย้อน 1 จุด</button>
 <button type="button" onclick="clearPickerFloodDraft()" style="border:0;border-radius:6px;background:#dc2626;color:white;padding:6px 9px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-eraser"></i> ล้าง</button>
 </div>
@@ -2718,7 +2718,7 @@ else if (typeof o.remove === 'function') o.remove();
 };
 map.on('click', function(e) {
 if (mapPickLockToCurrent) return;
-if (mapPickerMode === 'flood-area') {
+if (mapPickerMode === 'flood-area' || mapPickerMode === 'road-closure') {
 addPickerFloodVertex(e.lngLat.lng, e.lngLat.lat);
 return;
 }
@@ -2774,9 +2774,9 @@ showIncidentOnPickerMap();
 showERGOnPickerMap();
 showExistingZoneMarkersOnPickerMap();
 }
-if (mapPickerMode === 'flood-area') {
+if (mapPickerMode === 'flood-area' || mapPickerMode === 'road-closure') {
 renderPickerFloodDraft();
-focusFloodAreaReferenceOnPicker();
+if (mapPickerMode === 'flood-area') focusFloodAreaReferenceOnPicker();
 }
 });
 }
@@ -2791,7 +2791,8 @@ function makePickerFloodPolygonOverlay(points) {
 var id = 'picker-flood-' + Date.now() + '-' + Math.random().toString(36).slice(2);
 var coords = (points || []).map(function(p) { return [Number(p[0]), Number(p[1])]; });
 var floodStyle = getPickerFloodStyle();
-if (coords.length >= 3) coords.push(coords[0].slice());
+var isRoadClosure = mapPickerMode === 'road-closure';
+if (!isRoadClosure && coords.length >= 3) coords.push(coords[0].slice());
 return {
 _addToMap: function(targetMap) {
 var mapObj = targetMap && (targetMap._maptiler || targetMap);
@@ -2803,10 +2804,10 @@ return;
 }
 var sourceId = id + '-source';
 if (mapObj.getSource && mapObj.getSource(sourceId)) return;
-var isPolygon = coords.length >= 4;
+var isPolygon = !isRoadClosure && coords.length >= 4;
 mapObj.addSource(sourceId, { type:'geojson', data:{ type:'Feature', properties:{}, geometry:{ type:isPolygon ? 'Polygon' : 'LineString', coordinates:isPolygon ? [coords] : coords } } });
 if (isPolygon) mapObj.addLayer({ id:id + '-fill', type:'fill', source:sourceId, paint:{ 'fill-color':floodStyle.fill, 'fill-opacity':0.34 } });
-mapObj.addLayer({ id:id + '-line', type:'line', source:sourceId, paint:{ 'line-color':floodStyle.line, 'line-width':4 } });
+mapObj.addLayer({ id:id + '-line', type:'line', source:sourceId, layout:{ 'line-cap':'round', 'line-join':'round' }, paint:{ 'line-color':isRoadClosure ? '#dc2626' : floodStyle.line, 'line-width':isRoadClosure ? 7 : 4, 'line-opacity':0.96 } });
 this._map = mapObj;
 this._sourceId = sourceId;
 this._layerIds = isPolygon ? [id + '-fill', id + '-line'] : [id + '-line'];
@@ -2822,14 +2823,20 @@ this._map = null;
 }
 function updatePickerFloodTools() {
 var count = pickerFloodVertices.length;
+var isRoadClosure = mapPickerMode === 'road-closure';
+var minimumPoints = isRoadClosure ? 2 : 3;
 var countEl = document.getElementById('pickerFloodVertexCount');
 if (countEl) countEl.textContent = '(' + count + ' จุด)';
 var selected = document.getElementById('selectedCoordText');
-if (selected && mapPickerMode === 'flood-area') selected.textContent = count >= 3 ? 'วาดขอบเขตแล้ว ' + count + ' จุด — กดยืนยันได้' : 'แตะเพิ่มอีก ' + Math.max(0, 3 - count) + ' จุดเพื่อสร้างพื้นที่';
+if (selected && (mapPickerMode === 'flood-area' || isRoadClosure)) {
+selected.textContent = count >= minimumPoints
+? (isRoadClosure ? 'กำหนดแนวปิดถนนแล้ว ' + count + ' จุด — กดยืนยันได้' : 'วาดขอบเขตแล้ว ' + count + ' จุด — กดยืนยันได้')
+: 'แตะเพิ่มอีก ' + Math.max(0, minimumPoints - count) + ' จุดเพื่อ' + (isRoadClosure ? 'กำหนดแนวปิดถนน' : 'สร้างพื้นที่');
+}
 var btn = document.getElementById('mapPickerConfirmBtn');
-if (btn && mapPickerMode === 'flood-area') {
-btn.disabled = count < 3;
-btn.style.opacity = count < 3 ? '.45' : '1';
+if (btn && (mapPickerMode === 'flood-area' || isRoadClosure)) {
+btn.disabled = count < minimumPoints;
+btn.style.opacity = count < minimumPoints ? '.45' : '1';
 }
 }
 function renderPickerFloodDraft() {
@@ -2889,6 +2896,11 @@ lon: parseFloat(location.lon),
 lat: parseFloat(location.lat)
 };
 if (isNaN(loc.lon) || isNaN(loc.lat)) return;
+if (mapPickerMode === 'flood-area' || mapPickerMode === 'road-closure') {
+map.location(loc, true);
+addPickerFloodVertex(loc.lon, loc.lat);
+return;
+}
 if (marker) map.Overlays.remove(marker);
 var markerColor = mapPickerMode === 'eoc' ? '#2563eb' : '#ef4444';
 marker = new maptilersdk.Marker({ draggable: !mapPickLockToCurrent, color: markerColor })
@@ -3289,6 +3301,8 @@ marker = null;
 function configureMapPickerUI() {
 var isEOC = mapPickerMode === 'eoc';
 var isFloodArea = mapPickerMode === 'flood-area';
+var isRoadClosure = mapPickerMode === 'road-closure';
+var isDrawMode = isFloodArea || isRoadClosure;
 var ctx = window._mapPickerContext || {};
 var title = document.getElementById('mapPickerTitle');
 var input = document.getElementById('placeSearchInput');
@@ -3307,14 +3321,25 @@ if (coordInput) coordInput.placeholder = coordPlaceholder;
 if (selected) selected.innerText = selectedText;
 if (result) result.innerHTML = '';
 var tools = document.getElementById('pickerFloodDrawTools');
-if (tools) tools.style.display = isFloodArea ? 'flex' : 'none';
+if (tools) {
+tools.style.display = isDrawMode ? 'flex' : 'none';
+tools.style.background = isRoadClosure ? '#fef2f2' : '#e0f2fe';
+tools.style.borderBottomColor = isRoadClosure ? '#fca5a5' : '#7dd3fc';
+}
+var drawText = document.getElementById('pickerDrawToolText');
+if (drawText) {
+drawText.style.color = isRoadClosure ? '#991b1b' : '#075985';
+drawText.innerHTML = isRoadClosure
+? '<i class="fas fa-road-barrier"></i> แตะหัว–ท้ายถนน และแตะเพิ่มเพื่อหักแนวซิกแซก <span id="pickerFloodVertexCount" style="color:#dc2626;">(' + pickerFloodVertices.length + ' จุด)</span>'
+: '<i class="fas fa-draw-polygon"></i> แตะรอบขอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด <span id="pickerFloodVertexCount" style="color:#dc2626;">(' + pickerFloodVertices.length + ' จุด)</span>';
+}
 var confirmBtn = document.getElementById('mapPickerConfirmBtn');
 if (confirmBtn) {
-confirmBtn.innerHTML = isFloodArea ? '<i class="fas fa-check"></i> ใช้ขอบเขตนี้' : '<i class="fas fa-check"></i> ยืนยัน';
-confirmBtn.disabled = isFloodArea && pickerFloodVertices.length < 3;
+confirmBtn.innerHTML = isRoadClosure ? '<i class="fas fa-check"></i> ใช้แนวปิดถนนนี้' : (isFloodArea ? '<i class="fas fa-check"></i> ใช้ขอบเขตนี้' : '<i class="fas fa-check"></i> ยืนยัน');
+confirmBtn.disabled = isDrawMode && pickerFloodVertices.length < (isRoadClosure ? 2 : 3);
 confirmBtn.style.opacity = confirmBtn.disabled ? '.45' : '1';
 }
-if (isFloodArea) updatePickerFloodTools();
+if (isDrawMode) updatePickerFloodTools();
 }
 function safeMapText(value) {
 return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
@@ -3811,9 +3836,30 @@ map.location({ lon:center.lng, lat:center.lat }, true);
 focusFloodAreaReferenceOnPicker();
 }
 }
+function openRoadClosureMapPicker(callback, initialPoints, context) {
+mapPickerMode = 'road-closure';
+window._eocFormPickerMode = false;
+window._zonePickerCallback = null;
+window._mapPickerConfirmCallback = typeof callback === 'function' ? callback : null;
+window._mapPickerContext = context || {
+titleHtml: '<i class="fas fa-road-barrier"></i> ลากแนวถนนปิด',
+searchPlaceholder: 'ค้นหาถนน แยก หรือชุมชน...',
+coordPlaceholder: 'วางพิกัดเพื่อเลื่อนไปยังถนน',
+selectedText: 'แตะหัว–ท้ายถนนอย่างน้อย 2 จุด และแตะเพิ่มเพื่อทำแนวซิกแซก'
+};
+pickerFloodVertices = Array.isArray(initialPoints) ? initialPoints.map(function(p) { return [Number(p[0]), Number(p[1])]; }).filter(function(p) { return isFinite(p[0]) && isFinite(p[1]); }) : [];
+tempLat = '';
+tempLng = '';
+mapPickLockToCurrent = false;
+openMap();
+if (pickerFloodVertices.length && map) {
+var center = getPickerFloodCentroid(pickerFloodVertices);
+map.location({ lon:center.lng, lat:center.lat }, true);
+}
+}
 function openMap() {
 var mapModal = document.getElementById('modal_MapPicker');
-if (mapPickerMode !== 'flood-area' && mapPickerMode !== 'declare-multipoint') {
+if (mapPickerMode !== 'flood-area' && mapPickerMode !== 'road-closure' && mapPickerMode !== 'declare-multipoint') {
 mapPickerMode = (typeof window._zonePickerCallback === 'function') ? 'zone' : ((window._eocFormPickerMode || window._eocPickerMode) ? 'eoc' : 'declare');
 }
 configureMapPickerUI();
@@ -3841,9 +3887,9 @@ rawMap.once('idle', function() { renderPickerMapContext(true); });
 } else {
 renderPickerMapContext(true);
 }
-if (mapPickerMode === 'flood-area') {
+if (mapPickerMode === 'flood-area' || mapPickerMode === 'road-closure') {
 renderPickerFloodDraft();
-focusFloodAreaReferenceOnPicker();
+if (mapPickerMode === 'flood-area') focusFloodAreaReferenceOnPicker();
 }
 }, 300);
 }
@@ -3872,9 +3918,11 @@ var hint = document.getElementById('pickerDistanceHint');
 if (hint) hint.style.display = 'none';
 }
 function confirmMap() {
-if (mapPickerMode === 'flood-area') {
-if (pickerFloodVertices.length < 3) {
-Swal.fire('ขอบเขตยังไม่ครบ', 'กรุณาแตะรอบพื้นที่อย่างน้อย 3 จุด', 'warning');
+if (mapPickerMode === 'flood-area' || mapPickerMode === 'road-closure') {
+var isRoadClosure = mapPickerMode === 'road-closure';
+var minimumPoints = isRoadClosure ? 2 : 3;
+if (pickerFloodVertices.length < minimumPoints) {
+Swal.fire(isRoadClosure ? 'แนวปิดถนนยังไม่ครบ' : 'ขอบเขตยังไม่ครบ', isRoadClosure ? 'กรุณาแตะหัว–ท้ายถนนอย่างน้อย 2 จุด' : 'กรุณาแตะรอบพื้นที่อย่างน้อย 3 จุด', 'warning');
 return;
 }
 var areaCallback = window._mapPickerConfirmCallback;
@@ -6824,8 +6872,8 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }
 </script>
 
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260929_flood_ui2" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260929_flood_ui2" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260929_flood_roads1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260929_flood_roads1" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {

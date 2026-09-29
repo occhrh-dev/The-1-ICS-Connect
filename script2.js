@@ -1132,14 +1132,15 @@ el.innerHTML = others.map(function(z) {
 var zoneType = getZoneMarkerType(z);
 var cfg = getOCZoneTypeConfig(zoneType);
 var c = cfg.color;
-var note = z.note || z.Note || '';
+var roadClosure = zoneType === 'RoadClosed' ? parseRoadClosureMarker(z) : null;
+var note = roadClosure ? roadClosure.detail : (z.note || z.Note || '');
 return '<div class="oc-card" style="display:flex;align-items:center;gap:10px;padding:10px 14px;">' +
 '<div style="width:30px;height:30px;border-radius:50%;background:' + c + ';color:white;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="fas ' + cfg.icon + '"></i></div>' +
 '<div style="flex:1;">' +
 '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' + cfg.label + '</div>' +
 '<div style="font-size:12px;color:#666;">' + z.label + '</div>' +
 (note ? '<div style="font-size:11px;color:#0369a1;margin-top:2px;">' + note + '</div>' : '') +
-(z.lat ? '<div style="font-size:11px;color:#aaa;">' + z.lat.toFixed(5) + ', ' + z.lng.toFixed(5) + '</div>' : '') +
+(roadClosure ? '<div style="font-size:11px;color:#aaa;">แนวปิดถนน ' + roadClosure.points.length + ' จุด</div>' : (z.lat ? '<div style="font-size:11px;color:#aaa;">' + z.lat.toFixed(5) + ', ' + z.lng.toFixed(5) + '</div>' : '')) +
 '</div>' +
 '</div>';
 }).join('');
@@ -1764,6 +1765,48 @@ return { label:label, note:details.join(' | ') };
 if (result.isConfirmed && typeof callback === 'function') callback(result.value);
 });
 }
+function pickRoadClosureLocation(marker, isUpdate, source) {
+marker = marker || {};
+source = source || 'admin';
+if (source === 'admin' && !requireFloodPointAdmin()) return;
+var parsed = parseRoadClosureMarker(marker);
+var label = marker.label || marker.Label || (parsed && parsed.label) || 'ถนนปิด';
+var detail = parsed ? parsed.detail : (marker.note || marker.Note || 'สถานะ: ปิดถนน / ผ่านไม่ได้');
+var initialPoints = parsed ? parsed.points : [];
+if (!initialPoints.length) {
+var existingLat = Number(marker.lat !== undefined ? marker.lat : marker.Lat);
+var existingLng = Number(marker.lng !== undefined ? marker.lng : marker.Lng);
+if (isFinite(existingLat) && isFinite(existingLng)) initialPoints = [[existingLng, existingLat]];
+}
+Swal.close();
+openRoadClosureMapPicker(function(points, center) {
+var note = encodeRoadClosureNote({ label:label, detail:detail, points:points });
+var reporter = source === 'admin' ? getFloodAdminReporter() : (window.ocCurrentUser || 'OC');
+var runner = google.script.run
+.withSuccessHandler(function() {
+if (source === 'admin') {
+Swal.fire({ icon:'success', title:isUpdate ? 'วาดแนวปิดถนนใหม่แล้ว' : 'เพิ่มแนวปิดถนนแล้ว', timer:1300, showConfirmButton:false });
+refreshFloodPointsAfterAdminChange(true);
+} else {
+refreshOCData();
+Swal.fire({ icon:'success', title:'บันทึกแนวปิดถนนแล้ว', timer:1500, showConfirmButton:false });
+}
+})
+.withFailureHandler(function(err) {
+Swal.fire('บันทึกแนวปิดถนนไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
+});
+if (isUpdate) {
+runner.updateZoneMarker(getFloodMarkerId(marker), 'RoadClosed', label, center.lat, center.lng, note, reporter, APP_ACCESS_ROLE);
+} else {
+runner.saveZoneMarker('RoadClosed', label, center.lat, center.lng, note, reporter, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
+}
+}, initialPoints, {
+titleHtml:'<i class="fas fa-road-barrier"></i> ' + (isUpdate ? 'วาดแนวปิดถนนใหม่: ' : 'กำหนดแนวถนนปิด: ') + roleSafeText(label),
+searchPlaceholder:'ค้นหาถนน แยก หรือชุมชน...',
+coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังถนน',
+selectedText:'แตะหัว–ท้ายถนนอย่างน้อย 2 จุด และแตะเพิ่มตามแนวโค้งหรือซิกแซก'
+});
+}
 function openZoneMapPickerWithData(zType, zLabel, zNote) {
 var cfg = getOCZoneTypeConfig(zType);
 mapPickerMode = 'zone';
@@ -1800,6 +1843,10 @@ var zLabel = labelEl ? labelEl.value.trim() : '';
 if (isFloodZoneType(zType)) {
 collectFloodZoneDetails(zType, zLabel, function(data) {
 if (labelEl) labelEl.value = data.label;
+if (zType === 'RoadClosed') {
+pickRoadClosureLocation({ type:zType, label:data.label, note:data.note }, false, 'oc');
+return;
+}
 openZoneMapPickerWithData(zType, data.label, data.note);
 });
 return;
@@ -2848,6 +2895,57 @@ points: points
 function encodeFloodAreaNote(area) {
 return JSON.stringify({ kind:'floodArea', version:1, name:area.name || 'พื้นที่น้ำท่วม', depthCm:area.depthCm === '' ? '' : Number(area.depthCm), severity:area.severity || 'moderate', points:area.points || [] });
 }
+function parseRoadClosureMarker(marker) {
+marker = marker || {};
+var note = marker.note || marker.Note || '';
+var data = null;
+if (typeof note === 'object' && note) data = note;
+else {
+try { data = JSON.parse(String(note || '')); } catch(e) { data = null; }
+}
+if (!data || data.kind !== 'roadClosure' || !Array.isArray(data.points)) return null;
+var points = data.points.map(function(point) { return [Number(point && point[0]), Number(point && point[1])]; }).filter(function(point) { return isFinite(point[0]) && isFinite(point[1]); });
+if (points.length < 2) return null;
+return {
+label: String(data.label || marker.label || marker.Label || 'ถนนปิด'),
+detail: String(data.detail || ''),
+points: points
+};
+}
+function encodeRoadClosureNote(closure) {
+return JSON.stringify({ kind:'roadClosure', version:1, label:closure.label || 'ถนนปิด', detail:closure.detail || '', points:closure.points || [] });
+}
+function makeMapTilerLineOverlay(points, options) {
+options = options || {};
+var coords = (points || []).map(function(point) { return [Number(point[0]), Number(point[1])]; }).filter(function(point) { return isFinite(point[0]) && isFinite(point[1]); });
+if (coords.length < 2) return null;
+var id = 'mt-line-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+return {
+_addToMap: function(targetMap) {
+var mapObj = targetMap && (targetMap._maptiler || targetMap);
+if (!mapObj || !mapObj.addSource) return;
+if (typeof mapObj.isStyleLoaded === 'function' && !mapObj.isStyleLoaded()) {
+var self = this;
+mapObj.once('styledata', function() { self._addToMap(mapObj); });
+return;
+}
+var sourceId = id + '-source';
+if (mapObj.getSource && mapObj.getSource(sourceId)) return;
+mapObj.addSource(sourceId, { type:'geojson', data:{ type:'Feature', properties:{}, geometry:{ type:'LineString', coordinates:coords } } });
+mapObj.addLayer({ id:id + '-line', type:'line', source:sourceId, layout:{ 'line-cap':'round', 'line-join':'round' }, paint:{ 'line-color':options.lineColor || '#dc2626', 'line-width':options.lineWidth || 7, 'line-opacity':options.lineOpacity == null ? 0.96 : options.lineOpacity } });
+this._map = mapObj;
+this._sourceId = sourceId;
+this._layerIds = [id + '-line'];
+},
+_removeFromMap: function() {
+var mapObj = this._map;
+if (!mapObj) return;
+(this._layerIds || []).forEach(function(layerId) { try { if (mapObj.getLayer(layerId)) mapObj.removeLayer(layerId); } catch(e) {} });
+try { if (mapObj.getSource(this._sourceId)) mapObj.removeSource(this._sourceId); } catch(e) {}
+this._map = null;
+}
+};
+}
 function getFloodAreaCentroid(points) {
 var list = points || [];
 var total = list.reduce(function(sum, point) { sum.lat += Number(point[1]) || 0; sum.lng += Number(point[0]) || 0; return sum; }, {lat:0,lng:0});
@@ -2890,6 +2988,24 @@ var labelMarker = makeLongdoHtmlMarker({lon:center.lng,lat:center.lat}, labelHtm
 dashMap.Overlays.add(labelMarker);
 overlays.push(labelMarker);
 });
+(allZones || []).filter(function(marker) { return getZoneMarkerType(marker) === 'RoadClosed' && parseRoadClosureMarker(marker); }).forEach(function(marker) {
+var closure = parseRoadClosureMarker(marker);
+if (!closure) return;
+var line = makeMapTilerLineOverlay(closure.points, { lineColor:'#dc2626', lineWidth:7, lineOpacity:0.97 });
+if (line) { dashMap.Overlays.add(line); overlays.push(line); }
+var endpoints = [closure.points[0], closure.points[closure.points.length - 1]];
+endpoints.forEach(function(point, index) {
+var endpointHtml = '<div style="width:26px;height:26px;border-radius:50%;background:#dc2626;color:white;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;font:900 11px Prompt,sans-serif;"><i class="fas fa-road-barrier"></i></div>';
+var endpoint = makeLongdoHtmlMarker({lon:point[0],lat:point[1]}, endpointHtml, { offset:{x:0,y:0}, scaleMode:'none', title:index === 0 ? 'หัวถนนปิด' : 'ท้ายถนนปิด', markerOptions:{detail:'<b>' + roleSafeText(closure.label) + '</b><br>' + (index === 0 ? 'หัวแนวปิดถนน' : 'ท้ายแนวปิดถนน') + (closure.detail ? '<br>' + roleSafeText(closure.detail) : '')} });
+dashMap.Overlays.add(endpoint);
+overlays.push(endpoint);
+});
+var center = getFloodAreaCentroid(closure.points);
+var roadLabelHtml = '<div style="background:#b91c1c;color:white;border:2px solid white;border-radius:6px;padding:3px 7px;box-shadow:0 2px 8px rgba(0,0,0,.4);font:900 10px Prompt,sans-serif;white-space:nowrap;"><i class="fas fa-road-barrier"></i> ' + roleSafeText(closure.label) + '</div>';
+var roadLabel = makeLongdoHtmlMarker({lon:center.lng,lat:center.lat}, roadLabelHtml, { offset:{x:0,y:0}, scaleMode:'none', title:'ถนนปิด', markerOptions:{detail:'<b>ถนนปิด / ผ่านไม่ได้</b><br>' + roleSafeText(closure.label) + (closure.detail ? '<br>' + roleSafeText(closure.detail) : '')} });
+dashMap.Overlays.add(roadLabel);
+overlays.push(roadLabel);
+});
 }
 window._incidentSpecialMapOverlays = overlays;
 }
@@ -2915,13 +3031,64 @@ floodZones.forEach(function(z) {
 var type = getZoneMarkerType(z);
 counts[type] = (counts[type] || 0) + 1;
 });
-var rows = Object.keys(counts).map(function(type) {
+var legendOrder = ['FloodArea','FloodDepth','RoadClosed','RoadHighVehicle','BoatLaunch','HighGround','SupplyPoint','ElectricHazard','PumpPoint'];
+var rows = legendOrder.filter(function(type) { return !!counts[type]; }).map(function(type) {
 if (type === 'FloodArea') return '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;"><span style="width:18px;height:18px;border-radius:4px;background:rgba(14,165,233,.35);border:2px solid #0369a1;display:inline-block;"></span><span style="flex:1;">ขอบเขตน้ำท่วม</span><b>' + counts[type] + '</b></div>';
 var cfg = getOCZoneTypeConfig(type);
 return '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;"><span style="width:18px;height:18px;border-radius:50%;background:' + cfg.color + ';color:white;display:inline-flex;align-items:center;justify-content:center;"><i class="fas ' + cfg.icon + '" style="font-size:9px;"></i></span><span style="flex:1;">' + cfg.label + '</span><b>' + counts[type] + '</b></div>';
 }).join('');
-legend.innerHTML = '<div style="font-size:11px;font-weight:900;color:#075985;border-bottom:1px solid #bae6fd;padding-bottom:4px;"><i class="fas fa-water"></i> สถานการณ์น้ำท่วม <span style="font-weight:600;">(' + floodZones.length + ' รายการ)</span></div>' + rows;
+legend.innerHTML = '<div class="flood-legend-drag-handle" style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:900;color:#075985;border-bottom:1px solid #bae6fd;padding-bottom:4px;cursor:move;user-select:none;touch-action:none;">' +
+'<span style="flex:1;white-space:nowrap;"><i class="fas fa-grip-vertical" style="color:#64748b;margin-right:4px;"></i><i class="fas fa-water"></i> สถานการณ์น้ำท่วม <span style="font-weight:600;">(' + floodZones.length + ' รายการ)</span></span>' +
+'<button type="button" onclick="event.stopPropagation();toggleFloodLegendCollapsed()" title="ยุบ/ขยายกล่อง" style="width:24px;height:22px;border:1px solid #bae6fd;border-radius:5px;background:white;color:#075985;cursor:pointer;padding:0;"><i id="floodLegendCollapseIcon" class="fas ' + (window._floodLegendCollapsed ? 'fa-chevron-up' : 'fa-chevron-down') + '"></i></button></div>' +
+'<div id="dashFloodLegendBody" style="display:' + (window._floodLegendCollapsed ? 'none' : 'block') + ';padding-top:2px;">' + rows + '</div>';
 legend.style.display = 'block';
+ensureFloodLegendInteraction();
+}
+function toggleFloodLegendCollapsed() {
+window._floodLegendCollapsed = !window._floodLegendCollapsed;
+var body = document.getElementById('dashFloodLegendBody');
+var icon = document.getElementById('floodLegendCollapseIcon');
+if (body) body.style.display = window._floodLegendCollapsed ? 'none' : 'block';
+if (icon) icon.className = 'fas ' + (window._floodLegendCollapsed ? 'fa-chevron-up' : 'fa-chevron-down');
+}
+function ensureFloodLegendInteraction() {
+var legend = document.getElementById('dash_flood_legend');
+if (!legend || legend.dataset.dragReady === '1') return;
+legend.dataset.dragReady = '1';
+legend.addEventListener('pointerdown', function(event) {
+var handle = event.target && event.target.closest ? event.target.closest('.flood-legend-drag-handle') : null;
+if (!handle || (event.target.closest && event.target.closest('button'))) return;
+var parent = legend.offsetParent || legend.parentElement;
+if (!parent) return;
+var parentRect = parent.getBoundingClientRect();
+var legendRect = legend.getBoundingClientRect();
+var startX = event.clientX;
+var startY = event.clientY;
+var startLeft = legendRect.left - parentRect.left;
+var startTop = legendRect.top - parentRect.top;
+legend.style.right = 'auto';
+legend.style.bottom = 'auto';
+legend.style.left = startLeft + 'px';
+legend.style.top = startTop + 'px';
+if (legend.setPointerCapture) { try { legend.setPointerCapture(event.pointerId); } catch(e) {} }
+function move(moveEvent) {
+var maxLeft = Math.max(0, parent.clientWidth - legend.offsetWidth);
+var maxTop = Math.max(0, parent.clientHeight - legend.offsetHeight);
+var left = Math.min(maxLeft, Math.max(0, startLeft + moveEvent.clientX - startX));
+var top = Math.min(maxTop, Math.max(0, startTop + moveEvent.clientY - startY));
+legend.style.left = left + 'px';
+legend.style.top = top + 'px';
+}
+function stop() {
+document.removeEventListener('pointermove', move);
+document.removeEventListener('pointerup', stop);
+document.removeEventListener('pointercancel', stop);
+}
+document.addEventListener('pointermove', move);
+document.addEventListener('pointerup', stop);
+document.addEventListener('pointercancel', stop);
+event.preventDefault();
+});
 }
 function toggleFloodMapLayer() {
 window._floodLayerVisible = window._floodLayerVisible === false;
@@ -2973,7 +3140,8 @@ var listHtml = markers.length ? markers.map(function(z, index) {
 var type = getZoneMarkerType(z);
 var cfg = getOCZoneTypeConfig(type);
 var label = z.label || z.Label || cfg.label;
-var note = z.note || z.Note || '';
+var roadClosure = type === 'RoadClosed' ? parseRoadClosureMarker(z) : null;
+var note = roadClosure ? roadClosure.detail : (z.note || z.Note || '');
 var lat = parseFloat(z.lat !== undefined ? z.lat : z.Lat);
 var lng = parseFloat(z.lng !== undefined ? z.lng : z.Lng);
 var id = getFloodMarkerId(z);
@@ -2982,10 +3150,10 @@ return '<div style="display:grid;grid-template-columns:38px minmax(0,1fr) auto;g
 '<div style="width:34px;height:34px;border-radius:50%;background:' + cfg.color + ';color:white;display:flex;align-items:center;justify-content:center;"><i class="fas ' + cfg.icon + '"></i></div>' +
 '<div style="min-width:0;text-align:left;"><div style="font-size:12px;color:' + cfg.color + ';font-weight:900;">' + roleSafeText(cfg.label) + '</div><div style="font-size:13px;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(label) + '</div>' +
 (note ? '<div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(note) + '</div>' : '') +
-'<div style="font-size:10px;color:#94a3b8;">' + (isNaN(lat) || isNaN(lng) ? 'ยังไม่มีพิกัด' : lat.toFixed(5) + ', ' + lng.toFixed(5)) + '</div></div>' +
+'<div style="font-size:10px;color:#94a3b8;">' + (roadClosure ? 'แนวปิดถนน ' + roadClosure.points.length + ' จุด' : (isNaN(lat) || isNaN(lng) ? 'ยังไม่มีพิกัด' : lat.toFixed(5) + ', ' + lng.toFixed(5))) + '</div></div>' +
 '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">' +
 '<button type="button" onclick="editAdminFloodPoint(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#2563eb;color:white;padding:6px 8px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-pen"></i> แก้ข้อมูล</button>' +
-'<button type="button" onclick="moveAdminFloodPoint(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#0f766e;color:white;padding:6px 8px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-location-crosshairs"></i> ย้ายจุด</button>' +
+'<button type="button" onclick="moveAdminFloodPoint(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#0f766e;color:white;padding:6px 8px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas ' + (type === 'RoadClosed' ? 'fa-route' : 'fa-location-crosshairs') + '"></i> ' + (type === 'RoadClosed' ? 'วาดเส้นใหม่' : 'ย้ายจุด') + '</button>' +
 '<button type="button" onclick="deleteAdminFloodPoint(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#dc2626;color:white;padding:6px 8px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-trash"></i></button>' +
 '</div></div>';
 }).join('') : '<div style="border:2px dashed #bae6fd;border-radius:10px;padding:22px;text-align:center;color:#64748b;background:#f0f9ff;"><i class="fas fa-map-location-dot" style="font-size:28px;color:#0284c7;margin-bottom:7px;"></i><br>ยังไม่มีจุดสถานการณ์น้ำท่วม<br><span style="font-size:11px;">Admin สามารถเพิ่มจุดได้หลังจากเปิดเหตุแล้ว</span></div>';
@@ -3036,13 +3204,19 @@ preConfirm: function() { return document.getElementById('admin_flood_new_type').
 }).then(function(r) {
 if (!r.isConfirmed) return;
 collectFloodZoneDetails(r.value, '', function(data) {
-pickAdminFloodPointLocation({ type:r.value, label:data.label, note:data.note }, false);
+var draft = { type:r.value, label:data.label, note:data.note };
+if (r.value === 'RoadClosed') pickRoadClosureLocation(draft, false, 'admin');
+else pickAdminFloodPointLocation(draft, false);
 });
 });
 }
 function pickAdminFloodPointLocation(marker, isUpdate) {
 if (!requireFloodPointAdmin()) return;
 var type = getZoneMarkerType(marker);
+if (type === 'RoadClosed') {
+pickRoadClosureLocation(marker, isUpdate, 'admin');
+return;
+}
 var cfg = getOCZoneTypeConfig(type);
 mapPickerMode = 'zone';
 mapPickLockToCurrent = false;
@@ -3079,6 +3253,8 @@ if (!requireFloodPointAdmin()) return;
 var marker = (window._adminFloodMarkers || [])[index];
 if (!marker) return;
 var currentType = getZoneMarkerType(marker);
+var currentRoadClosure = currentType === 'RoadClosed' ? parseRoadClosureMarker(marker) : null;
+var currentNote = currentRoadClosure ? currentRoadClosure.detail : (marker.note || marker.Note || '');
 var options = Object.keys(FLOOD_ZONE_CONFIG).map(function(type) {
 var cfg = FLOOD_ZONE_CONFIG[type];
 return '<option value="' + type + '"' + (type === currentType ? ' selected' : '') + '>' + roleSafeText(cfg.label) + '</option>';
@@ -3088,7 +3264,8 @@ title: 'แก้ไขข้อมูลจุด',
 html: '<div style="text-align:left;display:grid;gap:7px;">' +
 '<label style="font-size:12px;font-weight:800;color:#334155;">ประเภทจุด</label><select id="admin_flood_edit_type" class="swal2-select" style="margin:0;width:100%;box-sizing:border-box;">' + options + '</select>' +
 '<label style="font-size:12px;font-weight:800;color:#334155;">ชื่อจุด / ถนน / จุดสังเกต</label><input id="admin_flood_edit_label" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box;" value="' + roleSafeText(marker.label || marker.Label || '') + '">' +
-'<label style="font-size:12px;font-weight:800;color:#334155;">รายละเอียดสถานการณ์</label><textarea id="admin_flood_edit_note" class="swal2-textarea" style="margin:0;width:100%;box-sizing:border-box;min-height:90px;">' + roleSafeText(marker.note || marker.Note || '') + '</textarea></div>',
+'<label style="font-size:12px;font-weight:800;color:#334155;">รายละเอียดสถานการณ์</label><textarea id="admin_flood_edit_note" class="swal2-textarea" style="margin:0;width:100%;box-sizing:border-box;min-height:90px;">' + roleSafeText(currentNote) + '</textarea>' +
+(currentRoadClosure ? '<div style="font-size:11px;color:#991b1b;background:#fef2f2;border-radius:6px;padding:7px;">แนวปิดถนนเดิมมี ' + currentRoadClosure.points.length + ' จุด — ใช้ปุ่ม “วาดเส้นใหม่” หากต้องการเปลี่ยนแนว</div>' : '') + '</div>',
 showCancelButton: true,
 confirmButtonText: 'บันทึกการแก้ไข',
 cancelButtonText: 'ยกเลิก',
@@ -3102,6 +3279,14 @@ return { type:document.getElementById('admin_flood_edit_type').value, label:labe
 if (!r.isConfirmed) return;
 var lat = marker.lat !== undefined ? marker.lat : marker.Lat;
 var lng = marker.lng !== undefined ? marker.lng : marker.Lng;
+if (r.value.type === 'RoadClosed' && !currentRoadClosure) {
+pickRoadClosureLocation({ id:getFloodMarkerId(marker), markerId:getFloodMarkerId(marker), type:'RoadClosed', label:r.value.label, note:r.value.note, lat:lat, lng:lng }, true, 'admin');
+return;
+}
+var savedNote = r.value.note;
+if (r.value.type === 'RoadClosed' && currentRoadClosure) {
+savedNote = encodeRoadClosureNote({ label:r.value.label, detail:r.value.note, points:currentRoadClosure.points });
+}
 Swal.fire({ title:'กำลังบันทึก...', allowOutsideClick:false, didOpen:function() { Swal.showLoading(); } });
 google.script.run
 .withSuccessHandler(function() {
@@ -3109,7 +3294,7 @@ Swal.fire({ icon:'success', title:'แก้ไขข้อมูลแล้ว
 refreshFloodPointsAfterAdminChange(true);
 })
 .withFailureHandler(function(err) { Swal.fire('แก้ไขไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
-.updateZoneMarker(getFloodMarkerId(marker), r.value.type, r.value.label, lat, lng, r.value.note, getFloodAdminReporter(), APP_ACCESS_ROLE);
+.updateZoneMarker(getFloodMarkerId(marker), r.value.type, r.value.label, lat, lng, savedNote, getFloodAdminReporter(), APP_ACCESS_ROLE);
 });
 }
 function moveAdminFloodPoint(index) {
@@ -3267,10 +3452,11 @@ function drawOCZoneMarkersOnICMap(zones, supportReqs) {
 var allZones = (zones || []).filter(function(z) { return (z.locationKind || z.location_kind || 'outdoor') !== 'indoor'; });
 allZones = normalizeICOCState({ zoneMarkers: allZones }).zoneMarkers;
 updateFloodMapLayerUI(allZones);
-var specialZones = allZones.filter(function(z) { var type = getZoneMarkerType(z); return type === 'IncidentPoint' || type === 'FloodArea'; });
+var specialZones = allZones.filter(function(z) { var type = getZoneMarkerType(z); return type === 'IncidentPoint' || type === 'FloodArea' || (type === 'RoadClosed' && !!parseRoadClosureMarker(z)); });
 zones = allZones.filter(function(z) {
 var type = getZoneMarkerType(z);
 if (type === 'IncidentPoint' || type === 'FloodArea') return false;
+if (type === 'RoadClosed' && parseRoadClosureMarker(z)) return false;
 if (window._floodLayerVisible === false && isFloodZoneType(type)) return false;
 return true;
 });
@@ -3288,7 +3474,7 @@ return [(r.id||r.rowIndex) || '', r.type || '', r.status || 'pending', r.respons
 }).join(',');
 var drawKey = allZones.map(function(z) {
 return [getZoneMarkerType(z), z.label || z.Label || '', z.lat || z.Lat || '', z.lng || z.Lng || '', z.note || z.Note || '', z.loggedBy || z.by || '', z.phone || z.tel || ''].join('|');
-}).join('~') + '|marker-style-flood-v2|flood=' + (window._floodLayerVisible !== false) + '|' + reqKey;
+}).join('~') + '|marker-style-flood-v3|flood=' + (window._floodLayerVisible !== false) + '|' + reqKey;
 if (window._icOCZoneDrawKey === drawKey && window._icOCZoneMapRef === dashMap && ((window._icOCZoneOverlays && window._icOCZoneOverlays.length) || (window._incidentSpecialMapOverlays && window._incidentSpecialMapOverlays.length))) return;
 window._icOCZoneDrawKey = drawKey;
 window._icOCZoneMapRef = dashMap;
@@ -3299,6 +3485,10 @@ var nextOverlays = [];
 var nextCircles = [];
 var points = [];
 if (incidentCenter && incidentCenter.lat && incidentCenter.lng) points.push({ lat: parseFloat(incidentCenter.lat), lng: parseFloat(incidentCenter.lng) });
+specialZones.forEach(function(z) {
+var roadClosure = getZoneMarkerType(z) === 'RoadClosed' ? parseRoadClosureMarker(z) : null;
+if (roadClosure) roadClosure.points.forEach(function(p) { points.push({ lat:Number(p[1]), lng:Number(p[0]), type:'RoadClosed' }); });
+});
 ensureOCRequestAlertStyle();
 zones.forEach(function(z) {
 var lat = parseFloat(z.lat || z.Lat);
