@@ -1810,6 +1810,7 @@ var mapPickerMode = 'declare';
 var mapPickLockToCurrent = false;
 var pickerFloodVertices = [];
 var pickerFloodDraftOverlay = null;
+var pickerRoadStartMarker = null;
 var tempLat = "", tempLng = "";
 var dashMap, dashMarker, hatchedOverlay, zoneLabelMarker, radarCircle;
 var otherMarkers = [];
@@ -2843,6 +2844,15 @@ function renderPickerFloodDraft() {
 if (!map) return;
 if (pickerFloodDraftOverlay) { try { map.Overlays.remove(pickerFloodDraftOverlay); } catch(e) {} }
 pickerFloodDraftOverlay = null;
+if (pickerRoadStartMarker) { try { map.Overlays.remove(pickerRoadStartMarker); } catch(e) {} }
+pickerRoadStartMarker = null;
+if (mapPickerMode === 'road-closure' && pickerFloodVertices.length >= 1) {
+var startPoint = pickerFloodVertices[0];
+pickerRoadStartMarker = makePickerHtmlMarker({ lon:startPoint[0], lat:startPoint[1] },
+'<div title="จุดเริ่มแนวปิดถนน" style="width:28px;height:28px;border-radius:50%;background:#dc2626;color:#fff;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.45);font-weight:800;font-size:13px;">1</div>',
+{ anchor:'center' });
+map.Overlays.add(pickerRoadStartMarker);
+}
 if (pickerFloodVertices.length >= 2) {
 pickerFloodDraftOverlay = makePickerFloodPolygonOverlay(pickerFloodVertices);
 map.Overlays.add(pickerFloodDraftOverlay);
@@ -2887,6 +2897,14 @@ pickerIncidentMarker = makePickerHtmlMarker({ lon:lng, lat:lat },
 '<div title="จุดอ้างอิง" style="width:32px;height:32px;border-radius:50%;background:#dc2626;color:white;display:flex;align-items:center;justify-content:center;border:3px solid white;box-shadow:0 2px 9px rgba(0,0,0,.4);"><i class="fas fa-location-dot" style="font-size:15px;"></i></div>',
 { anchor:'center' });
 map.Overlays.add(pickerIncidentMarker);
+map.location({ lon:lng, lat:lat }, true);
+}
+function focusRoadClosureStartOnPicker() {
+if (mapPickerMode !== 'road-closure' || !map) return;
+var center = window._roadClosurePickerStartCenter || {};
+var lat = Number(center.lat);
+var lng = Number(center.lng);
+if (!isFinite(lat) || !isFinite(lng)) return;
 map.location({ lon:lng, lat:lat }, true);
 }
 function placeMarker(location) {
@@ -3847,6 +3865,7 @@ searchPlaceholder: 'ค้นหาถนน แยก หรือชุมช�
 coordPlaceholder: 'วางพิกัดเพื่อเลื่อนไปยังถนน',
 selectedText: 'แตะหัว–ท้ายถนนอย่างน้อย 2 จุด และแตะเพิ่มเพื่อทำแนวซิกแซก'
 };
+window._roadClosurePickerStartCenter = context && context.startCenter ? context.startCenter : null;
 pickerFloodVertices = Array.isArray(initialPoints) ? initialPoints.map(function(p) { return [Number(p[0]), Number(p[1])]; }).filter(function(p) { return isFinite(p[0]) && isFinite(p[1]); }) : [];
 tempLat = '';
 tempLng = '';
@@ -3855,6 +3874,8 @@ openMap();
 if (pickerFloodVertices.length && map) {
 var center = getPickerFloodCentroid(pickerFloodVertices);
 map.location({ lon:center.lng, lat:center.lat }, true);
+} else if (window._roadClosurePickerStartCenter && map) {
+focusRoadClosureStartOnPicker();
 }
 }
 function openMap() {
@@ -3890,6 +3911,7 @@ renderPickerMapContext(true);
 if (mapPickerMode === 'flood-area' || mapPickerMode === 'road-closure') {
 renderPickerFloodDraft();
 if (mapPickerMode === 'flood-area') focusFloodAreaReferenceOnPicker();
+if (mapPickerMode === 'road-closure') focusRoadClosureStartOnPicker();
 }
 }, 300);
 }
@@ -3903,10 +3925,13 @@ mapPickLockToCurrent = false;
 mapPickerMode = 'declare';
 if (pickerFloodDraftOverlay && map) { try { map.Overlays.remove(pickerFloodDraftOverlay); } catch(e) {} }
 pickerFloodDraftOverlay = null;
+if (pickerRoadStartMarker && map) { try { map.Overlays.remove(pickerRoadStartMarker); } catch(e) {} }
+pickerRoadStartMarker = null;
 pickerFloodVertices = [];
 window._floodAreaPickerStartCenter = null;
 window._floodAreaPickerReferenceLabel = '';
 window._floodAreaPickerSeverity = 'moderate';
+window._roadClosurePickerStartCenter = null;
 clearPickerSearchMarkers();
 clearPickerErgOverlays();
 clearPickerZoneOverlays();
@@ -6872,8 +6897,8 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }
 </script>
 
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260929_flood_roads1" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260929_flood_roads1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260929_flood_roads2" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260929_flood_roads2" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {

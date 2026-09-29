@@ -1772,11 +1772,13 @@ if (source === 'admin' && !requireFloodPointAdmin()) return;
 var parsed = parseRoadClosureMarker(marker);
 var label = marker.label || marker.Label || (parsed && parsed.label) || 'ถนนปิด';
 var detail = parsed ? parsed.detail : (marker.note || marker.Note || 'สถานะ: ปิดถนน / ผ่านไม่ได้');
-var initialPoints = parsed ? parsed.points : [];
-if (!initialPoints.length) {
+var startCenter = null;
+if (parsed && parsed.points && parsed.points.length) {
+startCenter = getFloodAreaCentroid(parsed.points);
+} else {
 var existingLat = Number(marker.lat !== undefined ? marker.lat : marker.Lat);
 var existingLng = Number(marker.lng !== undefined ? marker.lng : marker.Lng);
-if (isFinite(existingLat) && isFinite(existingLng)) initialPoints = [[existingLng, existingLat]];
+if (isFinite(existingLat) && isFinite(existingLng)) startCenter = { lat:existingLat, lng:existingLng };
 }
 Swal.close();
 openRoadClosureMapPicker(function(points, center) {
@@ -1800,11 +1802,12 @@ runner.updateZoneMarker(getFloodMarkerId(marker), 'RoadClosed', label, center.la
 } else {
 runner.saveZoneMarker('RoadClosed', label, center.lat, center.lng, note, reporter, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
 }
-}, initialPoints, {
+}, [], {
 titleHtml:'<i class="fas fa-road-barrier"></i> ' + (isUpdate ? 'วาดแนวปิดถนนใหม่: ' : 'กำหนดแนวถนนปิด: ') + roleSafeText(label),
 searchPlaceholder:'ค้นหาถนน แยก หรือชุมชน...',
 coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังถนน',
-selectedText:'แตะหัว–ท้ายถนนอย่างน้อย 2 จุด และแตะเพิ่มตามแนวโค้งหรือซิกแซก'
+selectedText:'แตะครั้งแรกเพื่อกำหนดจุดเริ่ม แล้วแตะครั้งที่ 2 เพื่อเริ่มสร้างเส้น',
+startCenter:startCenter
 });
 }
 function openZoneMapPickerWithData(zType, zLabel, zNote) {
