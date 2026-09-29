@@ -62,6 +62,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
     releaseICSLead:'releaseICSLead',getICSCoords:'getICSCoords',claimICSCoord:'claimICSCoord',
     releaseICSCoord:'releaseICSCoord',updateMedicalTriage:'updateMedicalTriage',addMedicalTriageRows:'updateMedicalTriage',
     getMedicalTriageDetails:'getMedicalTriageDetails',saveZoneMarker:'saveZoneMarker',
+    updateZoneMarker:'updateZoneMarker',deleteZoneMarker:'deleteZoneMarker',
     getZoneMarkers:'getZoneMarkers',saveZoneConfig:'saveZoneConfig',getZoneConfig:'getZoneConfig',
     addTask:'addTask',updateTaskStatus:'updateTaskStatus',getTasks:'getTasks',
     getHospitalCapacity:'getHospitalCapacity',updateHospitalCapacity:'updateHospitalCapacity',
@@ -131,6 +132,8 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       updateMedicalTriage:{red:a[0],yellow:a[1],green:a[2],black:a[3],onsite:a[4],location:a[5],reporter:a[6]},
       addMedicalTriageRows:(function(color,entries,reporter){var body={red:0,yellow:0,green:0,black:0,onsite:0,location:'',reporter:reporter||''};var total=0;var hospitals=[];(Array.isArray(entries)?entries:[]).forEach(function(e){if(!e)return;total+=parseInt(e.count)||0;if(e.hospital)hospitals.push((e.count||0)+' @ '+e.hospital);});body[String(color||'').toLowerCase()]=total;body.onsite=total;body.location=hospitals.join('; ');return body;})(a[0],a[1],a[2]),
       saveZoneMarker:{zoneType:a[0],label:a[1],lat:a[2],lng:a[3],note:a[4],loggedBy:a[5],phone:a[6],locationKind:a[8],floorLabel:a[9]},
+      updateZoneMarker:{markerId:a[0],zoneType:a[1],label:a[2],lat:a[3],lng:a[4],note:a[5],loggedBy:a[6],accessRole:a[7]},
+      deleteZoneMarker:{markerId:a[0],loggedBy:a[1],accessRole:a[2]},
       saveZoneConfig:{hotM:a[0],warmM:a[1],coldM:a[2],deconLat:a[3],deconLng:a[4]},
       addTask:{taskName:a[0],type:a[1],priority:a[2],assignedTo:a[3],location:a[4],note:a[5],loggedBy:a[6]},
       updateTaskStatus:{taskID:a[0],newStatus:a[1],loggedBy:a[2]},
@@ -177,7 +180,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
     // เติม roleLabel (ชื่อการ์ดงานปัจจุบัน) ให้ action กลุ่มที่บันทึก/รายงานข้อมูล เพื่อใช้ใน incident log
     // ข้าม action ที่กำหนด roleLabel ของตัวเองอยู่แล้ว (เช่น setICSLead, claimICSLead, addRoleNote) ไม่ให้ทับ
     var LOG_WORTHY_ACTIONS = {
-      updateMedicalTriage:1, addMedicalTriageRows:1, saveZoneMarker:1, addTask:1, updateTaskStatus:1,
+      updateMedicalTriage:1, addMedicalTriageRows:1, saveZoneMarker:1, updateZoneMarker:1, deleteZoneMarker:1, addTask:1, updateTaskStatus:1,
       updateHospitalCapacity:1, addPatientTransfer:1, saveWindReport:1, saveERGSelection:1,
       addCommanderLog:1, submitSitReport:1, saveEvacuationPoint:1,
       submitFieldCasualtyReport:1, submitSupportRequest:1, updateSupportRequestStatus:1,
@@ -952,6 +955,7 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 <button id="dashStyleSat" onclick="setDashboardMapStyle('satellite')" style="border:0;background:white;color:#334155;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;">ดาวเทียม</button>
 <button onclick="openLongdoTrafficMap()" style="border:0;background:#f97316;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-road"></i> จราจร</button>
 <button id="dashFloodToggleBtn" onclick="toggleFloodMapLayer()" title="แสดง/ซ่อนจุดสถานการณ์น้ำท่วม" style="border:0;background:#0369a1;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-water"></i> น้ำท่วม</button>
+<button id="dashFloodManageBtn" onclick="openAdminFloodPointManager()" title="เพิ่ม แก้ไข ย้าย หรือลบจุดน้ำท่วม" style="display:none;border:0;background:#7c3aed;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-map-location-dot"></i> จัดการจุด</button>
 <button id="dashTambonToggleBtn" onclick="toggleTambonBoundary()" title="แสดง/ซ่อนเส้นแบ่งเขตตำบล" style="border:0;background:white;color:#334155;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-draw-polygon"></i> เขตตำบล</button>
 </div>
 <div class="dash-toolbar-left" style="position:absolute;top:6px;left:6px;z-index:11;">
@@ -6636,8 +6640,8 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }
 </script>
 
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260623_1700" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260928_flood1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260929_flood_admin1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260929_flood_admin1" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {

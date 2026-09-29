@@ -1284,9 +1284,11 @@ function setupUserUI() {
 const checkInBtn = document.getElementById('btn_checkin');
 const endBtn = document.getElementById('dash_end_btn');
 const escalateBtn = document.getElementById('dash_escalate_btn');
+const floodManageBtn = document.getElementById('dashFloodManageBtn');
 const isAdmin = APP_ACCESS_ROLE === 'admin';
 if (endBtn) endBtn.style.display = isAdmin ? 'inline-block' : 'none';
 if (escalateBtn) escalateBtn.style.display = isAdmin ? 'inline-block' : 'none';
+if (floodManageBtn) floodManageBtn.style.display = isAdmin ? 'inline-block' : 'none';
 if (!checkInBtn) return;
 if (TEMP_ROLE === 'IC') {
 checkInBtn.style.display = 'none';

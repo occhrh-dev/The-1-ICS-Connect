@@ -29,6 +29,8 @@ const ACTION_MAP = {
   updateMedicalTriage:          'updateMedicalTriage',
   getMedicalTriageDetails:      'getMedicalTriageDetails',
   saveZoneMarker:               'saveZoneMarker',
+  updateZoneMarker:             'updateZoneMarker',
+  deleteZoneMarker:             'deleteZoneMarker',
   getZoneMarkers:               'getZoneMarkers',
   saveZoneConfig:               'saveZoneConfig',
   getZoneConfig:                'getZoneConfig',
@@ -158,6 +160,11 @@ function argsToBody(fnName, args) {
     case 'saveZoneMarker':
       return { zoneType: a[0], label: a[1], lat: a[2], lng: a[3],
                note: a[4], loggedBy: a[5], phone: a[6] };
+    case 'updateZoneMarker':
+      return { markerId: a[0], zoneType: a[1], label: a[2], lat: a[3], lng: a[4],
+               note: a[5], loggedBy: a[6], accessRole: a[7] };
+    case 'deleteZoneMarker':
+      return { markerId: a[0], loggedBy: a[1], accessRole: a[2] };
     case 'saveZoneConfig':
       return { hotM: a[0], warmM: a[1], coldM: a[2], deconLat: a[3], deconLng: a[4] };
     case 'addTask':
@@ -300,6 +307,7 @@ async function callWorker(fnName, args, successCb, failureCb) {
   }
 
   const body = argsToBody(fnName, args);
+  if (!body.agencyId) body.agencyId = getBridgeAgencyId();
 
   try {
     const res = await fetch(`${WORKER_URL}/?action=${action}`, {

@@ -2861,6 +2861,220 @@ var zones = window._icZoneMarkers || (window._lastOCState && window._lastOCState
 updateFloodMapLayerUI(zones);
 if (dashMap) drawOCZoneMarkersOnICMap(zones, window._icSupportReqs || []);
 }
+function requireFloodPointAdmin() {
+if (typeof APP_ACCESS_ROLE !== 'undefined' && APP_ACCESS_ROLE === 'admin') return true;
+Swal.fire('ต้องใช้สิทธิ์ Admin', 'เฉพาะ Admin ที่ควบคุมแดชบอร์ดเท่านั้นที่จัดการจุดน้ำท่วมได้', 'warning');
+return false;
+}
+function getFloodMarkerId(marker) {
+marker = marker || {};
+return marker.id || marker.markerId || marker.marker_id || '';
+}
+function getFloodAdminReporter() {
+return (typeof USER_NAME !== 'undefined' && USER_NAME) || window.ocCurrentUser || 'Admin';
+}
+function refreshFloodPointsAfterAdminChange(openManagerAfter) {
+google.script.run
+.withSuccessHandler(function(list) {
+list = Array.isArray(list) ? list : [];
+window._icZoneMarkers = list;
+window._icOCZoneDrawKey = '';
+updateFloodMapLayerUI(list);
+if (dashMap) drawOCZoneMarkersOnICMap(list, window._icSupportReqs || []);
+if (openManagerAfter) setTimeout(function() { openAdminFloodPointManager(list); }, 500);
+})
+.withFailureHandler(function() {
+if (openManagerAfter) setTimeout(function() { openAdminFloodPointManager(window._icZoneMarkers || []); }, 500);
+})
+.getZoneMarkers();
+}
+function renderAdminFloodPointManager(allMarkers) {
+var markers = (allMarkers || []).filter(function(z) { return isFloodZoneType(getZoneMarkerType(z)); });
+window._adminFloodMarkers = markers;
+var counts = {};
+markers.forEach(function(z) {
+var type = getZoneMarkerType(z);
+counts[type] = (counts[type] || 0) + 1;
+});
+var summary = Object.keys(counts).map(function(type) {
+var cfg = getOCZoneTypeConfig(type);
+return '<span style="display:inline-flex;align-items:center;gap:4px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:999px;padding:4px 8px;font-size:11px;color:#334155;"><i class="fas ' + cfg.icon + '" style="color:' + cfg.color + ';"></i> ' + roleSafeText(cfg.short) + ' <b>' + counts[type] + '</b></span>';
+}).join(' ');
+var listHtml = markers.length ? markers.map(function(z, index) {
+var type = getZoneMarkerType(z);
+var cfg = getOCZoneTypeConfig(type);
+var label = z.label || z.Label || cfg.label;
+var note = z.note || z.Note || '';
+var lat = parseFloat(z.lat !== undefined ? z.lat : z.Lat);
+var lng = parseFloat(z.lng !== undefined ? z.lng : z.Lng);
+var id = getFloodMarkerId(z);
+var disabled = id ? '' : ' disabled title="จุดเดิมนี้ยังไม่มีรหัส กรุณารีเฟรชระบบก่อน"';
+return '<div style="display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:9px;align-items:center;border:1px solid #e2e8f0;border-left:5px solid ' + cfg.color + ';border-radius:9px;padding:9px 10px;background:#fff;">' +
+'<div style="width:34px;height:34px;border-radius:50%;background:' + cfg.color + ';color:white;display:flex;align-items:center;justify-content:center;"><i class="fas ' + cfg.icon + '"></i></div>' +
+'<div style="min-width:0;text-align:left;"><div style="font-size:12px;color:' + cfg.color + ';font-weight:900;">' + roleSafeText(cfg.label) + '</div><div style="font-size:13px;font-weight:800;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(label) + '</div>' +
+(note ? '<div style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(note) + '</div>' : '') +
+'<div style="font-size:10px;color:#94a3b8;">' + (isNaN(lat) || isNaN(lng) ? 'ยังไม่มีพิกัด' : lat.toFixed(5) + ', ' + lng.toFixed(5)) + '</div></div>' +
+'<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">' +
+'<button type="button" onclick="editAdminFloodPoint(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#2563eb;color:white;padding:6px 8px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-pen"></i> แก้ข้อมูล</button>' +
+'<button type="button" onclick="moveAdminFloodPoint(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#0f766e;color:white;padding:6px 8px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-location-crosshairs"></i> ย้ายจุด</button>' +
+'<button type="button" onclick="deleteAdminFloodPoint(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#dc2626;color:white;padding:6px 8px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-trash"></i></button>' +
+'</div></div>';
+}).join('') : '<div style="border:2px dashed #bae6fd;border-radius:10px;padding:22px;text-align:center;color:#64748b;background:#f0f9ff;"><i class="fas fa-map-location-dot" style="font-size:28px;color:#0284c7;margin-bottom:7px;"></i><br>ยังไม่มีจุดสถานการณ์น้ำท่วม<br><span style="font-size:11px;">Admin สามารถเพิ่มจุดได้หลังจากเปิดเหตุแล้ว</span></div>';
+Swal.fire({
+title: '<i class="fas fa-water" style="color:#0284c7;"></i> จัดการจุดสถานการณ์น้ำท่วม',
+html: '<div style="text-align:left;">' +
+'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:9px 11px;margin-bottom:9px;font-size:12px;color:#1e3a8a;">ขั้นตอนประกาศเหตุเก็บเฉพาะพื้นที่หลัก ส่วนจุดปฏิบัติการให้ Admin เพิ่มและปรับตามสถานการณ์จริงที่หน้านี้</div>' +
+'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px;"><div style="display:flex;gap:5px;flex-wrap:wrap;">' + (summary || '<span style="font-size:12px;color:#94a3b8;">รวม 0 จุด</span>') + '</div>' +
+'<button type="button" onclick="openAdminFloodPointCreator()" style="flex:0 0 auto;border:0;border-radius:7px;background:#7c3aed;color:white;padding:8px 11px;font:800 12px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-plus"></i> เพิ่มจุดใหม่</button></div>' +
+'<div style="display:grid;gap:7px;max-height:430px;overflow:auto;padding-right:3px;">' + listHtml + '</div></div>',
+showConfirmButton: false,
+showCloseButton: true,
+width: 800
+});
+}
+function openAdminFloodPointManager(prefetched) {
+if (!requireFloodPointAdmin()) return;
+if (Array.isArray(prefetched)) {
+renderAdminFloodPointManager(prefetched);
+return;
+}
+Swal.fire({ title:'กำลังโหลดจุดน้ำท่วม...', allowOutsideClick:false, didOpen:function() { Swal.showLoading(); } });
+google.script.run
+.withSuccessHandler(function(list) {
+list = Array.isArray(list) ? list : [];
+window._icZoneMarkers = list;
+renderAdminFloodPointManager(list);
+})
+.withFailureHandler(function(err) {
+Swal.fire('โหลดรายการไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
+})
+.getZoneMarkers();
+}
+function openAdminFloodPointCreator() {
+if (!requireFloodPointAdmin()) return;
+var options = Object.keys(FLOOD_ZONE_CONFIG).map(function(type) {
+var cfg = FLOOD_ZONE_CONFIG[type];
+return '<option value="' + type + '">' + roleSafeText(cfg.label) + '</option>';
+}).join('');
+Swal.fire({
+title: 'เพิ่มจุดสถานการณ์น้ำท่วม',
+html: '<div style="text-align:left;"><label style="font-size:12px;font-weight:800;color:#334155;">ประเภทจุด</label><select id="admin_flood_new_type" class="swal2-select" style="margin:4px 0 0;width:100%;box-sizing:border-box;">' + options + '</select></div>',
+showCancelButton: true,
+confirmButtonText: 'กรอกรายละเอียด',
+cancelButtonText: 'ยกเลิก',
+confirmButtonColor: '#7c3aed',
+preConfirm: function() { return document.getElementById('admin_flood_new_type').value; }
+}).then(function(r) {
+if (!r.isConfirmed) return;
+collectFloodZoneDetails(r.value, '', function(data) {
+pickAdminFloodPointLocation({ type:r.value, label:data.label, note:data.note }, false);
+});
+});
+}
+function pickAdminFloodPointLocation(marker, isUpdate) {
+if (!requireFloodPointAdmin()) return;
+var type = getZoneMarkerType(marker);
+var cfg = getOCZoneTypeConfig(type);
+mapPickerMode = 'zone';
+mapPickLockToCurrent = false;
+tempLat = '';
+tempLng = '';
+window._mapPickerContext = {
+titleHtml: '<i class="fas ' + cfg.icon + '"></i> ' + (isUpdate ? 'ย้ายพิกัด: ' : 'เลือกพิกัด: ') + cfg.label,
+searchPlaceholder: 'ค้นหาตำแหน่ง ถนน หรือชุมชน...',
+coordPlaceholder: 'วาง Google Maps link หรือ lat,lon',
+selectedText: 'ยังไม่ได้เลือกพิกัด'
+};
+var selectedText = document.getElementById('selectedCoordText');
+if (selectedText) selectedText.innerText = 'พิกัด: กรุณาเลือกจุดบนแผนที่';
+window._zonePickerCallback = function(lat, lng) {
+var reporter = getFloodAdminReporter();
+var runner = google.script.run
+.withSuccessHandler(function() {
+Swal.fire({ icon:'success', title:isUpdate ? 'ย้ายจุดแล้ว' : 'เพิ่มจุดแล้ว', timer:1200, showConfirmButton:false });
+refreshFloodPointsAfterAdminChange(true);
+})
+.withFailureHandler(function(err) {
+Swal.fire(isUpdate ? 'ย้ายจุดไม่สำเร็จ' : 'เพิ่มจุดไม่สำเร็จ', err && err.message ? err.message : String(err), 'error');
+});
+if (isUpdate) {
+runner.updateZoneMarker(getFloodMarkerId(marker), type, marker.label || marker.Label || cfg.label, lat, lng, marker.note || marker.Note || '', reporter, APP_ACCESS_ROLE);
+} else {
+runner.saveZoneMarker(type, marker.label || cfg.label, lat, lng, marker.note || '', reporter, window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
+}
+};
+openMap();
+}
+function editAdminFloodPoint(index) {
+if (!requireFloodPointAdmin()) return;
+var marker = (window._adminFloodMarkers || [])[index];
+if (!marker) return;
+var currentType = getZoneMarkerType(marker);
+var options = Object.keys(FLOOD_ZONE_CONFIG).map(function(type) {
+var cfg = FLOOD_ZONE_CONFIG[type];
+return '<option value="' + type + '"' + (type === currentType ? ' selected' : '') + '>' + roleSafeText(cfg.label) + '</option>';
+}).join('');
+Swal.fire({
+title: 'แก้ไขข้อมูลจุด',
+html: '<div style="text-align:left;display:grid;gap:7px;">' +
+'<label style="font-size:12px;font-weight:800;color:#334155;">ประเภทจุด</label><select id="admin_flood_edit_type" class="swal2-select" style="margin:0;width:100%;box-sizing:border-box;">' + options + '</select>' +
+'<label style="font-size:12px;font-weight:800;color:#334155;">ชื่อจุด / ถนน / จุดสังเกต</label><input id="admin_flood_edit_label" class="swal2-input" style="margin:0;width:100%;box-sizing:border-box;" value="' + roleSafeText(marker.label || marker.Label || '') + '">' +
+'<label style="font-size:12px;font-weight:800;color:#334155;">รายละเอียดสถานการณ์</label><textarea id="admin_flood_edit_note" class="swal2-textarea" style="margin:0;width:100%;box-sizing:border-box;min-height:90px;">' + roleSafeText(marker.note || marker.Note || '') + '</textarea></div>',
+showCancelButton: true,
+confirmButtonText: 'บันทึกการแก้ไข',
+cancelButtonText: 'ยกเลิก',
+confirmButtonColor: '#2563eb',
+preConfirm: function() {
+var label = (document.getElementById('admin_flood_edit_label').value || '').trim();
+if (!label) return Swal.showValidationMessage('กรุณาระบุชื่อจุด');
+return { type:document.getElementById('admin_flood_edit_type').value, label:label, note:(document.getElementById('admin_flood_edit_note').value || '').trim() };
+}
+}).then(function(r) {
+if (!r.isConfirmed) return;
+var lat = marker.lat !== undefined ? marker.lat : marker.Lat;
+var lng = marker.lng !== undefined ? marker.lng : marker.Lng;
+Swal.fire({ title:'กำลังบันทึก...', allowOutsideClick:false, didOpen:function() { Swal.showLoading(); } });
+google.script.run
+.withSuccessHandler(function() {
+Swal.fire({ icon:'success', title:'แก้ไขข้อมูลแล้ว', timer:1100, showConfirmButton:false });
+refreshFloodPointsAfterAdminChange(true);
+})
+.withFailureHandler(function(err) { Swal.fire('แก้ไขไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
+.updateZoneMarker(getFloodMarkerId(marker), r.value.type, r.value.label, lat, lng, r.value.note, getFloodAdminReporter(), APP_ACCESS_ROLE);
+});
+}
+function moveAdminFloodPoint(index) {
+if (!requireFloodPointAdmin()) return;
+var marker = (window._adminFloodMarkers || [])[index];
+if (!marker) return;
+Swal.close();
+pickAdminFloodPointLocation(marker, true);
+}
+function deleteAdminFloodPoint(index) {
+if (!requireFloodPointAdmin()) return;
+var marker = (window._adminFloodMarkers || [])[index];
+if (!marker) return;
+var cfg = getOCZoneTypeConfig(getZoneMarkerType(marker));
+Swal.fire({
+title: 'ลบจุดนี้?',
+html: '<b>' + roleSafeText(cfg.label) + '</b><br>' + roleSafeText(marker.label || marker.Label || ''),
+icon: 'warning',
+showCancelButton: true,
+confirmButtonText: 'ลบจุด',
+cancelButtonText: 'ยกเลิก',
+confirmButtonColor: '#dc2626'
+}).then(function(r) {
+if (!r.isConfirmed) return;
+Swal.fire({ title:'กำลังลบ...', allowOutsideClick:false, didOpen:function() { Swal.showLoading(); } });
+google.script.run
+.withSuccessHandler(function() {
+Swal.fire({ icon:'success', title:'ลบจุดแล้ว', timer:1000, showConfirmButton:false });
+refreshFloodPointsAfterAdminChange(true);
+})
+.withFailureHandler(function(err) { Swal.fire('ลบไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
+.deleteZoneMarker(getFloodMarkerId(marker), getFloodAdminReporter(), APP_ACCESS_ROLE);
+});
+}
 function drawOCZoneMarkersOnICMap(zones, supportReqs) {
 var allZones = (zones || []).filter(function(z) { return (z.locationKind || z.location_kind || 'outdoor') !== 'indoor'; });
 allZones = normalizeICOCState({ zoneMarkers: allZones }).zoneMarkers;

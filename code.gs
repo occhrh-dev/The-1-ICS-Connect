@@ -331,7 +331,7 @@ function ensureZoneMarkersSchema_() {
   var ss = SpreadsheetApp.openById(SSID);
   var sheet = ss.getSheetByName("Zone_Markers");
   if (!sheet) return null;
-  var requiredHeaders = ["Timestamp","ZoneType","Label","Lat","Lng","Note","LoggedBy","Phone"];
+  var requiredHeaders = ["Timestamp","ZoneType","Label","Lat","Lng","Note","LoggedBy","Phone","MarkerID"];
   var lastCol = Math.max(sheet.getLastColumn(), requiredHeaders.length);
   if (sheet.getLastRow() < 1) sheet.appendRow(requiredHeaders);
   var current = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
@@ -346,6 +346,20 @@ function ensureZoneMarkersSchema_() {
     .setFontColor('#ffffff');
   if (sheet.getMaxRows() > 1) {
     sheet.getRange(2, 8, sheet.getMaxRows() - 1, 1).setNumberFormat('@');
+    sheet.getRange(2, 9, sheet.getMaxRows() - 1, 1).setNumberFormat('@');
+  }
+  // เติมรหัสถาวรให้ข้อมูลเดิมเพียงครั้งเดียว เพื่อให้ Admin แก้ไข/ลบจุดได้โดยไม่อิงเลขแถวที่อาจเลื่อน
+  if (sheet.getLastRow() > 1) {
+    var idRange = sheet.getRange(2, 9, sheet.getLastRow() - 1, 1);
+    var ids = idRange.getValues();
+    var changed = false;
+    ids.forEach(function(row) {
+      if (!String(row[0] || '').trim()) {
+        row[0] = Utilities.getUuid();
+        changed = true;
+      }
+    });
+    if (changed) idRange.setValues(ids);
   }
   return sheet;
 }
@@ -3131,7 +3145,7 @@ function setupNewSheets() {
       "Timestamp","Source","Reporter","FileName","MimeType","FileURL","FileID","Note"
     ],
     "Zone_Markers": [
-      "Timestamp","ZoneType","Label","Lat","Lng","Note","LoggedBy","Phone"
+      "Timestamp","ZoneType","Label","Lat","Lng","Note","LoggedBy","Phone","MarkerID"
     ],
     "Hospital_Capacity": [
       "HospitalName","RedCapacity","YellowCapacity","GreenCapacity","BlackCapacity",
@@ -3470,7 +3484,8 @@ function saveZoneMarker(zoneType, label, lat, lng, note, loggedBy, phone, agency
     }
   }
 
-  sheet.appendRow([timestamp, zoneType, label, lat, lng, note || '', loggedBy || 'OC', safePhone]);
+  var markerId = Utilities.getUuid();
+  sheet.appendRow([timestamp, zoneType, label, lat, lng, note || '', loggedBy || 'OC', safePhone, markerId]);
   sheet.getRange(sheet.getLastRow(), 8).setNumberFormat('@').setValue(safePhone);
   addCommanderLog('📍 ปักหมุด ' + zoneType + ': ' + label + ' ที่ ' + lat + ',' + lng, loggedBy || 'OC');
   return "OK";
@@ -3482,7 +3497,7 @@ function getZoneMarkers() {
   if (!sheet) return [];
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return [];
-  var data = sheet.getRange(2, 1, lastRow - 1, Math.max(sheet.getLastColumn(), 8)).getValues();
+  var data = sheet.getRange(2, 1, lastRow - 1, Math.max(sheet.getLastColumn(), 9)).getValues();
   return data.map(function(row) {
     var loggedBy = String(row[6] || '');
     var phone = _normalizePhone_(row[7]) || _findLatestStaffPhone_(loggedBy);
@@ -3494,11 +3509,63 @@ function getZoneMarkers() {
       lng:      Number(row[4]) || null,
       note:     String(row[5] || ''),
       loggedBy: loggedBy,
-      phone:    phone
+      phone:    phone,
+      id:       String(row[8] || ''),
+      markerId: String(row[8] || '')
     };
   }).filter(function(z) {
     return z.type && z.lat !== null && z.lng !== null;
   });
+}
+
+function _findZoneMarkerRowById_(sheet, markerId) {
+  var target = String(markerId || '').trim();
+  if (!target || !sheet || sheet.getLastRow() < 2) return 0;
+  var ids = sheet.getRange(2, 9, sheet.getLastRow() - 1, 1).getDisplayValues();
+  for (var i = ids.length - 1; i >= 0; i--) {
+    if (String(ids[i][0] || '').trim() === target) return i + 2;
+  }
+  return 0;
+}
+
+function updateZoneMarker(markerId, zoneType, label, lat, lng, note, loggedBy, accessRole) {
+  _requireAdmin(String(accessRole || '').trim());
+  var sheet = ensureZoneMarkersSchema_();
+  if (!sheet) throw new Error('ไม่พบตาราง Zone_Markers');
+  var rowIndex = _findZoneMarkerRowById_(sheet, markerId);
+  if (!rowIndex) throw new Error('ไม่พบจุดที่ต้องการแก้ไข กรุณารีเฟรชรายการ');
+  var current = sheet.getRange(rowIndex, 1, 1, 9).getValues()[0];
+  var safeLat = Number(lat);
+  var safeLng = Number(lng);
+  if (!isFinite(safeLat) || !isFinite(safeLng)) throw new Error('พิกัดไม่ถูกต้อง');
+  var timestamp = Utilities.formatDate(new Date(), 'GMT+7', 'dd/MM/yyyy HH:mm:ss');
+  var safeReporter = String(loggedBy || 'Admin').trim() || 'Admin';
+  sheet.getRange(rowIndex, 1, 1, 9).setValues([[
+    timestamp,
+    String(zoneType || current[1] || ''),
+    String(label || current[2] || ''),
+    safeLat,
+    safeLng,
+    String(note || ''),
+    safeReporter,
+    current[7] || '',
+    String(markerId)
+  ]]);
+  addCommanderLog('✏️ แก้ไขจุด ' + (zoneType || current[1]) + ': ' + (label || current[2]), safeReporter);
+  return { ok: true, id: String(markerId) };
+}
+
+function deleteZoneMarker(markerId, loggedBy, accessRole) {
+  _requireAdmin(String(accessRole || '').trim());
+  var sheet = ensureZoneMarkersSchema_();
+  if (!sheet) throw new Error('ไม่พบตาราง Zone_Markers');
+  var rowIndex = _findZoneMarkerRowById_(sheet, markerId);
+  if (!rowIndex) throw new Error('ไม่พบจุดที่ต้องการลบ กรุณารีเฟรชรายการ');
+  var current = sheet.getRange(rowIndex, 1, 1, 9).getValues()[0];
+  var safeReporter = String(loggedBy || 'Admin').trim() || 'Admin';
+  sheet.deleteRow(rowIndex);
+  addCommanderLog('🗑️ ลบจุด ' + (current[1] || '-') + ': ' + (current[2] || '-'), safeReporter);
+  return { ok: true, id: String(markerId) };
 }
 
 // ==========================================
