@@ -3072,6 +3072,80 @@ if (nextRecords[key]) return;
 window._incidentSpecialMapRecords = nextRecords;
 window._incidentSpecialMapOverlays = overlays;
 }
+function getFloodLegendTarget(marker) {
+var type = getZoneMarkerType(marker);
+var label = marker.label || marker.Label || '';
+var points = [];
+var detail = '';
+if (type === 'FloodArea') {
+var area = parseFloodAreaMarker(marker);
+if (area) {
+label = area.name;
+points = area.points;
+if (area.depthCm !== '' && isFinite(area.depthCm)) detail = 'ระดับน้ำ ' + area.depthCm + ' ซม.';
+}
+} else if (type === 'RoadClosed') {
+var closure = parseRoadClosureMarker(marker);
+if (closure) {
+label = closure.label;
+points = closure.points;
+detail = closure.detail || '';
+}
+}
+var lat = Number(marker.lat !== undefined ? marker.lat : marker.Lat);
+var lng = Number(marker.lng !== undefined ? marker.lng : marker.Lng);
+if ((!isFinite(lat) || !isFinite(lng)) && points.length) {
+var center = getFloodAreaCentroid(points);
+lat = center.lat;
+lng = center.lng;
+}
+var cfg = type === 'FloodArea' ? { label:'ขอบเขตน้ำท่วม', short:'พื้นที่น้ำท่วม' } : getOCZoneTypeConfig(type);
+return {
+type:type,
+label:String(label || cfg.short || cfg.label || 'ไม่ระบุชื่อ'),
+detail:String(detail || ''),
+lat:lat,
+lng:lng,
+points:points
+};
+}
+function toggleFloodLegendType(type) {
+window._floodLegendExpandedTypes = window._floodLegendExpandedTypes || {};
+window._floodLegendExpandedTypes[type] = !window._floodLegendExpandedTypes[type];
+var zones = window._icZoneMarkers || (window._lastOCState && window._lastOCState.zoneMarkers) || [];
+updateFloodMapLayerUI(zones);
+}
+function focusFloodLegendItem(index, button) {
+var target = (window._floodLegendTargets || [])[Number(index)];
+if (!target || !dashMap) return;
+if (button && button.parentElement) {
+Array.prototype.forEach.call(button.parentElement.querySelectorAll('button'), function(item) {
+item.style.background = '#f8fafc';
+item.style.borderColor = '#e2e8f0';
+});
+button.style.background = '#dbeafe';
+button.style.borderColor = '#60a5fa';
+}
+var points = (target.points || []).map(function(point) { return [Number(point[0]), Number(point[1])]; }).filter(function(point) { return isFinite(point[0]) && isFinite(point[1]); });
+if (points.length >= 2) {
+var lngs = points.map(function(point) { return point[0]; });
+var lats = points.map(function(point) { return point[1]; });
+var bounds = [[Math.min.apply(null, lngs), Math.min.apply(null, lats)], [Math.max.apply(null, lngs), Math.max.apply(null, lats)]];
+if (typeof dashMap.fitBounds === 'function') {
+dashMap.fitBounds(bounds, { padding:80, duration:650, maxZoom:target.type === 'RoadClosed' ? 18 : 17 });
+return;
+}
+}
+var lat = Number(target.lat);
+var lng = Number(target.lng);
+if (!isFinite(lat) || !isFinite(lng)) return;
+var mapObj = dashMap._maptiler;
+if (mapObj && typeof mapObj.flyTo === 'function') mapObj.flyTo({ center:[lng, lat], zoom:17, duration:650 });
+else {
+dashMap.location({ lon:lng, lat:lat }, true);
+if (typeof dashMap.zoom === 'function') dashMap.zoom(17);
+}
+}
 function updateFloodMapLayerUI(zones) {
 var visible = window._floodLayerVisible !== false;
 var floodZones = (zones || []).filter(function(z) { return isFloodMapLayerType(getZoneMarkerType(z)); });
@@ -3094,16 +3168,27 @@ floodZones.forEach(function(z) {
 var type = getZoneMarkerType(z);
 counts[type] = (counts[type] || 0) + 1;
 });
+window._floodLegendExpandedTypes = window._floodLegendExpandedTypes || {};
+window._floodLegendTargets = [];
 var legendOrder = ['FloodArea','FloodDepth','RoadClosed','RoadHighVehicle','BoatLaunch','HighGround','SupplyPoint','ElectricHazard','PumpPoint'];
 var rows = legendOrder.filter(function(type) { return !!counts[type]; }).map(function(type) {
-if (type === 'FloodArea') return '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;"><span style="width:18px;height:18px;border-radius:4px;background:rgba(14,165,233,.35);border:2px solid #0369a1;display:inline-block;"></span><span style="flex:1;">ขอบเขตน้ำท่วม</span><b>' + counts[type] + '</b></div>';
-var cfg = getOCZoneTypeConfig(type);
-return '<div style="display:flex;align-items:center;gap:6px;margin-top:3px;"><span style="width:18px;height:18px;border-radius:50%;background:' + cfg.color + ';color:white;display:inline-flex;align-items:center;justify-content:center;"><i class="fas ' + cfg.icon + '" style="font-size:9px;"></i></span><span style="flex:1;">' + cfg.label + '</span><b>' + counts[type] + '</b></div>';
+var cfg = type === 'FloodArea' ? { label:'ขอบเขตน้ำท่วม', icon:'fa-draw-polygon', color:'#0ea5e9' } : getOCZoneTypeConfig(type);
+var expanded = !!window._floodLegendExpandedTypes[type];
+var targets = floodZones.filter(function(marker) { return getZoneMarkerType(marker) === type; }).map(getFloodLegendTarget).sort(function(a, b) { return a.label.localeCompare(b.label, 'th'); });
+var itemRows = targets.map(function(target) {
+var targetIndex = window._floodLegendTargets.length;
+window._floodLegendTargets.push(target);
+return '<button type="button" onclick="event.stopPropagation();focusFloodLegendItem(' + targetIndex + ',this)" title="เลื่อนไปยัง ' + roleSafeText(target.label) + '" style="width:100%;display:flex;align-items:center;gap:6px;border:1px solid #e2e8f0;border-radius:5px;background:#f8fafc;color:#334155;padding:4px 6px;margin-top:3px;text-align:left;cursor:pointer;font:700 9px Prompt,sans-serif;"><i class="fas fa-location-crosshairs" style="color:' + cfg.color + ';font-size:9px;"></i><span style="min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(target.label) + '</span>' + (target.detail ? '<span style="display:block;max-width:68px;overflow:hidden;text-overflow:ellipsis;font-size:8px;color:#64748b;white-space:nowrap;">' + roleSafeText(target.detail) + '</span>' : '') + '</button>';
+}).join('');
+var symbol = type === 'FloodArea'
+? '<span style="width:18px;height:18px;border-radius:4px;background:rgba(14,165,233,.35);border:2px solid #0369a1;display:inline-block;box-sizing:border-box;"></span>'
+: '<span style="width:18px;height:18px;border-radius:50%;background:' + cfg.color + ';color:white;display:inline-flex;align-items:center;justify-content:center;"><i class="fas ' + cfg.icon + '" style="font-size:9px;"></i></span>';
+return '<div style="margin-top:3px;"><button type="button" onclick="event.stopPropagation();toggleFloodLegendType(\'' + type + '\')" title="แสดงรายชื่อ ' + roleSafeText(cfg.label) + '" style="width:100%;border:0;background:transparent;padding:1px 0;display:flex;align-items:center;gap:6px;color:#334155;cursor:pointer;font:inherit;text-align:left;">' + symbol + '<span style="flex:1;font-weight:700;">' + cfg.label + '</span><b>' + counts[type] + '</b><i class="fas ' + (expanded ? 'fa-chevron-down' : 'fa-chevron-right') + '" style="width:9px;color:#0284c7;font-size:9px;"></i></button><div style="display:' + (expanded ? 'block' : 'none') + ';padding-left:8px;border-left:2px solid #bae6fd;margin-left:8px;max-height:130px;overflow-y:auto;">' + itemRows + '</div></div>';
 }).join('');
 legend.innerHTML = '<div class="flood-legend-drag-handle" style="display:flex;align-items:center;gap:7px;font-size:11px;font-weight:900;color:#075985;border-bottom:1px solid #bae6fd;padding-bottom:4px;cursor:move;user-select:none;touch-action:none;">' +
 '<span style="flex:1;white-space:nowrap;"><i class="fas fa-grip-vertical" style="color:#64748b;margin-right:4px;"></i><i class="fas fa-water"></i> สถานการณ์น้ำท่วม <span style="font-weight:600;">(' + floodZones.length + ' รายการ)</span></span>' +
 '<button type="button" onclick="event.stopPropagation();toggleFloodLegendCollapsed()" title="ยุบ/ขยายกล่อง" style="width:24px;height:22px;border:1px solid #bae6fd;border-radius:5px;background:white;color:#075985;cursor:pointer;padding:0;"><i id="floodLegendCollapseIcon" class="fas ' + (window._floodLegendCollapsed ? 'fa-chevron-up' : 'fa-chevron-down') + '"></i></button></div>' +
-'<div id="dashFloodLegendBody" style="display:' + (window._floodLegendCollapsed ? 'none' : 'block') + ';padding-top:2px;">' + rows + '</div>';
+'<div id="dashFloodLegendBody" style="display:' + (window._floodLegendCollapsed ? 'none' : 'block') + ';padding-top:2px;max-height:280px;overflow-y:auto;">' + rows + '</div>';
 legend.style.display = 'block';
 ensureFloodLegendInteraction();
 }
