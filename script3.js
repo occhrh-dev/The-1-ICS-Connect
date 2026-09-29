@@ -109,6 +109,39 @@ this._map = null;
 }
 };
 }
+function makeMapTilerPolygonOverlay(points, options) {
+options = options || {};
+var coords = (points || []).map(function(point) { return [Number(point[0]), Number(point[1])]; }).filter(function(point) { return isFinite(point[0]) && isFinite(point[1]); });
+if (coords.length < 3) return null;
+coords.push(coords[0].slice());
+var id = 'mt-polygon-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+return {
+_addToMap: function(targetMap) {
+var mapObj = targetMap && (targetMap._maptiler || targetMap);
+if (!mapObj || !mapObj.addSource) return;
+if (typeof mapObj.isStyleLoaded === 'function' && !mapObj.isStyleLoaded()) {
+var self = this;
+mapObj.once('styledata', function() { self._addToMap(mapObj); });
+return;
+}
+var sourceId = id + '-source';
+if (mapObj.getSource && mapObj.getSource(sourceId)) return;
+mapObj.addSource(sourceId, { type:'geojson', data:{ type:'Feature', properties:{}, geometry:{ type:'Polygon', coordinates:[coords] } } });
+mapObj.addLayer({ id:id + '-fill', type:'fill', source:sourceId, paint:{ 'fill-color':options.fillColor || '#0ea5e9', 'fill-opacity':options.fillOpacity == null ? 0.34 : options.fillOpacity } });
+mapObj.addLayer({ id:id + '-line', type:'line', source:sourceId, paint:{ 'line-color':options.lineColor || '#0369a1', 'line-width':options.lineWidth || 3 } });
+this._map = mapObj;
+this._sourceId = sourceId;
+this._layerIds = [id + '-fill', id + '-line'];
+},
+_removeFromMap: function() {
+var mapObj = this._map;
+if (!mapObj) return;
+(this._layerIds || []).forEach(function(layerId) { try { if (mapObj.getLayer(layerId)) mapObj.removeLayer(layerId); } catch(e) {} });
+try { if (mapObj.getSource(this._sourceId)) mapObj.removeSource(this._sourceId); } catch(e) {}
+this._map = null;
+}
+};
+}
 function makeLongdoHtmlMarker(loc, html, options) {
 options = options || {};
 if (typeof maptilersdk !== 'undefined') {
@@ -828,6 +861,7 @@ clearLongdoOverlayList(dashMap, zoneCircles);
 clearLongdoOverlayList(dashMap, window._icOCZoneOverlays || []);
 clearLongdoOverlayList(dashMap, window._icOCZoneCircles || []);
 clearLongdoOverlayList(dashMap, window._icOCReqAlertOverlays || []);
+clearLongdoOverlayList(dashMap, window._incidentSpecialMapOverlays || []);
 clearLongdoOverlayList(dashMap, Object.values(helpRequestMarkers || {}));
 clearLongdoOverlayList(dashMap, Object.values(responderLocationMarkers || {}));
 otherMarkers = [];
@@ -839,6 +873,7 @@ window._icOCZoneOverlayRecords = {};
 window._icOCZoneOverlays = [];
 window._icOCZoneCircles = [];
 window._icOCReqAlertOverlays = [];
+window._incidentSpecialMapOverlays = [];
 window._icOCZoneDrawKey = '';
 dashMap._maptiler.setStyle(style);
 var styleSwitchRendered = false;
@@ -1285,10 +1320,12 @@ const checkInBtn = document.getElementById('btn_checkin');
 const endBtn = document.getElementById('dash_end_btn');
 const escalateBtn = document.getElementById('dash_escalate_btn');
 const floodManageBtn = document.getElementById('dashFloodManageBtn');
+const floodAreaManageBtn = document.getElementById('dashFloodAreaManageBtn');
 const isAdmin = APP_ACCESS_ROLE === 'admin';
 if (endBtn) endBtn.style.display = isAdmin ? 'inline-block' : 'none';
 if (escalateBtn) escalateBtn.style.display = isAdmin ? 'inline-block' : 'none';
 if (floodManageBtn) floodManageBtn.style.display = isAdmin ? 'inline-block' : 'none';
+if (floodAreaManageBtn) floodAreaManageBtn.style.display = isAdmin ? 'inline-block' : 'none';
 if (!checkInBtn) return;
 if (TEMP_ROLE === 'IC') {
 checkInBtn.style.display = 'none';

@@ -135,7 +135,8 @@ function argsToBody(fnName, args) {
                evtLevel: a[4], evtEOC: a[5], commanderName: a[6],
                accessRole: a[7], commanderPosition: a[8],
                windDirectionDeg: a[9], windSpeedMs: a[10],
-               windMode: a[11], agencyId: a[12], eocCoords: a[13] };
+               windMode: a[11], agencyId: a[12], eocCoords: a[13],
+               incidentPoints: a[14], floodAreas: a[15] };
     case 'deactivateEmergency':
       return { commanderName: a[0], accessRole: a[1], agencyId: a[2] };
     case 'updateResource':

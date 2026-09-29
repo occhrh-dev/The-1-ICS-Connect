@@ -116,7 +116,7 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
     a = a || [];
     var m = {
       checkAppLogin:{inputPass:a[0],deviceId:a[1]},
-      activateEmergency:{evtName:a[0],evtLoc:a[1],evtCoords:a[2],evtPlan:a[3],evtLevel:a[4],evtEOC:a[5],commanderName:a[6],accessRole:a[7],commanderPosition:a[8],windDirectionDeg:a[9],windSpeedMs:a[10],windMode:a[11],agencyId:a[12],eocCoords:a[13]},
+      activateEmergency:{evtName:a[0],evtLoc:a[1],evtCoords:a[2],evtPlan:a[3],evtLevel:a[4],evtEOC:a[5],commanderName:a[6],accessRole:a[7],commanderPosition:a[8],windDirectionDeg:a[9],windSpeedMs:a[10],windMode:a[11],agencyId:a[12],eocCoords:a[13],incidentPoints:a[14],floodAreas:a[15]},
       deactivateEmergency:{commanderName:a[0],accessRole:a[1],agencyId:a[2]},
       updateResource:{type:a[0],val:a[1]},updateEmerCount:{type:a[0],val:a[1]},
       submitEmergencyAttendance:{name:a[0],role:a[1],location:a[2],phone:a[3],roleCode:a[4]},
@@ -631,8 +631,13 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 <p id="selectedCoordText" style="margin:0;color:#555;font-size:0.82rem;flex:1;min-width:100px;">ยังไม่ได้เลือกพิกัด</p>
 <div style="display:flex;gap:6px;flex-shrink:0;">
 <button onclick="usePickerMapCenter()" style="background:#475569;color:white;border:none;padding:8px 10px;border-radius:5px;cursor:pointer;font-weight:800;font-family:'Prompt',sans-serif;font-size:0.8rem;white-space:nowrap;"><i class="fas fa-crosshairs"></i> ใช้จุดกลาง</button>
-<button onclick="confirmMap()" style="background:#3498db;color:white;border:none;padding:8px 12px;border-radius:5px;cursor:pointer;font-weight:800;font-family:'Prompt',sans-serif;font-size:0.8rem;white-space:nowrap;"><i class="fas fa-check"></i> ยืนยัน</button>
+<button id="mapPickerConfirmBtn" onclick="confirmMap()" style="background:#3498db;color:white;border:none;padding:8px 12px;border-radius:5px;cursor:pointer;font-weight:800;font-family:'Prompt',sans-serif;font-size:0.8rem;white-space:nowrap;"><i class="fas fa-check"></i> ยืนยัน</button>
 </div>
+</div>
+<div id="pickerFloodDrawTools" style="display:none;padding:8px 10px;background:#e0f2fe;border-bottom:1px solid #7dd3fc;gap:8px;align-items:center;flex-wrap:wrap;">
+<div style="flex:1;min-width:180px;font-size:12px;color:#075985;font-weight:800;"><i class="fas fa-draw-polygon"></i> แตะรอบขอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด <span id="pickerFloodVertexCount" style="color:#dc2626;">(0 จุด)</span></div>
+<button type="button" onclick="undoPickerFloodVertex()" style="border:0;border-radius:6px;background:#64748b;color:white;padding:6px 9px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-undo"></i> ย้อน 1 จุด</button>
+<button type="button" onclick="clearPickerFloodDraft()" style="border:0;border-radius:6px;background:#dc2626;color:white;padding:6px 9px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-eraser"></i> ล้าง</button>
 </div>
 <div id="map"></div>
 <div id="pickerDistanceHint" style="display:none;padding:7px 12px;background:#fff7ed;color:#9a3412;border-top:1px solid #fed7aa;font-weight:bold;font-size:12px;text-align:center;"></div>
@@ -956,6 +961,7 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 <button onclick="openLongdoTrafficMap()" style="border:0;background:#f97316;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-road"></i> จราจร</button>
 <button id="dashFloodToggleBtn" onclick="toggleFloodMapLayer()" title="แสดง/ซ่อนจุดสถานการณ์น้ำท่วม" style="border:0;background:#0369a1;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-water"></i> น้ำท่วม</button>
 <button id="dashFloodManageBtn" onclick="openAdminFloodPointManager()" title="เพิ่ม แก้ไข ย้าย หรือลบจุดน้ำท่วม" style="display:none;border:0;background:#7c3aed;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-map-location-dot"></i> จัดการจุด</button>
+<button id="dashFloodAreaManageBtn" onclick="openAdminFloodAreaManager()" title="วาด แก้ไข หรือลบขอบเขตน้ำท่วม" style="display:none;border:0;background:#0e7490;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-draw-polygon"></i> พื้นที่น้ำ</button>
 <button id="dashTambonToggleBtn" onclick="toggleTambonBoundary()" title="แสดง/ซ่อนเส้นแบ่งเขตตำบล" style="border:0;background:white;color:#334155;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-draw-polygon"></i> เขตตำบล</button>
 </div>
 <div class="dash-toolbar-left" style="position:absolute;top:6px;left:6px;z-index:11;">
@@ -1802,6 +1808,8 @@ var pickerZoneOverlays = [];
 var pickerSearchMarkers = [];
 var mapPickerMode = 'declare';
 var mapPickLockToCurrent = false;
+var pickerFloodVertices = [];
+var pickerFloodDraftOverlay = null;
 var tempLat = "", tempLng = "";
 var dashMap, dashMarker, hatchedOverlay, zoneLabelMarker, radarCircle;
 var otherMarkers = [];
@@ -2697,11 +2705,23 @@ if (animate) map.flyTo({ zoom: z, essential: true });
 else map.setZoom(z);
 };
 map.Overlays = {
-add: function(o) { if (o && o.addTo) o.addTo(map); },
-remove: function(o) { if (o && o.remove) o.remove(); }
+add: function(o) {
+if (!o) return;
+if (typeof o._addToMap === 'function') o._addToMap(map);
+else if (typeof o.addTo === 'function') o.addTo(map);
+},
+remove: function(o) {
+if (!o) return;
+if (typeof o._removeFromMap === 'function') o._removeFromMap();
+else if (typeof o.remove === 'function') o.remove();
+}
 };
 map.on('click', function(e) {
 if (mapPickLockToCurrent) return;
+if (mapPickerMode === 'flood-area') {
+addPickerFloodVertex(e.lngLat.lng, e.lngLat.lat);
+return;
+}
 placeMarker({ lon: e.lngLat.lng, lat: e.lngLat.lat });
 });
 map.on('mousemove', function(e) {
@@ -2753,7 +2773,87 @@ showIncidentOnPickerMap();
 showERGOnPickerMap();
 showExistingZoneMarkersOnPickerMap();
 }
+if (mapPickerMode === 'flood-area') renderPickerFloodDraft();
 });
+}
+
+function makePickerFloodPolygonOverlay(points) {
+var id = 'picker-flood-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+var coords = (points || []).map(function(p) { return [Number(p[0]), Number(p[1])]; });
+if (coords.length >= 3) coords.push(coords[0].slice());
+return {
+_addToMap: function(targetMap) {
+var mapObj = targetMap && (targetMap._maptiler || targetMap);
+if (!mapObj || !mapObj.addSource || coords.length < 2) return;
+if (typeof mapObj.isStyleLoaded === 'function' && !mapObj.isStyleLoaded()) {
+var self = this;
+mapObj.once('styledata', function() { self._addToMap(mapObj); });
+return;
+}
+var sourceId = id + '-source';
+if (mapObj.getSource && mapObj.getSource(sourceId)) return;
+var isPolygon = coords.length >= 4;
+mapObj.addSource(sourceId, { type:'geojson', data:{ type:'Feature', properties:{}, geometry:{ type:isPolygon ? 'Polygon' : 'LineString', coordinates:isPolygon ? [coords] : coords } } });
+if (isPolygon) mapObj.addLayer({ id:id + '-fill', type:'fill', source:sourceId, paint:{ 'fill-color':'#0ea5e9', 'fill-opacity':0.34 } });
+mapObj.addLayer({ id:id + '-line', type:'line', source:sourceId, paint:{ 'line-color':'#0369a1', 'line-width':4 } });
+this._map = mapObj;
+this._sourceId = sourceId;
+this._layerIds = isPolygon ? [id + '-fill', id + '-line'] : [id + '-line'];
+},
+_removeFromMap: function() {
+var mapObj = this._map;
+if (!mapObj) return;
+(this._layerIds || []).forEach(function(layerId) { try { if (mapObj.getLayer(layerId)) mapObj.removeLayer(layerId); } catch(e) {} });
+try { if (mapObj.getSource(this._sourceId)) mapObj.removeSource(this._sourceId); } catch(e) {}
+this._map = null;
+}
+};
+}
+function updatePickerFloodTools() {
+var count = pickerFloodVertices.length;
+var countEl = document.getElementById('pickerFloodVertexCount');
+if (countEl) countEl.textContent = '(' + count + ' จุด)';
+var selected = document.getElementById('selectedCoordText');
+if (selected && mapPickerMode === 'flood-area') selected.textContent = count >= 3 ? 'วาดขอบเขตแล้ว ' + count + ' จุด — กดยืนยันได้' : 'แตะเพิ่มอีก ' + Math.max(0, 3 - count) + ' จุดเพื่อสร้างพื้นที่';
+var btn = document.getElementById('mapPickerConfirmBtn');
+if (btn && mapPickerMode === 'flood-area') {
+btn.disabled = count < 3;
+btn.style.opacity = count < 3 ? '.45' : '1';
+}
+}
+function renderPickerFloodDraft() {
+if (!map) return;
+if (pickerFloodDraftOverlay) { try { map.Overlays.remove(pickerFloodDraftOverlay); } catch(e) {} }
+pickerFloodDraftOverlay = null;
+if (pickerFloodVertices.length >= 2) {
+pickerFloodDraftOverlay = makePickerFloodPolygonOverlay(pickerFloodVertices);
+map.Overlays.add(pickerFloodDraftOverlay);
+}
+updatePickerFloodTools();
+}
+function addPickerFloodVertex(lng, lat) {
+lng = Number(lng); lat = Number(lat);
+if (!isFinite(lng) || !isFinite(lat)) return;
+pickerFloodVertices.push([Number(lng.toFixed(6)), Number(lat.toFixed(6))]);
+tempLat = lat.toFixed(6);
+tempLng = lng.toFixed(6);
+renderPickerFloodDraft();
+}
+function undoPickerFloodVertex() {
+pickerFloodVertices.pop();
+renderPickerFloodDraft();
+}
+function clearPickerFloodDraft() {
+pickerFloodVertices = [];
+tempLat = '';
+tempLng = '';
+renderPickerFloodDraft();
+}
+function getPickerFloodCentroid(points) {
+var list = points || [];
+if (!list.length) return { lat:0, lng:0 };
+var sums = list.reduce(function(acc, p) { acc.lng += Number(p[0]) || 0; acc.lat += Number(p[1]) || 0; return acc; }, {lat:0,lng:0});
+return { lat:sums.lat / list.length, lng:sums.lng / list.length };
 }
 function placeMarker(location) {
 if (!map || !location) return;
@@ -3151,21 +3251,6 @@ var lng = parseFloat(lngEl && lngEl.value);
 if (isNaN(lat) || isNaN(lng)) return null;
 return { lon: lng, lat: lat };
 }
-function configureMapPickerUI() {
-var isEOC = mapPickerMode === 'eoc';
-var title = document.getElementById('mapPickerTitle');
-var input = document.getElementById('placeSearchInput');
-var coordInput = document.getElementById('coordPasteInput');
-var selected = document.getElementById('selectedCoordText');
-var result = document.getElementById('placeSearchResult');
-if (title) title.innerHTML = isEOC
-? '<i class="fas fa-location-dot"></i> จิ้มเลือกที่ตั้ง EOC'
-: '<i class="fas fa-map-marker-alt"></i> จิ้มเลือกจุดเกิดเหตุ';
-if (input) input.placeholder = isEOC ? 'ค้นหาที่ตั้ง EOC...' : 'ค้นหาสถานที่ในไทย...';
-if (coordInput) coordInput.placeholder = isEOC ? 'วาง Google Maps link หรือ lat,lon ของ EOC' : 'วาง Google Maps link หรือ lat,lon เช่น 12.866,101.141';
-if (selected) selected.innerText = isEOC ? 'ยังไม่ได้เลือกพิกัด EOC' : 'ยังไม่ได้เลือกพิกัด';
-if (result) result.innerHTML = '';
-}
 function resetPickerSelection() {
 tempLat = "";
 tempLng = "";
@@ -3176,6 +3261,7 @@ marker = null;
 }
 function configureMapPickerUI() {
 var isEOC = mapPickerMode === 'eoc';
+var isFloodArea = mapPickerMode === 'flood-area';
 var ctx = window._mapPickerContext || {};
 var title = document.getElementById('mapPickerTitle');
 var input = document.getElementById('placeSearchInput');
@@ -3193,6 +3279,15 @@ if (input) input.placeholder = searchPlaceholder;
 if (coordInput) coordInput.placeholder = coordPlaceholder;
 if (selected) selected.innerText = selectedText;
 if (result) result.innerHTML = '';
+var tools = document.getElementById('pickerFloodDrawTools');
+if (tools) tools.style.display = isFloodArea ? 'flex' : 'none';
+var confirmBtn = document.getElementById('mapPickerConfirmBtn');
+if (confirmBtn) {
+confirmBtn.innerHTML = isFloodArea ? '<i class="fas fa-check"></i> ใช้ขอบเขตนี้' : '<i class="fas fa-check"></i> ยืนยัน';
+confirmBtn.disabled = isFloodArea && pickerFloodVertices.length < 3;
+confirmBtn.style.opacity = confirmBtn.disabled ? '.45' : '1';
+}
+if (isFloodArea) updatePickerFloodTools();
 }
 function safeMapText(value) {
 return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
@@ -3641,7 +3736,7 @@ return;
 _doClientSearch(keyword, resultEl);
 }
 function openDeclareMapPicker(purpose) {
-mapPickerMode = purpose === 'eoc' ? 'eoc' : 'declare';
+mapPickerMode = purpose === 'eoc' ? 'eoc' : (purpose === 'incident-point' ? 'declare-multipoint' : 'declare');
 if (mapPickerMode === 'eoc' && !window._eocPickerMode) window._eocFormPickerMode = true;
 if (mapPickerMode !== 'eoc') window._eocFormPickerMode = false;
 window._mapPickerContext = mapPickerMode === 'eoc' ? {
@@ -3650,19 +3745,45 @@ searchPlaceholder: 'ค้นหาที่ตั้ง EOC...',
 coordPlaceholder: 'วาง Google Maps link หรือ lat,lon ของ EOC',
 selectedText: 'ยังไม่ได้เลือกพิกัด EOC'
 } : {
-titleHtml: '<i class="fas fa-map-marker-alt"></i> เลือกจุดเกิดเหตุ',
+titleHtml: '<i class="fas fa-map-marker-alt"></i> ' + (mapPickerMode === 'declare-multipoint' ? 'เพิ่มจุดเกิดเหตุ' : 'เลือกจุดเกิดเหตุ'),
 searchPlaceholder: 'ค้นหาสถานที่เกิดเหตุ...',
 coordPlaceholder: 'วาง Google Maps link หรือ lat,lon จุดเกิดเหตุ',
 selectedText: 'ยังไม่ได้เลือกพิกัดจุดเกิดเหตุ'
 };
 window._zonePickerCallback = null;
+window._mapPickerConfirmCallback = mapPickerMode === 'declare-multipoint' ? function(lat, lng) {
+if (typeof addPendingDeclareIncidentPoint === 'function') addPendingDeclareIncidentPoint(lat, lng);
+} : null;
 mapPickLockToCurrent = false;
 resetPickerSelection();
 openMap();
 }
+function openFloodAreaMapPicker(callback, initialPoints, context) {
+mapPickerMode = 'flood-area';
+window._eocFormPickerMode = false;
+window._zonePickerCallback = null;
+window._mapPickerConfirmCallback = typeof callback === 'function' ? callback : null;
+window._mapPickerContext = context || {
+titleHtml: '<i class="fas fa-draw-polygon"></i> วาดขอบเขตน้ำท่วม',
+searchPlaceholder: 'ค้นหาชุมชน ถนน หรือสถานที่...',
+coordPlaceholder: 'วางพิกัดเพื่อเลื่อนไปยังบริเวณที่ต้องการวาด',
+selectedText: 'แตะรอบขอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด'
+};
+pickerFloodVertices = Array.isArray(initialPoints) ? initialPoints.map(function(p) { return [Number(p[0]), Number(p[1])]; }).filter(function(p) { return isFinite(p[0]) && isFinite(p[1]); }) : [];
+tempLat = '';
+tempLng = '';
+mapPickLockToCurrent = false;
+openMap();
+if (pickerFloodVertices.length && map) {
+var center = getPickerFloodCentroid(pickerFloodVertices);
+map.location({ lon:center.lng, lat:center.lat }, true);
+}
+}
 function openMap() {
 var mapModal = document.getElementById('modal_MapPicker');
+if (mapPickerMode !== 'flood-area' && mapPickerMode !== 'declare-multipoint') {
 mapPickerMode = (typeof window._zonePickerCallback === 'function') ? 'zone' : ((window._eocFormPickerMode || window._eocPickerMode) ? 'eoc' : 'declare');
+}
 configureMapPickerUI();
 var hint = document.getElementById('pickerDistanceHint');
 if (hint) hint.style.display = 'none';
@@ -3688,6 +3809,7 @@ rawMap.once('idle', function() { renderPickerMapContext(true); });
 } else {
 renderPickerMapContext(true);
 }
+if (mapPickerMode === 'flood-area') renderPickerFloodDraft();
 }, 300);
 }
 function closeMap() {
@@ -3695,8 +3817,12 @@ var mapModal = document.getElementById('modal_MapPicker');
 toggleMapFullscreen(false);
 mapModal.style.display = 'none';
 window._zonePickerCallback = null;
+window._mapPickerConfirmCallback = null;
 mapPickLockToCurrent = false;
 mapPickerMode = 'declare';
+if (pickerFloodDraftOverlay && map) { try { map.Overlays.remove(pickerFloodDraftOverlay); } catch(e) {} }
+pickerFloodDraftOverlay = null;
+pickerFloodVertices = [];
 clearPickerSearchMarkers();
 clearPickerErgOverlays();
 clearPickerZoneOverlays();
@@ -3708,6 +3834,18 @@ var hint = document.getElementById('pickerDistanceHint');
 if (hint) hint.style.display = 'none';
 }
 function confirmMap() {
+if (mapPickerMode === 'flood-area') {
+if (pickerFloodVertices.length < 3) {
+Swal.fire('ขอบเขตยังไม่ครบ', 'กรุณาแตะรอบพื้นที่อย่างน้อย 3 จุด', 'warning');
+return;
+}
+var areaCallback = window._mapPickerConfirmCallback;
+var areaPoints = pickerFloodVertices.map(function(p) { return p.slice(); });
+var areaCenter = getPickerFloodCentroid(areaPoints);
+closeMap();
+if (typeof areaCallback === 'function') areaCallback(areaPoints, areaCenter);
+return;
+}
 if(tempLat && tempLng) {
 if (window._eocFormPickerMode) {
 window._eocFormPickerMode = false;
@@ -3737,6 +3875,12 @@ window._zonePickerCallback = null;
 mapPickLockToCurrent = false;
 closeMap();
 zoneCallback(tempLat, tempLng);
+} else if (typeof window._mapPickerConfirmCallback === 'function') {
+var pickerCallback = window._mapPickerConfirmCallback;
+var selectedLat = tempLat;
+var selectedLng = tempLng;
+closeMap();
+pickerCallback(selectedLat, selectedLng);
 } else {
 var latInput = document.getElementById('hidden-lat');
 var lngInput = document.getElementById('hidden-lng');
@@ -6390,6 +6534,8 @@ window._dashboardLiveMarkerRecords = {};
 window._icOCZoneOverlayRecords = {};
 window._icOCZoneOverlays = [];
 window._icOCZoneCircles = [];
+clearLongdoOverlayList(dashMap, window._incidentSpecialMapOverlays || []);
+window._incidentSpecialMapOverlays = [];
 removeLongdoOverlay(dashMap, dashMarker); dashMarker = null;
 removeLongdoOverlay(dashMap, dashEOCMarker); dashEOCMarker = null;
 removeLongdoOverlay(dashMap, zoneLabelMarker); zoneLabelMarker = null;
@@ -6640,8 +6786,8 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }
 </script>
 
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260929_flood_admin1" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260929_flood_admin1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260929_flood_area1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260929_flood_area1" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {

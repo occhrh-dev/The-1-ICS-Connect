@@ -913,7 +913,11 @@ function _countZonesForAgency_(agencyId) {
   if (!sheet) return 0;
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) return 0;
-  return lastRow - 1;
+  var types = sheet.getRange(2, 2, lastRow - 1, 1).getDisplayValues();
+  return types.filter(function(row) {
+    var type = String(row[0] || '').trim();
+    return type !== 'IncidentPoint' && type !== 'FloodArea';
+  }).length;
 }
 
 /**
@@ -1903,11 +1907,66 @@ function _getAutoWindForCoords_(evtCoords) {
 }
 
 
-function activateEmergency(evtName, evtLoc, evtCoords, evtPlan, evtLevel, evtEOC, commanderName, accessRole, commanderPosition, windDirectionDeg, windSpeedMs, windMode, agencyId, eocCoords) {
+function _parseIncidentMapArray_(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      var parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) { return []; }
+  }
+  return [];
+}
+
+function _saveInitialIncidentMapLayers_(incidentPoints, floodAreas, loggedBy) {
+  var points = _parseIncidentMapArray_(incidentPoints);
+  var areas = _parseIncidentMapArray_(floodAreas);
+  if (!points.length && !areas.length) return { incidentPoints: 0, floodAreas: 0 };
+  var sheet = ensureZoneMarkersSchema_();
+  if (!sheet) throw new Error('ไม่พบตาราง Zone_Markers');
+  var timestamp = Utilities.formatDate(new Date(), 'GMT+7', 'dd/MM/yyyy HH:mm:ss');
+  var reporter = String(loggedBy || 'Admin').trim() || 'Admin';
+  var rows = [];
+  points.forEach(function(point, index) {
+    var lat = Number(point && point.lat);
+    var lng = Number(point && point.lng);
+    if (!isFinite(lat) || !isFinite(lng)) return;
+    var label = String((point && point.label) || ('จุดเกิดเหตุ ' + (index + 1))).trim();
+    rows.push([timestamp, 'IncidentPoint', label, lat, lng, JSON.stringify({ kind:'incidentPoint', version:1, primary:index === 0 }), reporter, '', Utilities.getUuid()]);
+  });
+  areas.forEach(function(area, index) {
+    var rawPoints = Array.isArray(area && area.points) ? area.points : [];
+    var cleanPoints = rawPoints.map(function(point) {
+      return [Number(point && point[0]), Number(point && point[1])];
+    }).filter(function(point) { return isFinite(point[0]) && isFinite(point[1]); });
+    if (cleanPoints.length < 3) return;
+    var lat = Number(area && area.lat);
+    var lng = Number(area && area.lng);
+    if (!isFinite(lat) || !isFinite(lng)) {
+      var total = cleanPoints.reduce(function(sum, point) { sum.lat += point[1]; sum.lng += point[0]; return sum; }, {lat:0,lng:0});
+      lat = total.lat / cleanPoints.length;
+      lng = total.lng / cleanPoints.length;
+    }
+    var name = String((area && area.name) || ('พื้นที่น้ำท่วม ' + (index + 1))).trim();
+    var depth = area && area.depthCm !== '' && isFinite(Number(area.depthCm)) ? Number(area.depthCm) : '';
+    var severity = ['monitor','moderate','severe'].indexOf(String(area && area.severity)) >= 0 ? String(area.severity) : 'moderate';
+    var note = JSON.stringify({ kind:'floodArea', version:1, name:name, depthCm:depth, severity:severity, points:cleanPoints });
+    rows.push([timestamp, 'FloodArea', name, lat, lng, note, reporter, '', Utilities.getUuid()]);
+  });
+  if (rows.length) sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 9).setValues(rows);
+  return { incidentPoints: points.length, floodAreas: areas.length };
+}
+
+function activateEmergency(evtName, evtLoc, evtCoords, evtPlan, evtLevel, evtEOC, commanderName, accessRole, commanderPosition, windDirectionDeg, windSpeedMs, windMode, agencyId, eocCoords, incidentPoints, floodAreas) {
   _cacheRemoveAll_();
   _requireAdmin(accessRole);
   _useAgencySpreadsheetForRequest_(agencyId, '');
   _resetIncidentOperationalData_();
+  var normalizedIncidentPoints = _parseIncidentMapArray_(incidentPoints);
+  if (normalizedIncidentPoints.length) {
+    var primary = normalizedIncidentPoints[0] || {};
+    if (isFinite(Number(primary.lat)) && isFinite(Number(primary.lng))) evtCoords = Number(primary.lat) + ',' + Number(primary.lng);
+  }
   var ss    = SpreadsheetApp.openById(SSID);
   var sheet = ss.getSheetByName("Config");
   var data  = sheet.getDataRange().getValues();
@@ -1971,6 +2030,7 @@ function activateEmergency(evtName, evtLoc, evtCoords, evtPlan, evtLevel, evtEOC
 
   // 🔧 รวมการเขียนค่า Config ทั้งหมด (~30 คีย์) เป็น setValues() ครั้งเดียว — เดิมเขียนทีละเซลล์ทำให้เปิดเหตุช้าเกือบ 40 วิ
   _setConfigBatch_(sheet, data, updates);
+  var mapLayerCounts = _saveInitialIncidentMapLayers_(normalizedIncidentPoints, floodAreas, commanderName || 'Admin');
   var joinInfo = _createEmergencyJoinLink_(agencyId, ss.getId(), sheet, data);
 
   var logMsg = "🚨 ประกาศภาวะฉุกเฉิน: " + evtName + " | สถานที่: " + evtLoc + " | EOC: " + evtEOC;
@@ -1988,7 +2048,7 @@ function activateEmergency(evtName, evtLoc, evtCoords, evtPlan, evtLevel, evtEOC
     'กรุณาเข้าสู่ระบบเพื่อปฏิบัติงาน',
     joinInfo.url || appUrl || 'กรุณาเปิดลิงก์ Web App ของระบบ EOC'
   ]);
-  return { ok: true, videoRoomName: videoRoomName, joinToken: joinInfo.token, joinUrl: joinInfo.url, agencySheetId: joinInfo.sheetId };
+  return { ok: true, videoRoomName: videoRoomName, joinToken: joinInfo.token, joinUrl: joinInfo.url, agencySheetId: joinInfo.sheetId, mapLayers: mapLayerCounts };
 }
 function setEOCCoords(lat, lng, accessRole, agencyId) {
   _requireAdmin(accessRole);
