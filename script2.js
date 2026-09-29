@@ -2933,12 +2933,13 @@ mapObj.once('styledata', function() { self._addToMap(mapObj); });
 return;
 }
 var sourceId = id + '-source';
-if (mapObj.getSource && mapObj.getSource(sourceId)) return;
-mapObj.addSource(sourceId, { type:'geojson', data:{ type:'Feature', properties:{}, geometry:{ type:'LineString', coordinates:coords } } });
-mapObj.addLayer({ id:id + '-line', type:'line', source:sourceId, layout:{ 'line-cap':'round', 'line-join':'round' }, paint:{ 'line-color':options.lineColor || '#dc2626', 'line-width':options.lineWidth || 7, 'line-opacity':options.lineOpacity == null ? 0.96 : options.lineOpacity } });
+if (!mapObj.getSource || !mapObj.getSource(sourceId)) mapObj.addSource(sourceId, { type:'geojson', data:{ type:'Feature', properties:{}, geometry:{ type:'LineString', coordinates:coords } } });
+if (!mapObj.getLayer || !mapObj.getLayer(id + '-casing')) mapObj.addLayer({ id:id + '-casing', type:'line', source:sourceId, layout:{ 'line-cap':'round', 'line-join':'round' }, paint:{ 'line-color':'#ffffff', 'line-width':(options.lineWidth || 7) + 4, 'line-opacity':0.92 } });
+if (!mapObj.getLayer || !mapObj.getLayer(id + '-line')) mapObj.addLayer({ id:id + '-line', type:'line', source:sourceId, layout:{ 'line-cap':'round', 'line-join':'round' }, paint:{ 'line-color':options.lineColor || '#dc2626', 'line-width':options.lineWidth || 7, 'line-opacity':options.lineOpacity == null ? 0.96 : options.lineOpacity } });
+try { if (mapObj.moveLayer) { mapObj.moveLayer(id + '-casing'); mapObj.moveLayer(id + '-line'); } } catch(e) {}
 this._map = mapObj;
 this._sourceId = sourceId;
-this._layerIds = [id + '-line'];
+this._layerIds = [id + '-line', id + '-casing'];
 },
 _removeFromMap: function() {
 var mapObj = this._map;
@@ -2960,56 +2961,115 @@ return type === 'FloodArea' || isFloodZoneType(type);
 function clearIncidentSpecialMapLayers() {
 (window._incidentSpecialMapOverlays || []).forEach(function(overlay) { removeLongdoOverlay(dashMap, overlay); });
 window._incidentSpecialMapOverlays = [];
+window._incidentSpecialMapRecords = {};
 }
 function drawIncidentSpecialMapLayers(allZones) {
 if (!dashMap) return;
-clearIncidentSpecialMapLayers();
+var oldRecords = window._incidentSpecialMapRecords || {};
+var nextRecords = {};
 var overlays = [];
-var incidentPoints = (allZones || []).filter(function(marker) { return getZoneMarkerType(marker) === 'IncidentPoint'; });
-incidentPoints.forEach(function(marker, index) {
+function retainSpecialRecord(key, signature, creator) {
+var old = oldRecords[key];
+var reusable = old && old.signature === signature && (old.overlays || []).every(function(overlay) {
+return !overlay || typeof overlay._addToMap !== 'function' || !!overlay._map;
+});
+if (reusable) {
+nextRecords[key] = old;
+(old.overlays || []).forEach(function(overlay) { overlays.push(overlay); });
+return;
+}
+if (old) (old.overlays || []).forEach(function(overlay) { removeLongdoOverlay(dashMap, overlay); });
+var created = creator() || [];
+nextRecords[key] = { signature:signature, overlays:created };
+created.forEach(function(overlay) { overlays.push(overlay); });
+}
+var incidentPoints = (allZones || []).filter(function(marker) { return getZoneMarkerType(marker) === 'IncidentPoint'; }).sort(function(a, b) {
+var aKey = String(getFloodMarkerId(a) || a.label || a.Label || '') + '|' + String(a.lat || a.Lat || '') + '|' + String(a.lng || a.Lng || '');
+var bKey = String(getFloodMarkerId(b) || b.label || b.Label || '') + '|' + String(b.lat || b.Lat || '') + '|' + String(b.lng || b.Lng || '');
+return aKey.localeCompare(bKey);
+});
+if (incidentPoints.length > 1 && typeof dashMarker !== 'undefined' && dashMarker) {
+removeLongdoOverlay(dashMap, dashMarker);
+dashMarker = null;
+}
+if (incidentPoints.length <= 1 && typeof dashMarker !== 'undefined' && !dashMarker && typeof buildDashboardIncidentMarkerHtml === 'function') {
+var singlePoint = incidentPoints[0] || {};
+var singleLat = Number(singlePoint.lat !== undefined ? singlePoint.lat : singlePoint.Lat);
+var singleLng = Number(singlePoint.lng !== undefined ? singlePoint.lng : singlePoint.Lng);
+if (!isFinite(singleLat) || !isFinite(singleLng)) {
+singleLat = Number(incidentCenter && incidentCenter.lat);
+singleLng = Number(incidentCenter && incidentCenter.lng);
+}
+if (isFinite(singleLat) && isFinite(singleLng)) {
+dashMarker = makeLongdoHtmlMarker({ lon:singleLng, lat:singleLat }, buildDashboardIncidentMarkerHtml(), { offset:{x:0,y:0}, scaleMode:'none', title:'จุดเกิดเหตุ' });
+dashMap.Overlays.add(dashMarker);
+}
+}
+if (incidentPoints.length > 1) incidentPoints.forEach(function(marker, index) {
 var lat = Number(marker.lat !== undefined ? marker.lat : marker.Lat);
 var lng = Number(marker.lng !== undefined ? marker.lng : marker.Lng);
 if (!isFinite(lat) || !isFinite(lng)) return;
 var label = marker.label || marker.Label || ('จุดเกิดเหตุ ' + (index + 1));
+var key = 'incident:' + (getFloodMarkerId(marker) || [lat.toFixed(6), lng.toFixed(6), label].join('|'));
+var signature = [index, lat, lng, label].join('|');
+retainSpecialRecord(key, signature, function() {
 var html = '<div style="position:relative;width:34px;height:34px;border-radius:50%;background:#dc2626;color:white;border:3px solid white;box-shadow:0 0 0 3px rgba(220,38,38,.3),0 4px 12px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font:900 14px Prompt,sans-serif;">' + (index + 1) + '</div>' +
 '<div style="position:absolute;left:50%;top:38px;transform:translateX(-50%);background:#991b1b;color:white;border-radius:5px;padding:2px 6px;white-space:nowrap;font:800 10px Prompt,sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.35);">' + roleSafeText(label) + '</div>';
 var pointMarker = makeLongdoHtmlMarker({lon:lng,lat:lat}, html, { offset:{x:0,y:0}, scaleMode:'none', title:'จุดเกิดเหตุ', markerOptions:{detail:'<b>จุดเกิดเหตุ ' + (index + 1) + '</b><br>' + roleSafeText(label)} });
 dashMap.Overlays.add(pointMarker);
-overlays.push(pointMarker);
+return [pointMarker];
+});
 });
 if (window._floodLayerVisible !== false) {
 (allZones || []).filter(function(marker) { return getZoneMarkerType(marker) === 'FloodArea'; }).forEach(function(marker) {
 var area = parseFloodAreaMarker(marker);
 if (!area) return;
 var style = area.severity === 'severe' ? {fill:'#ef4444',line:'#b91c1c'} : area.severity === 'monitor' ? {fill:'#f59e0b',line:'#b45309'} : {fill:'#0ea5e9',line:'#0369a1'};
+var key = 'flood:' + (getFloodMarkerId(marker) || (area.name + '|' + JSON.stringify(area.points)));
+var signature = JSON.stringify([area.name, area.depthCm, area.severity, area.points]);
+retainSpecialRecord(key, signature, function() {
+var created = [];
 var polygon = makeMapTilerPolygonOverlay(area.points, { fillColor:style.fill, fillOpacity:0.34, lineColor:style.line, lineWidth:3 });
-if (polygon) { dashMap.Overlays.add(polygon); overlays.push(polygon); }
+if (polygon) { dashMap.Overlays.add(polygon); created.push(polygon); }
 var center = getFloodAreaCentroid(area.points);
 var depthText = area.depthCm === '' || !isFinite(area.depthCm) ? '' : ' · ' + area.depthCm + ' ซม.';
-var labelHtml = '<div style="background:' + style.line + ';color:white;border:2px solid white;border-radius:7px;padding:4px 8px;box-shadow:0 2px 8px rgba(0,0,0,.38);font:900 11px Prompt,sans-serif;white-space:nowrap;"><i class="fas fa-water"></i> ' + roleSafeText(area.name) + depthText + '</div>';
+var labelHtml = '<div style="background:' + style.line + 'e6;color:white;border:1px solid white;border-radius:5px;padding:2px 5px;box-shadow:0 1px 5px rgba(0,0,0,.32);font:800 8px Prompt,sans-serif;white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis;"><i class="fas fa-water" style="font-size:7px;"></i> ' + roleSafeText(area.name) + '</div>';
 var labelMarker = makeLongdoHtmlMarker({lon:center.lng,lat:center.lat}, labelHtml, { offset:{x:0,y:0}, scaleMode:'none', title:'พื้นที่น้ำท่วม', markerOptions:{detail:'<b>' + roleSafeText(area.name) + '</b>' + (depthText ? '<br>ระดับน้ำประมาณ ' + roleSafeText(area.depthCm) + ' ซม.' : '')} });
 dashMap.Overlays.add(labelMarker);
-overlays.push(labelMarker);
+created.push(labelMarker);
+return created;
+});
 });
 (allZones || []).filter(function(marker) { return getZoneMarkerType(marker) === 'RoadClosed' && parseRoadClosureMarker(marker); }).forEach(function(marker) {
 var closure = parseRoadClosureMarker(marker);
 if (!closure) return;
+var key = 'road:' + (getFloodMarkerId(marker) || (closure.label + '|' + JSON.stringify(closure.points)));
+var signature = JSON.stringify([closure.label, closure.detail, closure.points]);
+retainSpecialRecord(key, signature, function() {
+var created = [];
 var line = makeMapTilerLineOverlay(closure.points, { lineColor:'#dc2626', lineWidth:7, lineOpacity:0.97 });
-if (line) { dashMap.Overlays.add(line); overlays.push(line); }
+if (line) { dashMap.Overlays.add(line); created.push(line); }
 var endpoints = [closure.points[0], closure.points[closure.points.length - 1]];
 endpoints.forEach(function(point, index) {
 var endpointHtml = '<div style="width:26px;height:26px;border-radius:50%;background:#dc2626;color:white;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;font:900 11px Prompt,sans-serif;"><i class="fas fa-road-barrier"></i></div>';
 var endpoint = makeLongdoHtmlMarker({lon:point[0],lat:point[1]}, endpointHtml, { offset:{x:0,y:0}, scaleMode:'none', title:index === 0 ? 'หัวถนนปิด' : 'ท้ายถนนปิด', markerOptions:{detail:'<b>' + roleSafeText(closure.label) + '</b><br>' + (index === 0 ? 'หัวแนวปิดถนน' : 'ท้ายแนวปิดถนน') + (closure.detail ? '<br>' + roleSafeText(closure.detail) : '')} });
 dashMap.Overlays.add(endpoint);
-overlays.push(endpoint);
+created.push(endpoint);
 });
 var center = getFloodAreaCentroid(closure.points);
 var roadLabelHtml = '<div style="background:#b91c1c;color:white;border:2px solid white;border-radius:6px;padding:3px 7px;box-shadow:0 2px 8px rgba(0,0,0,.4);font:900 10px Prompt,sans-serif;white-space:nowrap;"><i class="fas fa-road-barrier"></i> ' + roleSafeText(closure.label) + '</div>';
 var roadLabel = makeLongdoHtmlMarker({lon:center.lng,lat:center.lat}, roadLabelHtml, { offset:{x:0,y:0}, scaleMode:'none', title:'ถนนปิด', markerOptions:{detail:'<b>ถนนปิด / ผ่านไม่ได้</b><br>' + roleSafeText(closure.label) + (closure.detail ? '<br>' + roleSafeText(closure.detail) : '')} });
 dashMap.Overlays.add(roadLabel);
-overlays.push(roadLabel);
+created.push(roadLabel);
+return created;
+});
 });
 }
+Object.keys(oldRecords).forEach(function(key) {
+if (nextRecords[key]) return;
+(oldRecords[key].overlays || []).forEach(function(overlay) { removeLongdoOverlay(dashMap, overlay); });
+});
+window._incidentSpecialMapRecords = nextRecords;
 window._incidentSpecialMapOverlays = overlays;
 }
 function updateFloodMapLayerUI(zones) {
@@ -3477,7 +3537,7 @@ return [(r.id||r.rowIndex) || '', r.type || '', r.status || 'pending', r.respons
 }).join(',');
 var drawKey = allZones.map(function(z) {
 return [getZoneMarkerType(z), z.label || z.Label || '', z.lat || z.Lat || '', z.lng || z.Lng || '', z.note || z.Note || '', z.loggedBy || z.by || '', z.phone || z.tel || ''].join('|');
-}).join('~') + '|marker-style-flood-v3|flood=' + (window._floodLayerVisible !== false) + '|' + reqKey;
+}).sort().join('~') + '|marker-style-flood-v4|flood=' + (window._floodLayerVisible !== false) + '|' + reqKey;
 if (window._icOCZoneDrawKey === drawKey && window._icOCZoneMapRef === dashMap && ((window._icOCZoneOverlays && window._icOCZoneOverlays.length) || (window._incidentSpecialMapOverlays && window._incidentSpecialMapOverlays.length))) return;
 window._icOCZoneDrawKey = drawKey;
 window._icOCZoneMapRef = dashMap;

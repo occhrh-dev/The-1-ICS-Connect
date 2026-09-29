@@ -285,7 +285,7 @@ return '<div style="position:relative;width:0;height:0;overflow:visible;pointer-
 }
 function buildDashboardIncidentMarkerHtml() {
 return buildDashboardPointMarkerHtml(
-'<div class="incident-sonar-body" style="transform:scale(.88);transform-origin:center center;"><div class="sonar-ring-1"></div><div class="sonar-ring-2"></div><div class="sonar-ring-3"></div><div class="sonar-core"><i class="fas fa-radiation-alt"></i></div></div>',
+'<div class="incident-sonar-body" style="transform:scale(.88);transform-origin:center center;"><div class="sonar-ring-1"></div><div class="sonar-ring-2"></div><div class="sonar-ring-3"></div><div class="sonar-core"><i class="fas fa-fire"></i></div></div>',
 '',
 { iconSize: 39, scale: true, zIndex: 10 }
 );
@@ -874,6 +874,7 @@ window._icOCZoneOverlays = [];
 window._icOCZoneCircles = [];
 window._icOCReqAlertOverlays = [];
 window._incidentSpecialMapOverlays = [];
+window._incidentSpecialMapRecords = {};
 window._icOCZoneDrawKey = '';
 dashMap._maptiler.setStyle(style);
 var styleSwitchRendered = false;
@@ -1002,13 +1003,16 @@ updateDashboardMarkerScale();
 }
 removeLongdoOverlay(dashMap, dashMarker);
 dashMarker = null;
-dashMarker = makeLongdoHtmlMarker(pos, buildDashboardIncidentMarkerHtml(), {
+var incidentPointCount = (window._icZoneMarkers || []).filter(function(zone) {
+return typeof getZoneMarkerType === 'function' && getZoneMarkerType(zone) === 'IncidentPoint';
+}).length;
+if (incidentPointCount <= 1) dashMarker = makeLongdoHtmlMarker(pos, buildDashboardIncidentMarkerHtml(), {
 offset: { x: 0, y: 0 },
 weight: (typeof longdo !== 'undefined' && longdo.OverlayWeight) ? longdo.OverlayWeight.Top : 0,
 title: 'จุดเกิดเหตุ',
 scaleMode: 'none'
 });
-dashMap.Overlays.add(dashMarker);
+if (dashMarker) dashMap.Overlays.add(dashMarker);
 renderDashboardEOCMarker(window._lastEmergState && window._lastEmergState.evtEOCCoords);
 if (!window._userInteractingMap) { dashMap.location(pos, true); }
 setTimeout(ensureDashboardMarkerSeparationZoom, 350);
@@ -2253,6 +2257,13 @@ incidentCenter.lng = lng;
 if (dashMarker) {
 try { removeLongdoOverlay(dashMap, dashMarker); } catch(e) {}
 dashMarker = null;
+}
+var incidentPointCount = (window._icZoneMarkers || []).filter(function(zone) {
+return typeof getZoneMarkerType === 'function' && getZoneMarkerType(zone) === 'IncidentPoint';
+}).length;
+if (incidentPointCount > 1) {
+renderDashboardEOCMarker(window._lastEmergState && window._lastEmergState.evtEOCCoords);
+return;
 }
 // สร้าง marker ใหม่เสมอ (ไม่ว่า dashMarker จะเป็น null หรือไม่)
 try {
