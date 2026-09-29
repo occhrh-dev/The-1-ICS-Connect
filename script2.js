@@ -3219,7 +3219,7 @@ Swal.fire({ icon:'success', title:'เพิ่มพื้นที่น้ำ
 refreshFloodAreasAfterAdminChange(true);
 }).withFailureHandler(function(err) { Swal.fire('บันทึกไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
 .saveZoneMarker('FloodArea', area.name, center.lat, center.lng, encodeFloodAreaNote(area), getFloodAdminReporter(), window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
-}, [], { titleHtml:'<i class="fas fa-draw-polygon"></i> วาดขอบเขต: ' + roleSafeText(area.name), searchPlaceholder:'ค้นหาบริเวณน้ำท่วม...', coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังพื้นที่', selectedText:'แตะรอบขอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด' });
+}, [], { titleHtml:'<i class="fas fa-draw-polygon"></i> วาดขอบเขต: ' + roleSafeText(area.name), searchPlaceholder:'ค้นหาบริเวณน้ำท่วม...', coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังพื้นที่', selectedText:'แตะรอบขอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด', severity:area.severity });
 });
 }
 function editAdminFloodArea(index) {
@@ -3248,7 +3248,7 @@ Swal.fire({ title:'กำลังบันทึกขอบเขต...', allo
 google.script.run.withSuccessHandler(function() { Swal.fire({ icon:'success', title:'วาดขอบเขตใหม่แล้ว', timer:1000, showConfirmButton:false }); refreshFloodAreasAfterAdminChange(true); })
 .withFailureHandler(function(err) { Swal.fire('บันทึกไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
 .updateZoneMarker(getFloodMarkerId(marker), 'FloodArea', area.name, center.lat, center.lng, encodeFloodAreaNote(area), getFloodAdminReporter(), APP_ACCESS_ROLE);
-}, area.points, { titleHtml:'<i class="fas fa-draw-polygon"></i> วาดใหม่: ' + roleSafeText(area.name), searchPlaceholder:'ค้นหาบริเวณน้ำท่วม...', coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังพื้นที่', selectedText:'ขอบเขตเดิมแสดงอยู่ — ล้างหรือแตะเพิ่มเพื่อปรับ' });
+}, area.points, { titleHtml:'<i class="fas fa-draw-polygon"></i> วาดใหม่: ' + roleSafeText(area.name), searchPlaceholder:'ค้นหาบริเวณน้ำท่วม...', coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังพื้นที่', selectedText:'ขอบเขตเดิมแสดงอยู่ — ล้างหรือแตะเพิ่มเพื่อปรับ', severity:area.severity });
 }
 function deleteAdminFloodArea(index) {
 if (!requireFloodPointAdmin()) return;
@@ -4408,6 +4408,7 @@ show.style.color = list.length ? '#16a34a' : '#64748b';
 if (!box) return;
 if (!list.length) {
 box.innerHTML = '<div class="declare-note">ยังไม่มีจุดเกิดเหตุ</div>';
+renderPendingDeclareFloodReferenceChoices();
 return;
 }
 box.innerHTML = list.map(function(p, index) {
@@ -4416,6 +4417,7 @@ return '<div style="display:grid;grid-template-columns:24px minmax(0,1fr) auto;g
 '<div style="min-width:0;"><div style="font-size:12px;font-weight:900;color:#7c2d12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(p.label || ('จุดเกิดเหตุ ' + (index + 1))) + (index === 0 ? ' <span style="color:#dc2626;">(จุดหลัก)</span>' : '') + '</div><div style="font-size:10px;color:#64748b;">' + Number(p.lat).toFixed(6) + ', ' + Number(p.lng).toFixed(6) + '</div></div>' +
 '<button type="button" onclick="removePendingDeclareIncidentPoint(' + index + ')" style="border:0;background:#fee2e2;color:#b91c1c;border-radius:5px;padding:5px 7px;cursor:pointer;"><i class="fas fa-trash"></i></button></div>';
 }).join('');
+renderPendingDeclareFloodReferenceChoices();
 }
 function addPendingDeclareIncidentPoint(lat, lng) {
 lat = Number(lat); lng = Number(lng);
@@ -4436,6 +4438,50 @@ list.forEach(function(p, i) { p.isPrimary = i === 0; });
 window._pendingDeclareIncidentPoints = list;
 renderPendingDeclareIncidentPoints();
 }
+function getDeclareFloodSeverityMeta(severity) {
+var map = {
+monitor: { label:'เฝ้าระวัง', icon:'🟡', color:'#92400e', fill:'#fef3c7', border:'#f59e0b' },
+moderate: { label:'น้ำท่วม', icon:'🔵', color:'#075985', fill:'#e0f2fe', border:'#0ea5e9' },
+severe: { label:'รุนแรง/อันตราย', icon:'🔴', color:'#991b1b', fill:'#fee2e2', border:'#ef4444' }
+};
+return map[severity] || map.moderate;
+}
+function updateDeclareFloodSeverityStyle() {
+var select = document.getElementById('swal-flood-area-severity');
+if (!select) return;
+var meta = getDeclareFloodSeverityMeta(select.value);
+select.style.background = meta.fill;
+select.style.borderColor = meta.border;
+select.style.color = meta.color;
+select.style.fontWeight = '900';
+}
+function toggleDeclareFloodAreaSection() {
+var checkbox = document.getElementById('swal-has-flood');
+var section = document.getElementById('declare-flood-area-section');
+if (!section) return;
+section.style.display = checkbox && checkbox.checked ? 'block' : 'none';
+if (checkbox && checkbox.checked) {
+updateDeclareFloodSeverityStyle();
+renderPendingDeclareFloodReferenceChoices();
+renderPendingDeclareFloodAreas();
+}
+}
+function renderPendingDeclareFloodReferenceChoices() {
+var box = document.getElementById('declare-flood-reference-list');
+if (!box) return;
+var list = window._pendingDeclareIncidentPoints || [];
+if (!list.length) {
+box.innerHTML = '<div class="declare-note" style="padding:8px;background:white;border-radius:7px;border:1px dashed #93c5fd;">เพิ่มจุดเกิดเหตุก่อน แล้วระบบจะแสดงปุ่มวาดพื้นที่รอบแต่ละจุดตรงนี้</div>';
+return;
+}
+box.innerHTML = list.map(function(point, index) {
+var label = point.label || ('จุดเกิดเหตุ ' + (index + 1));
+return '<button type="button" onclick="openPendingDeclareFloodAreaPicker(' + index + ')" style="width:100%;display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;background:white;border:1px solid #93c5fd;border-radius:8px;padding:8px;cursor:pointer;">' +
+'<span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:' + (index === 0 ? '#dc2626' : '#f97316') + ';color:white;font-size:12px;font-weight:900;">' + (index + 1) + '</span>' +
+'<span style="min-width:0;"><span style="display:block;font-size:12px;font-weight:900;color:#1e3a8a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(label) + '</span><span style="display:block;font-size:10px;color:#64748b;">' + Number(point.lat).toFixed(6) + ', ' + Number(point.lng).toFixed(6) + '</span></span>' +
+'<span style="background:#0284c7;color:white;border-radius:6px;padding:6px 8px;font-size:11px;font-weight:900;white-space:nowrap;"><i class="fas fa-draw-polygon"></i> วาดรอบจุดนี้</span></button>';
+}).join('');
+}
 function renderPendingDeclareFloodAreas() {
 var list = window._pendingDeclareFloodAreas || [];
 var box = document.getElementById('declare-flood-area-list');
@@ -4444,28 +4490,31 @@ if (!list.length) {
 box.innerHTML = '<div class="declare-note">ยังไม่ได้วาดพื้นที่ — สามารถเพิ่มภายหลังจากแดชบอร์ดได้</div>';
 return;
 }
-var severityLabel = { monitor:'เฝ้าระวัง', moderate:'น้ำท่วม', severe:'รุนแรง/อันตราย' };
 box.innerHTML = list.map(function(area, index) {
-return '<div style="display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:7px;align-items:center;background:white;border:1px solid #bfdbfe;border-radius:7px;padding:6px 8px;">' +
-'<span style="width:26px;height:26px;border-radius:6px;background:#0284c7;color:white;display:flex;align-items:center;justify-content:center;"><i class="fas fa-draw-polygon"></i></span>' +
-'<div style="min-width:0;"><div style="font-size:12px;font-weight:900;color:#075985;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(area.name || ('พื้นที่น้ำท่วม ' + (index + 1))) + '</div><div style="font-size:10px;color:#64748b;">' + (area.points || []).length + ' จุดขอบเขต · ' + (severityLabel[area.severity] || 'น้ำท่วม') + (area.depthCm !== '' ? ' · น้ำ ' + area.depthCm + ' ซม.' : '') + '</div></div>' +
+var meta = getDeclareFloodSeverityMeta(area.severity);
+return '<div style="display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:7px;align-items:center;background:' + meta.fill + ';border:1px solid ' + meta.border + ';border-radius:7px;padding:6px 8px;">' +
+'<span style="width:26px;height:26px;border-radius:6px;background:' + meta.border + ';color:white;display:flex;align-items:center;justify-content:center;"><i class="fas fa-draw-polygon"></i></span>' +
+'<div style="min-width:0;"><div style="font-size:12px;font-weight:900;color:' + meta.color + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(area.name || ('พื้นที่น้ำท่วม ' + (index + 1))) + '</div><div style="font-size:10px;color:#475569;">' + meta.icon + ' ' + meta.label + ' · ' + (area.points || []).length + ' จุดขอบเขต' + (area.depthCm !== '' ? ' · น้ำ ' + area.depthCm + ' ซม.' : '') + (area.referenceLabel ? ' · อ้างอิง ' + roleSafeText(area.referenceLabel) : '') + '</div></div>' +
 '<button type="button" onclick="removePendingDeclareFloodArea(' + index + ')" style="border:0;background:#fee2e2;color:#b91c1c;border-radius:5px;padding:5px 7px;cursor:pointer;"><i class="fas fa-trash"></i></button></div>';
 }).join('');
 }
-function openPendingDeclareFloodAreaPicker() {
+function openPendingDeclareFloodAreaPicker(referenceIndex) {
 var nameEl = document.getElementById('swal-flood-area-name');
 var depthEl = document.getElementById('swal-flood-area-depth');
 var severityEl = document.getElementById('swal-flood-area-severity');
-var name = nameEl && nameEl.value.trim();
-if (!name) {
-Swal.showValidationMessage('กรุณาใส่ชื่อพื้นที่ก่อนกดวาดพื้นที่');
+var incidentPoints = window._pendingDeclareIncidentPoints || [];
+var reference = incidentPoints[Number(referenceIndex)];
+if (!reference || !isFinite(Number(reference.lat)) || !isFinite(Number(reference.lng))) {
+Swal.showValidationMessage('ไม่พบพิกัดจุดเกิดเหตุ กรุณาเลือกจุดใหม่');
 return;
 }
+var referenceLabel = reference.label || ('จุดเกิดเหตุ ' + (Number(referenceIndex) + 1));
+var name = nameEl && nameEl.value.trim() ? nameEl.value.trim() : referenceLabel;
 var depth = depthEl && depthEl.value !== '' ? Number(depthEl.value) : '';
 var severity = severityEl ? severityEl.value : 'moderate';
 openFloodAreaMapPicker(function(points, center) {
 var list = window._pendingDeclareFloodAreas || [];
-list.push({ name:name, depthCm:depth, severity:severity, points:points, lat:Number(center.lat.toFixed(6)), lng:Number(center.lng.toFixed(6)) });
+list.push({ name:name, depthCm:depth, severity:severity, points:points, lat:Number(center.lat.toFixed(6)), lng:Number(center.lng.toFixed(6)), referenceIncidentIndex:Number(referenceIndex), referenceLabel:referenceLabel });
 window._pendingDeclareFloodAreas = list;
 if (nameEl) nameEl.value = '';
 if (depthEl) depthEl.value = '';
@@ -4474,7 +4523,10 @@ renderPendingDeclareFloodAreas();
 titleHtml:'<i class="fas fa-draw-polygon"></i> วาดขอบเขต: ' + roleSafeText(name),
 searchPlaceholder:'ค้นหาบริเวณน้ำท่วม...',
 coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังพื้นที่',
-selectedText:'แตะรอบขอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด'
+selectedText:'แผนที่มาที่ ' + roleSafeText(referenceLabel) + ' แล้ว — หมุดแดงคือจุดอ้างอิง ให้แตะรอบขอบพื้นที่อย่างน้อย 3 จุด',
+startCenter:{ lat:Number(reference.lat), lng:Number(reference.lng) },
+referenceLabel:referenceLabel,
+severity:severity
 });
 }
 function removePendingDeclareFloodArea(index) {
@@ -4511,16 +4563,18 @@ var html = [
 '<div id="show-coords" class="declare-note">จุดแรกจะเป็นพิกัดหลักสำหรับสภาพอากาศและการนำทาง</div>',
 '</div>',
 '<input type="hidden" id="hidden-lat"><input type="hidden" id="hidden-lng">',
-'<div style="margin-top:10px;background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:10px;">',
-'<div style="font-weight:900;color:#1e3a8a;font-size:13px;"><i class="fas fa-draw-polygon"></i> ขอบเขตพื้นที่น้ำท่วม (วาดได้หลายพื้นที่)</div>',
+'<label style="display:flex;align-items:center;gap:9px;margin-top:10px;background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:10px;cursor:pointer;font-weight:900;color:#1e3a8a;font-size:13px;"><input id="swal-has-flood" type="checkbox" onchange="toggleDeclareFloodAreaSection()" style="width:18px;height:18px;accent-color:#0284c7;"> เหตุการณ์นี้มีพื้นที่น้ำท่วม — ต้องการวาดขอบเขต</label>',
+'<div id="declare-flood-area-section" style="display:none;margin-top:7px;background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:10px;">',
+'<div style="font-weight:900;color:#1e3a8a;font-size:13px;"><i class="fas fa-draw-polygon"></i> ข้อมูลและขอบเขตพื้นที่น้ำท่วม</div>',
 '<div class="declare-grid" style="margin-top:7px;">',
-'<input id="swal-flood-area-name" class="declare-input" placeholder="ชื่อพื้นที่ เช่น ชุมชนตลาดเก่า">',
+'<input id="swal-flood-area-name" class="declare-input" placeholder="ชื่อพื้นที่ (ไม่กรอกจะใช้ชื่อจุดเกิดเหตุ)">',
 '<input id="swal-flood-area-depth" class="declare-input" type="number" min="0" step="1" placeholder="ระดับน้ำโดยประมาณ (ซม.)">',
 '</div>',
-'<div style="display:flex;gap:7px;margin-top:7px;">',
-'<select id="swal-flood-area-severity" class="declare-input" style="flex:1;"><option value="monitor">เฝ้าระวัง</option><option value="moderate" selected>น้ำท่วม</option><option value="severe">รุนแรง/อันตราย</option></select>',
-'<button type="button" onclick="openPendingDeclareFloodAreaPicker()" style="background:#0284c7;color:white;border:none;border-radius:8px;padding:0 12px;cursor:pointer;font-weight:900;white-space:nowrap;"><i class="fas fa-draw-polygon"></i> วาดพื้นที่</button>',
+'<div style="margin-top:7px;">',
+'<select id="swal-flood-area-severity" class="declare-input" onchange="updateDeclareFloodSeverityStyle()"><option value="monitor">🟡 เฝ้าระวัง — สีเหลือง</option><option value="moderate" selected>🔵 น้ำท่วม — สีฟ้า</option><option value="severe">🔴 รุนแรง/อันตราย — สีแดง</option></select>',
 '</div>',
+'<div class="declare-note" style="font-weight:800;color:#1e3a8a;margin-top:8px;">เลือกจุดอ้างอิงเพื่อเปิดแผนที่ตรงจุดนั้น</div>',
+'<div id="declare-flood-reference-list" style="display:grid;gap:6px;margin-top:6px;"><div class="declare-note">เพิ่มจุดเกิดเหตุก่อน แล้วปุ่มวาดพื้นที่จะปรากฏที่นี่</div></div>',
 '<div id="declare-flood-area-list" style="display:grid;gap:5px;margin-top:7px;"><div class="declare-note">ยังไม่ได้วาดพื้นที่ — สามารถเพิ่มภายหลังจากแดชบอร์ดได้</div></div>',
 '</div>',
 '<div>',
@@ -4557,6 +4611,10 @@ showCancelButton: true,
 confirmButtonText: 'ประกาศ ACTIVE',
 cancelButtonText: 'ยกเลิก',
 confirmButtonColor: '#e74c3c',
+didOpen: function() {
+toggleDeclareFloodAreaSection();
+renderPendingDeclareIncidentPoints();
+},
 preConfirm: function() {
 var lat = document.getElementById('hidden-lat').value;
 var lng = document.getElementById('hidden-lng').value;
@@ -4571,6 +4629,7 @@ var windModeEl = document.querySelector('input[name="swal-wind-mode"]:checked');
 var windMode = windModeEl ? windModeEl.value : 'manual';
 var windDir = document.getElementById('swal-wind-dir').value;
 var windSpeed = document.getElementById('swal-wind-speed').value;
+var hasFlood = !!((document.getElementById('swal-has-flood') || {}).checked);
 if (!evt) return Swal.showValidationMessage('กรุณาใส่ชื่อเหตุการณ์');
 if (!window._pendingDeclareIncidentPoints || !window._pendingDeclareIncidentPoints.length || !lat || !lng) return Swal.showValidationMessage('กรุณาเพิ่มจุดเกิดเหตุอย่างน้อย 1 จุด');
 if (windMode === 'manual' && windDir && windSpeed === '') return Swal.showValidationMessage('ถ้าเลือกทิศทางลม กรุณาใส่ความเร็วลมด้วย');
@@ -4588,7 +4647,7 @@ windSpeed,
 windMode,
 eocLat && eocLng ? eocLat + ',' + eocLng : '',
 window._pendingDeclareIncidentPoints || [],
-window._pendingDeclareFloodAreas || []
+hasFlood ? (window._pendingDeclareFloodAreas || []) : []
 ];
 }
 }).then(function(result) {
