@@ -1,5 +1,15 @@
 # Cloudflare Worker actions for Admin flood-point management
 
+## Production deployment record
+
+- Deployed: 29 September 2026 (Asia/Bangkok)
+- Active Cloudflare Worker version: `8991cef3`
+- Previous rollback version: `1fc3cc57`
+- Verified after deployment: an unauthenticated `updateZoneMarker` request is recognized and rejected with `Admin permission required`.
+- Frontend deployment must include commits `af388f5`, `5f0d4f6`, and `9b6101a` together.
+
+To roll back the Worker, select version `1fc3cc57` in Cloudflare Workers > `the-1-ics-connect` > Deployments and restore it. To roll back the frontend, deploy the Git backup branch `backup/pre-flood-map-20260928-154646` or restore the bundle/ZIP recorded in the local `backups` directory.
+
 Add these switch cases immediately after `getZoneMarkers`. The existing `Supabase` helper already scopes `query`, `patchWhere`, and `deleteWhere` by `agency_id`.
 
 ```js
@@ -94,7 +104,7 @@ for (let index = 0; index < incidentPoints.length; index += 1) {
   const lat = Number(point.lat);
   const lng = Number(point.lng);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-  await sb.insert("zone_markers", {
+  await sb.query("zone_markers", "POST", {
     zone_type: "IncidentPoint",
     label: point.label || `จุดเกิดเหตุ ${index + 1}`,
     lat,
@@ -116,7 +126,7 @@ for (let index = 0; index < floodAreas.length; index += 1) {
   const lat = Number.isFinite(Number(area.lat)) ? Number(area.lat) : center.lat / points.length;
   const lng = Number.isFinite(Number(area.lng)) ? Number(area.lng) : center.lng / points.length;
   const name = area.name || `พื้นที่น้ำท่วม ${index + 1}`;
-  await sb.insert("zone_markers", {
+  await sb.query("zone_markers", "POST", {
     zone_type: "FloodArea",
     label: name,
     lat,
