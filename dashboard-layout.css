@@ -76,10 +76,11 @@
 #scene_Dashboard .dash-map-heading { flex: 0 0 auto; padding: 7px 10px !important; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; }
 #scene_Dashboard .dash-map-heading h4 { font-size: 15px !important; }
 #scene_Dashboard #wind_panel { display:flex; align-items:center; gap:8px; flex:0 1 auto; max-width:100%; border:1px solid #bae6fd; background:#f0f9ff; color:#075985; border-radius:6px; padding:5px 9px; font:600 11px Prompt,sans-serif; cursor:pointer; text-align:left; box-sizing:border-box; }
+#scene_Dashboard #wind_panel { position:static !important; top:auto !important; left:auto !important; width:auto !important; }
 #scene_Dashboard #wind_panel > span { min-width:0; }
 #scene_Dashboard #wind_panel #wind_arrow { color:#0284c7; font-size:17px; transition:transform .3s; flex:0 0 auto; }
 #scene_Dashboard .dash-wind-label { display:block; color:#64748b; font-size:10px; line-height:1.4; }
-#scene_Dashboard #weather_info { display:block; overflow-wrap:anywhere; line-height:1.5; }
+#scene_Dashboard #weather_info { display:block; overflow-wrap:anywhere; line-height:1.5; font-size:11px !important; }
 #scene_Dashboard .dash-map-toolbar {
   display: flex;
   flex-wrap: wrap;
