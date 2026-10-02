@@ -124,5 +124,15 @@ if (require.main === module) {
   confirmed.points[0][0]=99;
   assert.equal(initial[0][0],101.2,'Confirmed draft must not mutate existing geometry');
   assert.equal(element('modal_MapPicker').style.display,'none');
-  console.log('PASS: inline syntax, references, style reload, stable zoom, framing, first click, cancel, delayed layers and confirmation');
+  context.openFloodAreaMapPicker(()=>{},initial,{referenceAreas:[],editVertices:true});
+  context.pickerFloodDraftOverlay=null;
+  context.clearPickerFloodVertexMarkers();
+  (events.load||[]).forEach(fn=>fn());
+  assert.ok(context.pickerFloodDraftOverlay,'First SDK load must restore a draft opened before the map was ready');
+  assert.equal(context.pickerFloodVertexMarkers.length,3,'First SDK load must restore draggable vertices');
+  context.closeMap();
+  const layersAfterClose=Object.keys(layers).length;
+  (events.load||[]).forEach(fn=>fn());
+  assert.equal(Object.keys(layers).length,layersAfterClose,'Load after cancel must not restore a draft');
+  console.log('PASS: inline syntax, references, style reload, stable zoom, framing, first click, cancel, delayed layers, first SDK load and confirmation');
 }

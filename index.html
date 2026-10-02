@@ -2749,6 +2749,11 @@ drawPickerSearchMarkers(window._placeSearchResults);
 }
 renderPickerMapContext(true);
 if (map.resize) map.resize();
+// The first opening can precede SDK load; restore the selected draft when ready.
+var pickerModal = document.getElementById('modal_MapPicker');
+if (pickerModal && pickerModal.style.display === 'flex' && (mapPickerMode === 'flood-area' || mapPickerMode === 'road-closure')) {
+renderPickerFloodDraft();
+}
 initializePickerMapView();
 });
 map.on('styledata', function() {
