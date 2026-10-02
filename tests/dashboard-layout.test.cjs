@@ -16,7 +16,7 @@ assert.match(html, /class="dash-header-context"/);
 assert.match(html, /class="dash-status-strip"/);
 assert.match(css, /grid-template-rows: minmax\(0, 1fr\) !important/);
 assert.match(css, /#scene_Dashboard\.dashboard-join-mobile \.dash-map-wrap/);
-assert.match(sw, /dashboard-layout\.css\?v=20261002_modes1/);
+assert.match(sw, /dashboard-layout\.css\?v=20261002_layers1/);
 assert.match(html, /navigationControl:\s*false/);
 assert.match(script, /navigationControl:\s*false/);
 

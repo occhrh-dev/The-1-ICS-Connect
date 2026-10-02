@@ -34,7 +34,7 @@ body.ic-login-mode #staffLeadBox,
 body.ic-login-mode #staffCoordBox { display:none !important; }
 body.ic-login-mode #staffRoleInput { list-style:none; }
 </style>
-<link rel="stylesheet" href="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-layout.css?v=20261002_modes1">
+<link rel="stylesheet" href="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-layout.css?v=20261002_layers1">
 <!-- ERG database loaded on demand -->
 <script>
 // Inline bridge — ทำงานทันทีก่อน external scripts โหลด
@@ -951,48 +951,41 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 <div class="panel dash-map-panel" style="display:flex;flex-direction:column;padding:0;margin:0 !important;height:100%;border-bottom-left-radius:0 !important;border-bottom-right-radius:0 !important;box-sizing:border-box;">
 <div class="dash-map-heading" style="padding:8px 15px 5px 15px;background:#f8f9fa;border-bottom:1px solid #eee;z-index:2;">
 <h4 style="margin:0;font-size:0.9rem;"><i class="fas fa-map-marked-alt"></i> แผนที่จุดเกิดเหตุ</h4>
+<button type="button" id="wind_panel" onclick="openWindInputModal()" title="คลิกเพื่อบันทึกทิศทางลม" aria-label="ดูหรือบันทึกทิศทางลม">
+<i class="fas fa-minus" id="wind_arrow" aria-hidden="true"></i>
+<span><span class="dash-wind-label">ทิศที่ลมพัดไป</span><span id="weather_info">รอข้อมูลลมจาก OC/ICP</span></span>
+</button>
 </div>
 <div class="dash-map-toolbar">
 <div class="dash-toolbar-right" style="position:absolute;top:6px;right:58px;z-index:11;display:flex;gap:0;box-shadow:0 2px 6px rgba(15,23,42,0.18);border-radius:6px;overflow:hidden;">
 <div id="dashMapViewControls" class="dash-map-view-controls" aria-label="โหมดแผนที่และชั้นข้อมูล (ดูอย่างเดียว)">
-<div class="dash-map-mode-buttons" role="group" aria-label="เลือกโหมดแผนที่">
-<button type="button" id="dashStyleStreet" onclick="selectDashboardMapMode('streets')" aria-pressed="false">ถนน</button>
-<button type="button" id="dashStyleSat" onclick="selectDashboardMapMode('satellite')" aria-pressed="true">ดาวเทียม</button>
-<button type="button" id="dashModeTraffic" onclick="selectDashboardMapMode('traffic')" aria-pressed="false"><i class="fas fa-road"></i> จราจร</button>
-<button type="button" id="dashModeFlood" onclick="selectDashboardMapMode('flood')" aria-pressed="false"><i class="fas fa-water"></i> น้ำท่วม</button>
-</div>
 <details id="dashMapLayerMenu" class="dash-map-layers">
-<summary title="เปิดจราจรและน้ำท่วมซ้อนบนพื้นถนนหรือดาวเทียม"><i class="fas fa-layer-group"></i> ชั้นข้อมูล</summary>
+<summary title="เลือกชั้นข้อมูลได้มากกว่าหนึ่งอย่าง"><i class="fas fa-layer-group"></i> ชั้นข้อมูล <i class="fas fa-chevron-down dash-layer-chevron" aria-hidden="true"></i></summary>
 <div class="dash-map-layer-panel">
-<label><input id="dashTrafficLayerCheck" type="checkbox" onchange="setDashboardTrafficLayer(this.checked)"> จราจร Longdo</label>
+<div class="dash-layer-section-title">แผนที่พื้นหลัง</div>
+<label><input id="dashStreetLayerCheck" type="checkbox" onchange="setDashboardBaseLayer('streets',this.checked)"><i class="fas fa-road" aria-hidden="true"></i> ถนน</label>
+<label><input id="dashSatelliteLayerCheck" type="checkbox" checked onchange="setDashboardBaseLayer('satellite',this.checked)"><i class="fas fa-satellite" aria-hidden="true"></i> ดาวเทียม</label>
+<div class="dash-layer-note">เลือกทั้งสองอย่าง: ถนนและชื่อสถานที่ซ้อนบนภาพดาวเทียม อยู่ใต้ชั้นข้อมูลอื่น</div>
+<div class="dash-layer-section-title">ชั้นข้อมูลซ้อนทับ</div>
+<label class="dash-layer-unavailable"><input id="dashExternalFloodLayerCheck" type="checkbox" disabled><i class="fas fa-water" aria-hidden="true"></i> น้ำท่วม <span class="dash-layer-pending">ยังไม่เชื่อม</span></label>
+<div class="dash-layer-note">ข้อมูลภายนอกจาก Longdo / GISTDA ที่กำลังเตรียมเชื่อม ไม่ใช่พื้นที่ที่แอดมินวาด พื้นที่ไม่มีสีไม่ได้แปลว่าไม่ท่วม</div>
+<label><input id="dashTrafficLayerCheck" type="checkbox" onchange="setDashboardTrafficLayer(this.checked)"><i class="fas fa-traffic-light" aria-hidden="true"></i> การจราจร</label>
 <div id="dashTrafficSourceStatus" class="dash-layer-note" role="status">ยังไม่เปิดชั้นจราจร</div>
 <div class="dash-layer-colors"><span style="--layer-color:#22c55e">คล่องตัว</span><span style="--layer-color:#f59e0b">ชะลอตัว</span><span style="--layer-color:#ef4444">ติดขัด</span></div>
-<label><input id="dashFieldFloodLayerCheck" type="checkbox" checked onchange="setDashboardFieldFloodLayer(this.checked)"> ขอบเขต / ระดับน้ำหน้างาน</label>
-<div class="dash-layer-note">ขอบเขตที่ Admin บันทึก ไม่ใช่ข้อมูลน้ำท่วมอัตโนมัติ ระดับน้ำแสดงตามที่รายงาน หากไม่มีจะระบุว่าไม่มีข้อมูล</div>
-<div class="dash-layer-colors"><span style="--layer-color:#0ea5e9">น้ำท่วม</span><span style="--layer-color:#f59e0b">เฝ้าระวัง</span><span style="--layer-color:#ef4444">รุนแรง</span></div>
-<label class="dash-layer-unavailable"><input type="checkbox" disabled> น้ำท่วมดาวเทียม GISTDA (ยังไม่เชื่อม)</label>
-<div class="dash-layer-note">รอสิทธิ์/API ของโครงการและวันที่สำรวจภาพ ไม่แสดงว่าเป็นข้อมูลสด พื้นที่ไม่มีสีไม่ได้แปลว่าปลอดภัย</div>
-<div class="dash-layer-note">จุดเกิดเหตุ EOC ถนนปิด จุดรับอาหาร และจุดปฏิบัติงานยังแสดงทุกโหมด</div>
+<label><input id="dashTambonLayerCheck" type="checkbox" onchange="setDashboardTambonLayer(this.checked)"><i class="fas fa-draw-polygon" aria-hidden="true"></i> เขตตำบล</label>
+<div class="dash-layer-note">จุดเกิดเหตุ EOC ถนนปิด จุดปฏิบัติงาน และพื้นที่ที่แอดมินวาดยังแสดงแยกจากชั้นข้อมูลภายนอก</div>
 <a href="https://traffic.longdo.com/" target="_blank" rel="noopener noreferrer">ดูรายละเอียดจราจรที่ Longdo ↗</a>
 </div>
 </details>
 </div>
 <button id="dashFloodManageBtn" onclick="openAdminFloodPointManager()" title="เพิ่ม แก้ไข ย้าย หรือลบจุดน้ำท่วม" style="display:none;border:0;background:#7c3aed;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-map-location-dot"></i> จัดการจุด</button>
-<button id="dashFloodAreaManageBtn" onclick="openAdminFloodAreaManager()" title="วาด แก้ไข หรือลบขอบเขตน้ำท่วม" style="display:none;border:0;background:#0e7490;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-draw-polygon"></i> พื้นที่น้ำ</button>
-<button id="dashTambonToggleBtn" onclick="toggleTambonBoundary()" title="แสดง/ซ่อนเส้นแบ่งเขตตำบล" style="border:0;background:white;color:#334155;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-draw-polygon"></i> เขตตำบล</button>
+<button id="dashFloodAreaManageBtn" onclick="openAdminFloodAreaManager()" title="วาด แก้ไข หรือลบขอบเขตน้ำท่วมที่แอดมินบันทึก" style="display:none;border:0;background:#0e7490;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;"><i class="fas fa-draw-polygon"></i> พื้นที่น้ำท่วม</button>
 </div>
 <div class="dash-toolbar-left" style="position:absolute;top:6px;left:6px;z-index:11;">
 <button id="btn_add_building_structure" onclick="openAddBuildingStructure()" style="border:0;background:#0f766e;color:white;padding:7px 12px;border-radius:6px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;box-shadow:0 2px 6px rgba(15,23,42,0.18);"><i class="fas fa-building"></i> เพิ่มโครงสร้างอาคาร</button>
 </div>
-<div id="wind_panel" onclick="openWindInputModal()" title="คลิกเพื่อบันทึกทิศทางลม" style="background:RGB(175,238,238);padding:4px 8px;border-radius:5px;display:flex;gap:6px;align-items:center;border-left:3px solid #3498db;cursor:pointer;box-sizing:border-box;">
-<i class="fas fa-minus" id="wind_arrow" style="font-size:18px;color:#3498db;transform:rotate(0deg);transition:transform 0.3s;flex:0 0 auto;"></i>
-<div style="text-align:left;">
-<div style="font-size:0.58rem;font-weight:bold;color:#555;line-height:1.15;">ทิศที่ลมพัดไป</div>
-<div style="font-size:0.68rem;color:#e74c3c;font-weight:bold;line-height:1.25;white-space:normal;" id="weather_info">รอข้อมูลลมจาก OC/ICP</div>
 </div>
-</div>
-</div>
-<div id="dashMapModeStatus" class="dash-map-mode-status" role="status">พื้นดาวเทียม · ขอบเขตน้ำหน้างาน · น้ำท่วมดาวเทียมยังไม่เชื่อม</div>
+<div id="dashMapModeStatus" class="dash-map-mode-status" role="status">พื้นดาวเทียม · น้ำท่วมภายนอกยังไม่เชื่อม</div>
 <div class="dash-map-wrap" style="position:relative;flex:1;width:100%;min-height:0;">
 <div id="dash_map_canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
 <div id="dash_building_cards_layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:8;"></div>
@@ -5486,8 +5479,8 @@ applyDashboardScreenProfile();
 var badge = document.getElementById('dashboard_view_only_badge');
 if (badge) badge.style.display = readOnly ? 'inline-flex' : 'none';
 dash.querySelectorAll('input, select, textarea').forEach(function(el) {
-// These two local display checkboxes never write incident/backend data.
-if (el.id === 'dashTrafficLayerCheck' || el.id === 'dashFieldFloodLayerCheck') {
+// Exempt only implemented local display controls, not pending external data.
+if (['dashStreetLayerCheck','dashSatelliteLayerCheck','dashTrafficLayerCheck','dashTambonLayerCheck'].indexOf(el.id) !== -1) {
 el.disabled = false;
 return;
 }
@@ -7092,9 +7085,10 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }
 </script>
 
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261002_modes1" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261002_modes1" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261002_modes1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/flood-incident-settings.js?v=20261002_layers1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261002_layers1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261002_layers1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261002_layers1" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {

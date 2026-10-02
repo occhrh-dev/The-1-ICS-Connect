@@ -1,11 +1,12 @@
 // Service Worker for EOC Rayong War Room
-const CACHE_NAME = 'eoc-warroom-v20261002_modes1';
+const CACHE_NAME = 'eoc-warroom-v20261002_layers1';
 
 const STATIC_ASSETS = [
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261002_modes1',
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261002_modes1',
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-layout.css?v=20261002_modes1',
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261002_modes1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261002_layers1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261002_layers1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-layout.css?v=20261002_layers1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261002_layers1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/flood-incident-settings.js?v=20261002_layers1',
   'https://occhrh-dev.github.io/The-1-ICS-Connect/stylesheet.css?v=20261002_layout1',
   'https://occhrh-dev.github.io/HazMat-Mapper/the1ICS.png'
 ];

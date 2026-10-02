@@ -858,22 +858,16 @@ dashMap.Overlays.add(dashEOCMarker);
 ensureDashboardMarkerSeparationZoom();
 }
 function setDashboardMapStyle(mode) {
-var nextStyle = mode === 'satellite' ? 'satellite' : 'streets';
+if (['streets','satellite','hybrid','empty'].indexOf(mode) === -1) return;
+var nextStyle = mode;
 var changed = window._dashboardMapStyle !== nextStyle;
 window._dashboardMapStyle = nextStyle;
-var streetBtn = document.getElementById('dashStyleStreet');
-var satBtn = document.getElementById('dashStyleSat');
-if (streetBtn && satBtn) {
-var sat = window._dashboardMapStyle === 'satellite';
-streetBtn.style.background = sat ? 'white' : '#2563eb';
-streetBtn.style.color = sat ? '#334155' : 'white';
-satBtn.style.background = sat ? '#2563eb' : 'white';
-satBtn.style.color = sat ? 'white' : '#334155';
-}
 if (!dashMap || !dashMap._maptiler || typeof maptilersdk === 'undefined' || !changed) return;
-var style = window._dashboardMapStyle === 'satellite'
-? (maptilersdk.MapStyle.HYBRID || 'https://api.maptiler.com/maps/hybrid/style.json?key=' + encodeURIComponent(MAPTILER_API_KEY))
-: maptilersdk.MapStyle.STREETS;
+var style;
+if (nextStyle === 'hybrid') style = maptilersdk.MapStyle.HYBRID;
+else if (nextStyle === 'satellite') style = maptilersdk.MapStyle.SATELLITE;
+else if (nextStyle === 'streets') style = maptilersdk.MapStyle.STREETS;
+else style = { version:8, sources:{}, layers:[{ id:'ics-empty-background', type:'background', paint:{'background-color':'#e2e8f0'} }] };
 // MapLibre retains DOM markers and the camera across setStyle. Restore only
 // style-owned polygons/lines from the current registry, never reset live feeds.
 if (typeof attachDashboardMapModes === 'function') attachDashboardMapModes(dashMap._maptiler);
@@ -1317,7 +1311,8 @@ const isAdmin = APP_ACCESS_ROLE === 'admin';
 if (endBtn) endBtn.style.display = isAdmin ? 'inline-block' : 'none';
 if (escalateBtn) escalateBtn.style.display = isAdmin ? 'inline-block' : 'none';
 if (floodManageBtn) floodManageBtn.style.display = isAdmin ? 'inline-block' : 'none';
-if (floodAreaManageBtn) floodAreaManageBtn.style.display = isAdmin ? 'inline-block' : 'none';
+if (floodAreaManageBtn) floodAreaManageBtn.style.display = 'none';
+if (typeof syncDashboardFloodAreaManageVisibility === 'function') syncDashboardFloodAreaManageVisibility();
 if (!checkInBtn) return;
 if (TEMP_ROLE === 'IC') {
 checkInBtn.style.display = 'none';
@@ -2538,6 +2533,11 @@ var geojson = await res.json();
 var sourceId = 'tambon-src-' + slug;
 var lineLayerId = 'tambon-line-' + slug;
 var fillLayerId = 'tambon-fill-' + slug;
+if (mapObj.isStyleLoaded && !mapObj.isStyleLoaded()) {
+delete tambonLoadedProvinces[slug];
+mapObj.once('idle', function() { if (tambonBoundaryVisible) loadTambonProvince(slug); });
+return;
+}
 if (mapObj.getSource(sourceId)) return; // กันเพิ่มซ้ำ (เผื่อ race condition หลุดมา)
 mapObj.addSource(sourceId, { type: 'geojson', data: geojson });
 // fill บางๆ ให้คลิกเลือกง่าย + เห็นขอบเขตชัดขึ้นโดยไม่บังแผนที่ข้างใต้
@@ -2594,39 +2594,21 @@ if (mapObj.getLayer(fillLayerId)) mapObj.setLayoutProperty(fillLayerId, 'visibil
 }
 
 function toggleTambonBoundary() {
-tambonBoundaryVisible = !tambonBoundaryVisible;
+setTambonBoundaryVisibility(!tambonBoundaryVisible);
+}
+function setTambonBoundaryVisibility(visible) {
+tambonBoundaryVisible = !!visible;
 tambonBoundaryAutoShown = false; // ผู้ใช้กดเองแล้ว ไม่ใช่ auto-show อีกต่อไป
 setTambonLayersVisibility(tambonBoundaryVisible);
 if (tambonBoundaryVisible) refreshTambonLayersForViewport();
-var btn = document.getElementById('dashTambonToggleBtn');
-if (btn) {
-btn.style.background = tambonBoundaryVisible ? '#f59e0b' : 'white';
-btn.style.color = tambonBoundaryVisible ? 'white' : '#334155';
-}
+if (typeof syncDashboardMapModeUI === 'function') syncDashboardMapModeUI();
 }
 
 function handleTambonAutoShowOnZoom() {
 var mapObj = dashMap && dashMap._maptiler;
 if (!mapObj || !mapObj.getZoom) return;
-var zoom = mapObj.getZoom();
-if (zoom >= TAMBON_AUTO_SHOW_ZOOM) {
-if (!tambonBoundaryVisible) {
-// auto-show เฉพาะตอนที่ผู้ใช้ยังไม่เคยกดปิดเอง (กันรบกวนถ้าผู้ใช้ตั้งใจปิดไว้)
-tambonBoundaryVisible = true;
-tambonBoundaryAutoShown = true;
-setTambonLayersVisibility(true);
-var btn = document.getElementById('dashTambonToggleBtn');
-if (btn) { btn.style.background = '#f59e0b'; btn.style.color = 'white'; }
-}
-refreshTambonLayersForViewport();
-} else if (tambonBoundaryAutoShown) {
-// ซูมออกจนต่ำกว่าระดับ auto-show และเป็นการโชว์แบบ auto (ไม่ใช่ผู้ใช้กดเอง) — ซ่อนกลับ
-tambonBoundaryVisible = false;
-tambonBoundaryAutoShown = false;
-setTambonLayersVisibility(false);
-var btn2 = document.getElementById('dashTambonToggleBtn');
-if (btn2) { btn2.style.background = 'white'; btn2.style.color = '#334155'; }
-}
+// The layer checkbox is authoritative: zooming never re-enables a hidden layer.
+if (tambonBoundaryVisible) refreshTambonLayersForViewport();
 }
 
 function initTambonBoundaryControls() {

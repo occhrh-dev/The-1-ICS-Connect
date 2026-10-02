@@ -3,7 +3,8 @@
 // https://api.longdo.com/map3/ and https://map.longdo.com/docs/v3/javascript/maplayers/trafficmap/
 (function() {
 'use strict';
-var mode = 'satellite';
+var streetsVisible = false;
+var satelliteVisible = true;
 var trafficVisible = false;
 var mapRef = null;
 var generation = 0;
@@ -25,39 +26,32 @@ function styleReady(mapObj) {
 return mapObj && (!mapObj.isStyleLoaded || mapObj.isStyleLoaded());
 }
 window.syncDashboardMapModeUI = function() {
-var waterVisible = window._floodLayerVisible !== false;
-var buttons = { streets:'dashStyleStreet', satellite:'dashStyleSat', traffic:'dashModeTraffic', flood:'dashModeFlood' };
-Object.keys(buttons).forEach(function(name) {
-var button = document.getElementById(buttons[name]);
-if (!button) return;
-button.setAttribute('aria-pressed', name === mode ? 'true' : 'false');
-button.style.background = name === mode ? '#2563eb' : 'white';
-button.style.color = name === mode ? 'white' : '#334155';
-});
+var streetCheck = document.getElementById('dashStreetLayerCheck');
+var satelliteCheck = document.getElementById('dashSatelliteLayerCheck');
 var trafficCheck = document.getElementById('dashTrafficLayerCheck');
-var waterCheck = document.getElementById('dashFieldFloodLayerCheck');
+var tambonCheck = document.getElementById('dashTambonLayerCheck');
+if (streetCheck) streetCheck.checked = streetsVisible;
+if (satelliteCheck) satelliteCheck.checked = satelliteVisible;
 if (trafficCheck) trafficCheck.checked = trafficVisible;
-if (waterCheck) waterCheck.checked = waterVisible;
-var labels = [window._dashboardMapStyle === 'streets' ? 'พื้นถนน' : 'พื้นดาวเทียม'];
+if (tambonCheck) tambonCheck.checked = typeof tambonBoundaryVisible !== 'undefined' && tambonBoundaryVisible;
+var labels = [satelliteVisible ? (streetsVisible ? 'พื้นดาวเทียม + ถนน' : 'พื้นดาวเทียม') : (streetsVisible ? 'พื้นถนน' : 'ปิดแผนที่พื้นหลัง')];
 if (trafficVisible) labels.push('จราจร Longdo');
-if (waterVisible) labels.push('ขอบเขตน้ำหน้างาน');
-labels.push('น้ำท่วมดาวเทียมยังไม่เชื่อม');
+if (tambonCheck && tambonCheck.checked) labels.push('เขตตำบล');
+labels.push('น้ำท่วมภายนอกยังไม่เชื่อม');
 setText('dashMapModeStatus', labels.join(' · '));
 setText('dashTrafficSourceStatus', trafficStatus);
 };
-window.selectDashboardMapMode = function(nextMode) {
-if (['streets','satellite','traffic','flood'].indexOf(nextMode) === -1) return;
-mode = nextMode;
-// Presets change the base and enable the requested layer, never turn off the
-// other independent layer. Street/satellite also retain both checkbox choices.
-setDashboardMapStyle(nextMode === 'satellite' ? 'satellite' : 'streets');
-if (nextMode === 'traffic') window.setDashboardTrafficLayer(true);
-if (nextMode === 'flood') window.setDashboardFieldFloodLayer(true);
+window.setDashboardBaseLayer = function(layer, visible) {
+if (layer === 'streets') streetsVisible = !!visible;
+else if (layer === 'satellite') satelliteVisible = !!visible;
+else return;
+// Both checked = genuine satellite imagery with road/label overlay, not
+// an opaque street map hiding the satellite. Both off = neutral background.
+setDashboardMapStyle(satelliteVisible ? (streetsVisible ? 'hybrid' : 'satellite') : (streetsVisible ? 'streets' : 'empty'));
 window.syncDashboardMapModeUI();
 };
-window.setDashboardFieldFloodLayer = function(visible) {
-if ((window._floodLayerVisible !== false) !== !!visible) toggleFloodMapLayer();
-if (!visible && mode === 'flood') mode = window._dashboardMapStyle || 'satellite';
+window.setDashboardTambonLayer = function(visible) {
+if (typeof setTambonBoundaryVisibility === 'function') setTambonBoundaryVisibility(!!visible);
 window.syncDashboardMapModeUI();
 };
 function removeTraffic(mapObj) {
@@ -78,7 +72,6 @@ clearRefresh();
 if (!trafficVisible) {
 removeTraffic(mapRef);
 trafficStatus = 'ยังไม่เปิดชั้นจราจร';
-if (mode === 'traffic') mode = window._dashboardMapStyle || 'satellite';
 window.syncDashboardMapModeUI();
 return;
 }
@@ -151,7 +144,7 @@ bounds:definition.bounds,
 attribution:'<a href="https://traffic.longdo.com/" target="_blank" rel="noopener noreferrer">Longdo Traffic</a>'
 });
 // Keep field-water polygons and solid red closure lines above traffic.
-var beforeLayer = (mapObj.getStyle().layers || []).find(function(layer) { return /^mt-(polygon|line|circle)-/.test(layer.id); });
+var beforeLayer = (mapObj.getStyle().layers || []).find(function(layer) { return /^(mt-(polygon|line|circle)-|tambon-(fill|line)-)/.test(layer.id); });
 definition.layers.forEach(function(layer, index) {
 var copy = JSON.parse(JSON.stringify(layer));
 copy.id = LAYERS[index];
@@ -216,10 +209,13 @@ if (!mapObj || mapRef === mapObj) return;
 mapRef = mapObj;
 generation++;
 clearRefresh();
-mode = window._dashboardMapStyle || 'satellite';
+var initialStyle = window._dashboardMapStyle || 'satellite';
+streetsVisible = initialStyle === 'streets' || initialStyle === 'hybrid';
+satelliteVisible = initialStyle === 'satellite' || initialStyle === 'hybrid';
 mapObj.on('style.load', function() {
 if (mapRef !== mapObj) return;
 window.restoreDashboardViewOverlays(mapObj);
+if (typeof tambonBoundaryVisible !== 'undefined' && tambonBoundaryVisible && typeof refreshTambonLayersForViewport === 'function') refreshTambonLayersForViewport();
 if (trafficVisible) renderTraffic();
 window.syncDashboardMapModeUI();
 });

@@ -21,6 +21,7 @@ function harness(fetchImpl) {
   const events = {}, sources = {}, layers = [];
   const timers = new Map();
   let timerId = 0, changes = 0, restores = 0;
+  const appliedStyles=[];
   const road = {_addToMap(map) {
     restores++;
     if (!map.getSource('road-source')) map.addSource('road-source', {type:'geojson',data:{type:'FeatureCollection',features:[]}});
@@ -39,7 +40,7 @@ function harness(fetchImpl) {
     removeLayer(id) { const i=layers.findIndex(layer=>layer.id===id); if(i>=0) layers.splice(i,1); },
     removeSource(id) { delete sources[id]; },
     getStyle() { return {layers, sources}; },
-    setStyle() { changes++; Object.keys(sources).forEach(id=>delete sources[id]); layers.length=0; },
+    setStyle(style) { changes++; appliedStyles.push(style); Object.keys(sources).forEach(id=>delete sources[id]); layers.length=0; },
     flyTo() { throw new Error('Mode switch must not recenter'); },
     fitBounds() { throw new Error('Mode switch must not refit'); }
   };
@@ -47,7 +48,9 @@ function harness(fetchImpl) {
     window:{_dashboardMapStyle:'satellite', _icOCZoneOverlays:[marker], _incidentSpecialMapOverlays:[road,road]},
     document:{getElementById:element,addEventListener() {},hidden:false},
     dashMap:{_maptiler:map}, otherMarkers:[marker],zoneCircles:[],hazmatZoneOverlays:[],
-    maptilersdk:{MapStyle:{HYBRID:'hybrid',STREETS:'streets'}},
+    maptilersdk:{MapStyle:{HYBRID:'hybrid',SATELLITE:'satellite',STREETS:'streets'}},
+    tambonBoundaryVisible:false,
+    setTambonBoundaryVisibility(visible) { ctx.tambonBoundaryVisible=visible; },
     toggleFloodMapLayer() { ctx.window._floodLayerVisible = ctx.window._floodLayerVisible === false; },
     fetch:fetchImpl,URL,AbortController,Set,Date,
     setTimeout(fn, ms) { timers.set(++timerId,{fn,ms}); return timerId; },
@@ -57,7 +60,7 @@ function harness(fetchImpl) {
   ctx.setDashboardMapStyle = ctx.setDashboardMapStyle.bind(ctx);
   vm.runInContext(source,ctx);
   Object.assign(ctx,ctx.window);
-  return {ctx,map,events,element,timers,changes:()=>changes,restores:()=>restores,road};
+  return {ctx,map,events,element,timers,changes:()=>changes,restores:()=>restores,road,appliedStyles};
 }
 const tick = () => new Promise(resolve=>setImmediate(resolve));
 const style = {version:8,layers:['forward','reverse'].map(direction=>({id:'traffic-'+direction,source:'traffic','source-layer':'traffic',type:'line',paint:{'line-color':'red'}}))};
@@ -69,22 +72,31 @@ const successfulFetch = async(url, options) => {
 };
 (async()=>{
   const h=harness(successfulFetch),w=h.ctx.window;
-  w.selectDashboardMapMode('satellite'); assert.equal(h.changes(),0,'Same base must not reload');
-  w.selectDashboardMapMode('flood'); assert.equal(h.changes(),1);
+  w.setDashboardBaseLayer('satellite',true); assert.equal(h.changes(),0,'Same base must not reload');
+  w.setDashboardBaseLayer('streets',true); assert.equal(h.changes(),1);
+  assert.equal(h.appliedStyles.at(-1),'hybrid','Both base checkboxes use real satellite with roads');
+  assert.equal(h.element('dashStreetLayerCheck').checked,true);
+  assert.equal(h.element('dashSatelliteLayerCheck').checked,true);
   assert.equal(w._floodLayerVisible !== false,true);
   h.events['style.load'].forEach(fn=>fn());
   assert.equal(h.restores(),1,'Restore once per unique object, not DOM markers');
-  w.selectDashboardMapMode('traffic'); await tick();
+  w.setDashboardTrafficLayer(true); await tick();
   assert.equal(h.changes(),1,'Traffic is an overlay, not another map');
   assert.ok(h.map.getSource('ics-longdo-traffic'));
   assert.equal(h.map.getStyle().layers.at(-1).id,'mt-line-test-line','Closure remains above traffic');
   assert.match(h.element('dashTrafficSourceStatus').textContent,/ไม่ใช่เวลาสำรวจต้นทาง/);
-  assert.equal(h.element('dashFieldFloodLayerCheck').checked,true,'Traffic must retain water');
-  w.setDashboardFieldFloodLayer(false);
-  assert.ok(h.map.getSource('ics-longdo-traffic'),'Water checkbox independent of traffic');
-  w.selectDashboardMapMode('satellite'); h.events['style.load'].forEach(fn=>fn()); await tick();
+  w.setDashboardTambonLayer(true);
+  assert.equal(h.element('dashTambonLayerCheck').checked,true);
+  assert.ok(h.map.getSource('ics-longdo-traffic'),'Boundaries independent of traffic');
+  w.setDashboardBaseLayer('streets',false); h.events['style.load'].forEach(fn=>fn()); await tick();
+  assert.equal(h.appliedStyles.at(-1),'satellite','Satellite alone is imagery, not hybrid');
   assert.ok(h.map.getSource('ics-longdo-traffic'),'Traffic survives base switch');
-  assert.equal(h.element('dashFieldFloodLayerCheck').checked,false,'Base switch retains water checkbox');
+  assert.equal(h.element('dashTambonLayerCheck').checked,true,'Base switch retains boundary checkbox');
+  w.setDashboardBaseLayer('satellite',false); h.events['style.load'].forEach(fn=>fn()); await tick();
+  assert.equal(h.appliedStyles.at(-1).layers[0].type,'background','Both bases off means neutral background');
+  assert.ok(h.map.getSource('ics-longdo-traffic'),'Can show selected overlays without base');
+  w.setDashboardBaseLayer('streets',true); h.events['style.load'].forEach(fn=>fn()); await tick();
+  assert.equal(h.appliedStyles.at(-1),'streets','Roads without satellite');
   assert.deepEqual(h.map.center,[101.27,12.7]); assert.equal(h.map.zoom,15);
   const refresh=[...h.timers.values()].find(timer=>timer.ms===180000);
   assert.ok(refresh,'Refresh cadence three minutes');
@@ -143,6 +155,14 @@ const successfulFetch = async(url, options) => {
   const viewControls=html.slice(html.indexOf('<div id="dashMapViewControls"'),html.indexOf('<button id="dashFloodManageBtn"'));
   assert.doesNotMatch(viewControls,/openAdmin|openAddBuilding|google\.script/,'Viewer exemption contains only view actions');
   assert.doesNotMatch(source,/google\.script|supabase\.|localStorage\.setItem|example.*key/i,'Modes cannot write data/keys');
+  const checkboxNames=[...viewControls.matchAll(/id="(dash\w+LayerCheck)"/g)].map(m=>m[1]);
+  assert.deepEqual(checkboxNames,['dashStreetLayerCheck','dashSatelliteLayerCheck','dashExternalFloodLayerCheck','dashTrafficLayerCheck','dashTambonLayerCheck']);
+  assert.doesNotMatch(viewControls,/dashFieldFloodLayerCheck|selectDashboardMapMode/,'External water is never the manual water toggle');
+  assert.match(viewControls,/id="dashExternalFloodLayerCheck" type="checkbox" disabled/,'Not connected must not appear to work');
+  assert.doesNotMatch(html,/id="dashTambonToggleBtn"/,'No duplicate boundary button');
+  assert.equal((html.match(/id="wind_panel"/g)||[]).length,1);
+  assert.ok(html.indexOf('id="wind_panel"')<html.indexOf('<div class="dash-map-toolbar">'),'Wind is in heading, not competing with toolbar');
+  assert.doesNotMatch(extract(mapCode,'handleTambonAutoShowOnZoom'),/tambonBoundaryVisible\s*=/,'Zoom cannot override checkbox');
   assert.match(fs.readFileSync(path.join(root,'sw.js'),'utf8'),/hostname === 'msv\.longdo\.com'\) return/);
-  console.log('PASS: independent presets, no camera/marker reset, latest async state, traffic errors/origin validation, refresh, boundaries, closures and viewer-safe controls');
+  console.log('PASS: independent base/overlay checkboxes, all 4 base combinations, no camera/marker reset, async cancellation, traffic errors/origin validation, refresh, boundaries, closures, wind placement and viewer-safe controls');
 })().catch(error=>{console.error(error);process.exitCode=1;});

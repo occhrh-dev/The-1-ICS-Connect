@@ -2355,7 +2355,7 @@ var info = document.getElementById('weather_info');
 var arrow = document.getElementById('wind_arrow');
 if (info) {
 var src = source ? ' • ' + source : '';
-info.innerText = windDirectionName(destDeg) + src;
+info.innerText = windDirectionName(destDeg) + ' · ' + Number(speed || 0).toFixed(1) + ' m/s' + src;
 }
 if (arrow) {
 arrow.className = 'fas fa-arrow-up';
@@ -3155,6 +3155,7 @@ if (typeof dashMap.zoom === 'function') dashMap.zoom(17);
 }
 }
 function updateFloodMapLayerUI(zones) {
+if (typeof syncDashboardFloodAreaManageVisibility === 'function') syncDashboardFloodAreaManageVisibility(zones);
 var visible = window._floodLayerVisible !== false;
 var floodZones = (zones || []).filter(function(z) {
 var type = getZoneMarkerType(z);
@@ -5023,7 +5024,8 @@ windSpeed,
 windMode,
 eocLat && eocLng ? eocLat + ',' + eocLng : '',
 window._pendingDeclareIncidentPoints || [],
-hasFlood ? (window._pendingDeclareFloodAreas || []) : []
+hasFlood ? (window._pendingDeclareFloodAreas || []) : [],
+hasFlood
 ];
 }
 }).then(function(result) {
@@ -5032,6 +5034,8 @@ var v = result.value;
 Swal.fire({ title:'กำลังเปิดศูนย์ EOC...', didOpen:function(){ Swal.showLoading(); }, allowOutsideClick:false });
 google.script.run
 .withSuccessHandler(function(res) {
+var saveFloodSetting = typeof persistDeclaredFloodSetting === 'function' ? persistDeclaredFloodSetting : function(enabled, point, reporter, role, done) { done(new Error('ยังโหลดระบบบันทึก checkbox ไม่ครบ')); };
+saveFloodSetting(v[14], (v[12] || [])[0], v[6], APP_ACCESS_ROLE, function(floodSettingError) {
 Swal.close();
 document.getElementById('scene_Declare').style.display = 'none';
 document.getElementById('scene_Loading').style.display = 'flex';
@@ -5040,6 +5044,7 @@ checkSystemStatus();
 setTimeout(function() {
 var joinUrl = (res && res.joinUrl) ? res.joinUrl : '';
 if (joinUrl) window._currentJoinUrl = joinUrl; // ให้ปุ่มโหลด/แชร์ QR ใน popup ใช้ได้ทันที
+var floodSettingWarning = floodSettingError ? '<div style="background:#fef3c7;padding:10px;border-radius:8px;color:#92400e;margin-bottom:10px;">เปิดเหตุแล้ว แต่บันทึก checkbox น้ำท่วมไม่สำเร็จ เมนูพื้นที่น้ำอาจไม่แสดงหลังเปิดใหม่ กรุณาติดต่อผู้ดูแลก่อนทดลองเปิดเหตุซ้ำ</div>' : '';
 var joinHtml = joinUrl
 ? '<div style="text-align:left;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:12px;margin-bottom:10px;">' +
   '<div style="font-weight:900;color:#1e3a8a;margin-bottom:6px;">🔗 Join Link สำหรับเจ้าหน้าที่</div>' +
@@ -5055,7 +5060,7 @@ var joinHtml = joinUrl
 Swal.fire({
 icon: 'success',
 title: '🚨 เปิด EOC สำเร็จ',
-html: joinHtml + (res && res.videoRoomName
+html: floodSettingWarning + joinHtml + (res && res.videoRoomName
   ? '<div style="margin-top:8px;font-size:0.85rem;color:#475569;">ห้องวิดีโอ: <b>' + res.videoRoomName + '</b></div>'
   : ''),
 confirmButtonText: res && res.videoRoomName ? 'เปิดห้องวิดีโอด้วย' : 'ตกลง',
@@ -5078,6 +5083,7 @@ setTimeout(function() { showJoinLinkInDashboard(joinUrl); }, 500);
 }
 });
 }, 800);
+});
 })
 .withFailureHandler(function(err) {
 Swal.close();

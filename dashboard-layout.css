@@ -73,8 +73,13 @@
 #scene_Dashboard .dash-status-strip #hdr_sitrep_time,
 #scene_Dashboard .dash-status-strip #hdr_oc_sitrep_text { font-size: 13px !important; }
 #scene_Dashboard .dash-map-panel { min-width: 0; min-height: 0; overflow: hidden !important; }
-#scene_Dashboard .dash-map-heading { flex: 0 0 auto; padding: 7px 10px !important; }
+#scene_Dashboard .dash-map-heading { flex: 0 0 auto; padding: 7px 10px !important; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; }
 #scene_Dashboard .dash-map-heading h4 { font-size: 15px !important; }
+#scene_Dashboard #wind_panel { display:flex; align-items:center; gap:8px; flex:0 1 auto; max-width:100%; border:1px solid #bae6fd; background:#f0f9ff; color:#075985; border-radius:6px; padding:5px 9px; font:600 11px Prompt,sans-serif; cursor:pointer; text-align:left; box-sizing:border-box; }
+#scene_Dashboard #wind_panel > span { min-width:0; }
+#scene_Dashboard #wind_panel #wind_arrow { color:#0284c7; font-size:17px; transition:transform .3s; flex:0 0 auto; }
+#scene_Dashboard .dash-wind-label { display:block; color:#64748b; font-size:10px; line-height:1.4; }
+#scene_Dashboard #weather_info { display:block; overflow-wrap:anywhere; line-height:1.5; }
 #scene_Dashboard .dash-map-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -101,23 +106,17 @@
   white-space: nowrap;
   font-size: 12px !important;
 }
-#scene_Dashboard .dash-map-toolbar #wind_panel {
-  position: static !important;
-  width: auto !important;
-  max-width: 220px !important;
-  margin-left: auto;
-  padding: 3px 7px !important;
-  box-shadow: none !important;
-}
 #scene_Dashboard .dash-map-wrap { overflow: hidden; }
 #scene_Dashboard .dash-map-view-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
-#scene_Dashboard .dash-map-mode-buttons { display: flex; flex-wrap: wrap; gap: 3px; }
-#scene_Dashboard .dash-map-mode-buttons button { border: 1px solid #cbd5e1; background: white; color: #334155; font: 800 12px Prompt,sans-serif; cursor: pointer; }
-#scene_Dashboard .dash-map-mode-buttons button[aria-pressed="true"] { background: #2563eb !important; color: white !important; border-color: #2563eb; }
 #scene_Dashboard .dash-map-layers { position: relative; z-index: 20; }
 #scene_Dashboard .dash-map-layers summary { list-style: none; border: 1px solid #94a3b8; background: white; color: #334155; border-radius: 5px; padding: 6px 8px; cursor: pointer; font: 800 12px Prompt,sans-serif; }
 #scene_Dashboard .dash-map-layers summary::-webkit-details-marker { display: none; }
-#scene_Dashboard .dash-map-layer-panel { position: absolute; top: calc(100% + 5px); right: 0; width: min(300px,calc(100vw - 40px)); max-height: min(420px,55dvh); overflow-y: auto; padding: 12px; border: 1px solid #94a3b8; border-radius: 8px; background: white; color: #334155; box-shadow: 0 4px 18px #0f172a33; box-sizing: border-box; font: 12px Prompt,sans-serif; }
+#scene_Dashboard .dash-map-layer-panel { position: absolute; top: calc(100% + 5px); left: 0; width: min(300px,calc(100vw - 40px)); max-height: min(420px,55dvh); overflow-y: auto; padding: 12px; border: 1px solid #94a3b8; border-radius: 8px; background: white; color: #334155; box-shadow: 0 4px 18px #0f172a33; box-sizing: border-box; font: 12px Prompt,sans-serif; }
+#scene_Dashboard .dash-layer-section-title { font-size:10px; font-weight:800; color:#64748b; letter-spacing:.2px; padding-top:8px; border-top:1px solid #e2e8f0; }
+#scene_Dashboard .dash-layer-section-title:first-child { padding-top:0; border:0; }
+#scene_Dashboard .dash-layer-pending { font-size:10px; background:#f1f5f9; border-radius:4px; padding:2px 5px; margin-left:auto; }
+#scene_Dashboard .dash-layer-chevron { font-size:10px; margin-left:5px; transition:transform .15s; }
+#scene_Dashboard .dash-map-layers[open] .dash-layer-chevron { transform:rotate(180deg); }
 #scene_Dashboard .dash-map-layer-panel label { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-weight: 800; }
 #scene_Dashboard .dash-map-layer-panel label:first-child { margin-top: 0; }
 #scene_Dashboard .dash-map-layer-panel input { width: 16px; height: 16px; flex: 0 0 auto; accent-color: #2563eb; }
