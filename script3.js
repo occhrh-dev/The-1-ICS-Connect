@@ -61,11 +61,12 @@ return {
 _maptilerCircle: true,
 _id: id,
 _addToMap: function(targetMap) {
+if (this._removed) return;
 var mapObj = targetMap && (targetMap._maptiler || targetMap);
 if (!mapObj || !mapObj.addSource) return;
 if (typeof mapObj.isStyleLoaded === 'function' && !mapObj.isStyleLoaded()) {
 var self = this;
-mapObj.once('load', function() { self._addToMap(mapObj); });
+mapObj.once('idle', function() { self._addToMap(mapObj); });
 return;
 }
 var sourceId = id + '-source';
@@ -99,6 +100,7 @@ this._sourceId = sourceId;
 this._layerIds = [id + '-fill', id + '-line'];
 },
 _removeFromMap: function() {
+this._removed = true;
 var mapObj = this._map;
 if (!mapObj) return;
 (this._layerIds || []).forEach(function(layerId) {
@@ -117,11 +119,12 @@ coords.push(coords[0].slice());
 var id = 'mt-polygon-' + Date.now() + '-' + Math.random().toString(36).slice(2);
 return {
 _addToMap: function(targetMap) {
+if (this._removed) return;
 var mapObj = targetMap && (targetMap._maptiler || targetMap);
 if (!mapObj || !mapObj.addSource) return;
 if (typeof mapObj.isStyleLoaded === 'function' && !mapObj.isStyleLoaded()) {
 var self = this;
-mapObj.once('styledata', function() { self._addToMap(mapObj); });
+mapObj.once('idle', function() { self._addToMap(mapObj); });
 return;
 }
 var sourceId = id + '-source';
@@ -134,6 +137,7 @@ this._sourceId = sourceId;
 this._layerIds = [id + '-fill', id + '-line'];
 },
 _removeFromMap: function() {
+this._removed = true;
 var mapObj = this._map;
 if (!mapObj) return;
 (this._layerIds || []).forEach(function(layerId) { try { if (mapObj.getLayer(layerId)) mapObj.removeLayer(layerId); } catch(e) {} });
@@ -854,7 +858,9 @@ dashMap.Overlays.add(dashEOCMarker);
 ensureDashboardMarkerSeparationZoom();
 }
 function setDashboardMapStyle(mode) {
-window._dashboardMapStyle = mode === 'satellite' ? 'satellite' : 'streets';
+var nextStyle = mode === 'satellite' ? 'satellite' : 'streets';
+var changed = window._dashboardMapStyle !== nextStyle;
+window._dashboardMapStyle = nextStyle;
 var streetBtn = document.getElementById('dashStyleStreet');
 var satBtn = document.getElementById('dashStyleSat');
 if (streetBtn && satBtn) {
@@ -864,48 +870,15 @@ streetBtn.style.color = sat ? '#334155' : 'white';
 satBtn.style.background = sat ? '#2563eb' : 'white';
 satBtn.style.color = sat ? 'white' : '#334155';
 }
-if (!dashMap || !dashMap._maptiler || typeof maptilersdk === 'undefined') return;
+if (!dashMap || !dashMap._maptiler || typeof maptilersdk === 'undefined' || !changed) return;
 var style = window._dashboardMapStyle === 'satellite'
 ? (maptilersdk.MapStyle.HYBRID || 'https://api.maptiler.com/maps/hybrid/style.json?key=' + encodeURIComponent(MAPTILER_API_KEY))
 : maptilersdk.MapStyle.STREETS;
-clearLongdoOverlayList(dashMap, otherMarkers);
-clearLongdoOverlayList(dashMap, zoneCircles);
-clearLongdoOverlayList(dashMap, window._icOCZoneOverlays || []);
-clearLongdoOverlayList(dashMap, window._icOCZoneCircles || []);
-clearLongdoOverlayList(dashMap, window._icOCReqAlertOverlays || []);
-clearLongdoOverlayList(dashMap, window._incidentSpecialMapOverlays || []);
-clearLongdoOverlayList(dashMap, Object.values(helpRequestMarkers || {}));
-clearLongdoOverlayList(dashMap, Object.values(responderLocationMarkers || {}));
-otherMarkers = [];
-zoneCircles = [];
-helpRequestMarkers = {};
-responderLocationMarkers = {};
-window._dashboardLiveMarkerRecords = {};
-window._icOCZoneOverlayRecords = {};
-window._icOCZoneOverlays = [];
-window._icOCZoneCircles = [];
-window._icOCReqAlertOverlays = [];
-window._incidentSpecialMapOverlays = [];
-window._incidentSpecialMapRecords = {};
-window._icOCZoneDrawKey = '';
+// MapLibre retains DOM markers and the camera across setStyle. Restore only
+// style-owned polygons/lines from the current registry, never reset live feeds.
+if (typeof attachDashboardMapModes === 'function') attachDashboardMapModes(dashMap._maptiler);
+if (typeof captureDashboardBoundaryLayers === 'function') captureDashboardBoundaryLayers(dashMap._maptiler);
 dashMap._maptiler.setStyle(style);
-var styleSwitchRendered = false;
-function renderAfterStyleSwitch() {
-if (styleSwitchRendered) return; // กันเรียกซ้ำถ้าทั้ง idle event และ fallback timeout ทำงานทั้งคู่
-styleSwitchRendered = true;
-try {
-if (window._lastEmergState) applyDashboardEmergencyState(window._lastEmergState);
-if (typeof updateLiveMarkers === 'function') updateLiveMarkers();
-if (typeof updateHelpRequestMarkers === 'function') updateHelpRequestMarkers();
-if (typeof updateResponderMarkers === 'function') updateResponderMarkers();
-if (typeof drawHazmatZonesOnDashMap === 'function' && window._lastHazmatZoneData) {
-drawHazmatZonesOnDashMap(window._lastHazmatZoneData);
-}
-} catch(e) {
-}
-}
-dashMap._maptiler.once('idle', renderAfterStyleSwitch);
-setTimeout(renderAfterStyleSwitch, 2000); // fallback กันเคส idle ไม่ยิง (เคยทำให้หมุดหายค้างตลอดไป)
 }
 function getDashboardIncidentPoint() {
 if (incidentCenter && incidentCenter.lat && incidentCenter.lng) {
@@ -997,6 +970,7 @@ language: 'th'
 });
 mapObj.addControl(new maptilersdk.NavigationControl(), 'top-right');
 dashMap = makeDashboardMapAdapter(mapObj);
+if (typeof attachDashboardMapModes === 'function') attachDashboardMapModes(mapObj);
 watchDashboardMapSize();
 mapObj.on('load', function() {
 if (dashMap && dashMap.resize) dashMap.resize();

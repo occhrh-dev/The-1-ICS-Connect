@@ -2931,11 +2931,12 @@ if (coords.length < 2) return null;
 var id = 'mt-line-' + Date.now() + '-' + Math.random().toString(36).slice(2);
 return {
 _addToMap: function(targetMap) {
+if (this._removed) return;
 var mapObj = targetMap && (targetMap._maptiler || targetMap);
 if (!mapObj || !mapObj.addSource) return;
 if (typeof mapObj.isStyleLoaded === 'function' && !mapObj.isStyleLoaded()) {
 var self = this;
-mapObj.once('styledata', function() { self._addToMap(mapObj); });
+mapObj.once('idle', function() { self._addToMap(mapObj); });
 return;
 }
 var sourceId = id + '-source';
@@ -2948,6 +2949,7 @@ this._sourceId = sourceId;
 this._layerIds = [id + '-line', id + '-casing'];
 },
 _removeFromMap: function() {
+this._removed = true;
 var mapObj = this._map;
 if (!mapObj) return;
 (this._layerIds || []).forEach(function(layerId) { try { if (mapObj.getLayer(layerId)) mapObj.removeLayer(layerId); } catch(e) {} });
@@ -3046,6 +3048,7 @@ created.push(labelMarker);
 return created;
 });
 });
+}
 (allZones || []).filter(function(marker) { return getZoneMarkerType(marker) === 'RoadClosed' && parseRoadClosureMarker(marker); }).forEach(function(marker) {
 var closure = parseRoadClosureMarker(marker);
 if (!closure) return;
@@ -3070,7 +3073,6 @@ created.push(roadLabel);
 return created;
 });
 });
-}
 Object.keys(oldRecords).forEach(function(key) {
 if (nextRecords[key]) return;
 (oldRecords[key].overlays || []).forEach(function(overlay) { removeLongdoOverlay(dashMap, overlay); });
@@ -3154,7 +3156,11 @@ if (typeof dashMap.zoom === 'function') dashMap.zoom(17);
 }
 function updateFloodMapLayerUI(zones) {
 var visible = window._floodLayerVisible !== false;
-var floodZones = (zones || []).filter(function(z) { return isFloodMapLayerType(getZoneMarkerType(z)); });
+var floodZones = (zones || []).filter(function(z) {
+var type = getZoneMarkerType(z);
+return isFloodMapLayerType(type) && (visible || (type !== 'FloodArea' && type !== 'FloodDepth'));
+});
+if (typeof syncDashboardMapModeUI === 'function') syncDashboardMapModeUI();
 var btn = document.getElementById('dashFloodToggleBtn');
 if (btn) {
 btn.style.background = visible ? '#0369a1' : '#ffffff';
@@ -3164,7 +3170,7 @@ btn.title = visible ? 'ซ่อนจุดสถานการณ์น้ำ
 }
 var legend = document.getElementById('dash_flood_legend');
 if (!legend) return;
-if (!visible || !floodZones.length) {
+if (!floodZones.length) {
 legend.style.display = 'none';
 legend.innerHTML = '';
 return;
@@ -3635,7 +3641,8 @@ zones = allZones.filter(function(z) {
 var type = getZoneMarkerType(z);
 if (type === 'IncidentPoint' || type === 'FloodArea') return false;
 if (type === 'RoadClosed' && parseRoadClosureMarker(z)) return false;
-if (window._floodLayerVisible === false && isFloodZoneType(type)) return false;
+// Hiding water data must not hide food, safe areas, electrical hazards or roads.
+if (window._floodLayerVisible === false && type === 'FloodDepth') return false;
 return true;
 });
 supportReqs = dedupeOCSupportRequests(reconcileOCSupportRequestStatus(supportReqs || window._icSupportReqs || []));
