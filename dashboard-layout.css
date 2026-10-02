@@ -73,10 +73,10 @@
 #scene_Dashboard .dash-status-strip #hdr_sitrep_time,
 #scene_Dashboard .dash-status-strip #hdr_oc_sitrep_text { font-size: 13px !important; }
 #scene_Dashboard .dash-map-panel { min-width: 0; min-height: 0; overflow: hidden !important; }
-#scene_Dashboard .dash-map-heading { flex: 0 0 auto; padding: 7px 10px !important; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; }
-#scene_Dashboard .dash-map-heading h4 { font-size: 15px !important; }
+#scene_Dashboard .dash-map-title { flex:0 0 auto; margin:0 4px 0 0; font-size:13px !important; white-space:nowrap; }
 #scene_Dashboard #wind_panel { display:flex; align-items:center; gap:8px; flex:0 1 auto; max-width:100%; border:1px solid #bae6fd; background:#f0f9ff; color:#075985; border-radius:6px; padding:5px 9px; font:600 11px Prompt,sans-serif; cursor:pointer; text-align:left; box-sizing:border-box; }
 #scene_Dashboard #wind_panel { position:static !important; top:auto !important; left:auto !important; width:auto !important; }
+#scene_Dashboard .dash-map-toolbar #wind_panel { margin-left:auto; padding:4px 7px !important; gap:6px; max-width:170px; white-space:normal; }
 #scene_Dashboard #wind_panel > span { min-width:0; }
 #scene_Dashboard #wind_panel #wind_arrow { color:#0284c7; font-size:17px; transition:transform .3s; flex:0 0 auto; }
 #scene_Dashboard .dash-wind-label { display:block; color:#64748b; font-size:10px; line-height:1.4; }
@@ -85,9 +85,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
+  gap: 5px 6px;
   padding: 6px;
-  background: #eef2f5;
+  background: #f8f9fa;
   border-bottom: 1px solid #cbd5e1;
   flex: 0 0 auto;
 }
@@ -125,7 +125,7 @@
 #scene_Dashboard .dash-layer-colors { display: flex; flex-wrap: wrap; gap: 8px; font-size: 10px; }
 #scene_Dashboard .dash-layer-colors span::before { content: ''; display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--layer-color); margin-right: 3px; }
 #scene_Dashboard .dash-layer-unavailable { color: #64748b; }
-#scene_Dashboard .dash-map-mode-status { flex: 0 0 auto; padding: 3px 9px; background: #eff6ff; color: #075985; font: 10px Prompt,sans-serif; line-height: 1.5; }
+#scene_Dashboard .dash-map-mode-status { padding:6px 8px; margin-bottom:8px; border-radius:5px; background:#eff6ff; color:#075985; font:10px Prompt,sans-serif; line-height:1.5; }
 @media (max-width: 600px) {
   #scene_Dashboard .dash-map-layers { position: static; }
   #scene_Dashboard .dash-map-toolbar { position: relative; }

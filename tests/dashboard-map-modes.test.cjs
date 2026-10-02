@@ -161,7 +161,12 @@ const successfulFetch = async(url, options) => {
   assert.match(viewControls,/id="dashExternalFloodLayerCheck" type="checkbox" disabled/,'Not connected must not appear to work');
   assert.doesNotMatch(html,/id="dashTambonToggleBtn"/,'No duplicate boundary button');
   assert.equal((html.match(/id="wind_panel"/g)||[]).length,1);
-  assert.ok(html.indexOf('id="wind_panel"')<html.indexOf('<div class="dash-map-toolbar">'),'Wind is in heading, not competing with toolbar');
+  const toolbar = html.slice(html.indexOf('<div class="dash-map-toolbar">'), html.indexOf('<div class="dash-map-wrap"'));
+  assert.match(toolbar, /class="dash-map-title"/,'Title shares the compact toolbar');
+  assert.match(toolbar, /id="wind_panel"/,'Wind shares the toolbar instead of taking a separate row');
+  assert.match(viewControls, /id="dashMapModeStatus"/,'Layer status lives in the dropdown, not above the map');
+  assert.doesNotMatch(viewControls, /id="wind_panel"/,'Editing wind cannot bypass viewer permissions');
+  assert.doesNotMatch(html, /class="dash-map-heading"/,'No separate heading strip consumes map height');
   assert.doesNotMatch(extract(mapCode,'handleTambonAutoShowOnZoom'),/tambonBoundaryVisible\s*=/,'Zoom cannot override checkbox');
   assert.match(fs.readFileSync(path.join(root,'sw.js'),'utf8'),/hostname === 'msv\.longdo\.com'\) return/);
   console.log('PASS: independent base/overlay checkboxes, all 4 base combinations, no camera/marker reset, async cancellation, traffic errors/origin validation, refresh, boundaries, closures, wind placement and viewer-safe controls');
