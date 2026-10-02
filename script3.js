@@ -270,6 +270,18 @@ try { renderDashboardEOCMarker(dashEOCCoordsRaw); } catch(e) {}
 window._dashboardEOCMarkerRendering = false;
 }
 }
+function watchDashboardMapSize() {
+var container = document.querySelector('#scene_Dashboard .dash-map-wrap');
+if (!container || window._dashboardMapResizeObserver || typeof ResizeObserver === 'undefined') return;
+window._dashboardMapResizeObserver = new ResizeObserver(function() {
+if (window._dashboardMapResizeFrame) cancelAnimationFrame(window._dashboardMapResizeFrame);
+window._dashboardMapResizeFrame = requestAnimationFrame(function() {
+window._dashboardMapResizeFrame = 0;
+if (dashMap && typeof dashMap.resize === 'function') dashMap.resize();
+});
+});
+window._dashboardMapResizeObserver.observe(container);
+}
 function buildDashboardPointMarkerHtml(iconHtml, labelHtml, options) {
 options = options || {};
 var x = parseFloat(options.x || 0) || 0;
@@ -980,10 +992,12 @@ container: 'dash_map_canvas',
 style: initialDashStyle,
 center: [lng, lat],
 zoom: 16,
+navigationControl: false,
 language: 'th'
 });
 mapObj.addControl(new maptilersdk.NavigationControl(), 'top-right');
 dashMap = makeDashboardMapAdapter(mapObj);
+watchDashboardMapSize();
 mapObj.on('load', function() {
 if (dashMap && dashMap.resize) dashMap.resize();
 updateDashboardMarkerScale();

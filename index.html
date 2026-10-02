@@ -28,12 +28,13 @@
 <link href="https://cdn.maptiler.com/maptiler-sdk-js/v4.0.2/maptiler-sdk.css" rel="stylesheet" media="print" onload="this.media='all'">
 <!-- Longdo map loaded on demand -->
 <style>
-@import url('https://occhrh-dev.github.io/The-1-ICS-Connect/stylesheet.css');
+@import url('https://occhrh-dev.github.io/The-1-ICS-Connect/stylesheet.css?v=20261002_layout1');
 /* IC Login Mode */
 body.ic-login-mode #staffLeadBox,
 body.ic-login-mode #staffCoordBox { display:none !important; }
 body.ic-login-mode #staffRoleInput { list-style:none; }
 </style>
+<link rel="stylesheet" href="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-layout.css?v=20261002_layout1">
 <!-- ERG database loaded on demand -->
 <script>
 // Inline bridge — ทำงานทันทีก่อน external scripts โหลด
@@ -645,10 +646,11 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 </div>
 </div>
 <div id="scene_Dashboard" style="height:100vh;display:none;flex-direction:column;overflow:hidden;background:#c7d2dc;">
-<div style="background:linear-gradient(90deg,#1a1a2e 0%,#2c3e50 100%);border-bottom:3px solid #e74c3c;padding:8px 20px;display:flex;align-items:stretch;gap:0;flex-shrink:0;z-index:10;">
-<div style="background:#e74c3c;padding:6px 16px;border-radius:6px;display:flex;align-items:center;margin-right:20px;box-shadow:0 0 12px rgba(231,76,60,0.5);">
+<div class="dash-header" style="background:linear-gradient(90deg,#1a1a2e 0%,#2c3e50 100%);border-bottom:3px solid #e74c3c;padding:8px 20px;display:flex;align-items:stretch;gap:0;flex-shrink:0;z-index:10;">
+<div class="dash-brand" style="background:#e74c3c;padding:6px 16px;border-radius:6px;display:flex;align-items:center;margin-right:20px;box-shadow:0 0 12px rgba(231,76,60,0.5);">
 <span style="font-size:1.1rem;font-weight:900;color:white;letter-spacing:2px;"><i class="fas fa-shield-alt"></i> EOC</span>
 </div>
+<div class="dash-header-actions">
 <button id="dashboard_join_link_btn" onclick="showJoinLinkPopup()" style="display:none;background:#16a34a;color:white;border:none;border-radius:6px;padding:6px 12px;margin-right:6px;font-size:0.82rem;font-weight:900;cursor:pointer;align-self:center;white-space:nowrap;">
 <i class="fas fa-share-alt"></i> Join Link จนท.
 </button>
@@ -668,15 +670,17 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 <i class="fas fa-sign-out-alt"></i> ออกจากบทบาท IC
 </button>
 <span id="dashboard_view_only_badge"><i class="fas fa-eye"></i> VIEW ONLY</span>
-<div style="display:flex;flex-direction:column;justify-content:center;padding:0 20px;border-right:1px solid rgba(255,255,255,0.15);">
+</div>
+<div class="dash-header-context">
+<div class="dash-context-item" style="display:flex;flex-direction:column;justify-content:center;padding:0 20px;border-right:1px solid rgba(255,255,255,0.15);">
 <div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">เหตุการณ์</div>
 <div id="dash_ban_name" style="font-size:1rem;font-weight:bold;color:white;white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis;">-</div>
 </div>
-<div style="display:flex;flex-direction:column;justify-content:center;padding:0 20px;border-right:1px solid rgba(255,255,255,0.15);cursor:pointer;" onclick="openIncidentLocationModal()" title="กดเพื่อดูพิกัด+นำทางจุดเกิดเหตุ">
+<div class="dash-context-item" style="display:flex;flex-direction:column;justify-content:center;padding:0 20px;border-right:1px solid rgba(255,255,255,0.15);cursor:pointer;" onclick="openIncidentLocationModal()" title="กดเพื่อดูพิกัด+นำทางจุดเกิดเหตุ">
 <div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">📍 สถานที่</div>
 <div id="dash_ban_loc" style="font-size:0.9rem;color:white;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;">-</div>
 </div>
-<div style="display:flex;flex-direction:column;justify-content:center;padding:0 20px;border-right:1px solid rgba(255,255,255,0.15);">
+<div class="dash-context-item dash-context-status" style="display:flex;flex-direction:column;justify-content:center;padding:0 20px;border-right:1px solid rgba(255,255,255,0.15);">
 <div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">สถานะ</div>
 <div style="display:flex;align-items:center;gap:8px;">
 <div id="dash_ban_status" style="font-size:0.88rem;font-weight:bold;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;">-</div>
@@ -689,7 +693,7 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 <div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">ที่ตั้ง EOC</div>
 <div id="dash_ban_eoc" style="font-size:0.9rem;color:white;white-space:nowrap;">-</div>
 </div>
-<div style="display:flex;flex-direction:column;justify-content:center;padding:0 0 0 20px;flex:1;cursor:pointer;" onclick="openEOCLocationModal()" title="กดเพื่อดูพิกัด+นำทาง EOC">
+<div class="dash-context-item" style="display:flex;flex-direction:column;justify-content:center;padding:0 0 0 20px;flex:1;cursor:pointer;" onclick="openEOCLocationModal()" title="กดเพื่อดูพิกัด+นำทาง EOC">
 <div style="font-size:0.62rem;color:#f1c40f;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">📍 ที่ตั้ง EOC / ผู้บัญชาการ</div>
 <div style="display:flex;gap:10px;align-items:center;color:white;white-space:nowrap;overflow:hidden;">
 <span id="dash_ban_eoc_inline" style="font-size:0.9rem;overflow:hidden;text-overflow:ellipsis;">-</span>
@@ -698,7 +702,8 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 </div>
 </div>
 </div>
-<div style="background:#dbe4eb;padding:6px 15px;border-bottom:2px solid #c2ccd6;display:flex;align-items:center;gap:12px;box-shadow:0 2px 6px rgba(0,0,0,0.08);flex-shrink:0;">
+</div>
+<div class="dash-status-strip" style="background:#dbe4eb;padding:6px 15px;border-bottom:2px solid #c2ccd6;display:flex;align-items:center;gap:12px;box-shadow:0 2px 6px rgba(0,0,0,0.08);flex-shrink:0;">
 <button id="dash_end_btn" onclick="endMission()" style="background:#c0392b;color:white;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:bold;flex-shrink:0;">
 <i class="fas fa-power-off"></i> จบภารกิจ
 </button>
@@ -943,18 +948,11 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 </div>
 </div>
 </div>
-<div class="panel" style="display:flex;flex-direction:column;padding:0;margin:0 !important;height:100%;border-bottom-left-radius:0 !important;border-bottom-right-radius:0 !important;box-sizing:border-box;">
-<div style="padding:8px 15px 5px 15px;background:#f8f9fa;border-bottom:1px solid #eee;z-index:2;">
+<div class="panel dash-map-panel" style="display:flex;flex-direction:column;padding:0;margin:0 !important;height:100%;border-bottom-left-radius:0 !important;border-bottom-right-radius:0 !important;box-sizing:border-box;">
+<div class="dash-map-heading" style="padding:8px 15px 5px 15px;background:#f8f9fa;border-bottom:1px solid #eee;z-index:2;">
 <h4 style="margin:0;font-size:0.9rem;"><i class="fas fa-map-marked-alt"></i> แผนที่จุดเกิดเหตุ</h4>
 </div>
-<div class="dash-map-wrap" style="position:relative;flex:1;width:100%;min-height:0;">
-<div id="wind_panel" onclick="openWindInputModal()" title="คลิกเพื่อบันทึกทิศทางลม" style="position:absolute;top:44px;right:58px;background:RGB(175,238,238);padding:4px 8px;border-radius:5px;box-shadow:0 2px 5px rgba(0,0,0,0.25);z-index:10;display:flex;gap:6px;align-items:center;border-left:3px solid #3498db;width:190px;max-width:190px;cursor:pointer;box-sizing:border-box;">
-<i class="fas fa-minus" id="wind_arrow" style="font-size:18px;color:#3498db;transform:rotate(0deg);transition:transform 0.3s;flex:0 0 auto;"></i>
-<div style="text-align:left;">
-<div style="font-size:0.58rem;font-weight:bold;color:#555;line-height:1.15;">ทิศที่ลมพัดไป</div>
-<div style="font-size:0.68rem;color:#e74c3c;font-weight:bold;line-height:1.25;white-space:normal;" id="weather_info">รอข้อมูลลมจาก OC/ICP</div>
-</div>
-</div>
+<div class="dash-map-toolbar">
 <div class="dash-toolbar-right" style="position:absolute;top:6px;right:58px;z-index:11;display:flex;gap:0;box-shadow:0 2px 6px rgba(15,23,42,0.18);border-radius:6px;overflow:hidden;">
 <button id="dashStyleStreet" onclick="setDashboardMapStyle('streets')" style="border:0;background:#2563eb;color:white;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;">แผนที่</button>
 <button id="dashStyleSat" onclick="setDashboardMapStyle('satellite')" style="border:0;background:white;color:#334155;padding:7px 12px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;">ดาวเทียม</button>
@@ -967,6 +965,15 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 <div class="dash-toolbar-left" style="position:absolute;top:6px;left:6px;z-index:11;">
 <button id="btn_add_building_structure" onclick="openAddBuildingStructure()" style="border:0;background:#0f766e;color:white;padding:7px 12px;border-radius:6px;font-weight:800;cursor:pointer;font-family:'Prompt',sans-serif;box-shadow:0 2px 6px rgba(15,23,42,0.18);"><i class="fas fa-building"></i> เพิ่มโครงสร้างอาคาร</button>
 </div>
+<div id="wind_panel" onclick="openWindInputModal()" title="คลิกเพื่อบันทึกทิศทางลม" style="background:RGB(175,238,238);padding:4px 8px;border-radius:5px;display:flex;gap:6px;align-items:center;border-left:3px solid #3498db;cursor:pointer;box-sizing:border-box;">
+<i class="fas fa-minus" id="wind_arrow" style="font-size:18px;color:#3498db;transform:rotate(0deg);transition:transform 0.3s;flex:0 0 auto;"></i>
+<div style="text-align:left;">
+<div style="font-size:0.58rem;font-weight:bold;color:#555;line-height:1.15;">ทิศที่ลมพัดไป</div>
+<div style="font-size:0.68rem;color:#e74c3c;font-weight:bold;line-height:1.25;white-space:normal;" id="weather_info">รอข้อมูลลมจาก OC/ICP</div>
+</div>
+</div>
+</div>
+<div class="dash-map-wrap" style="position:relative;flex:1;width:100%;min-height:0;">
 <div id="dash_map_canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
 <div id="dash_building_cards_layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:8;"></div>
 <div id="dash_flood_legend" style="display:none;position:absolute;right:10px;bottom:10px;z-index:9;background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:8px;padding:8px 10px;box-shadow:0 2px 8px rgba(15,23,42,.2);font-family:'Prompt',sans-serif;font-size:10px;color:#334155;max-width:240px;"></div>
@@ -976,7 +983,7 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 </div>
 </div>
 </div>
-<div class="panel" style="display:flex;flex-direction:column;overflow:visible;margin:0 !important;height:auto;border-bottom-left-radius:0 !important;border-bottom-right-radius:0 !important;box-sizing:border-box;">
+<div class="panel dash-info-panel" style="display:flex;flex-direction:column;overflow:visible;margin:0 !important;height:auto;border-bottom-left-radius:0 !important;border-bottom-right-radius:0 !important;box-sizing:border-box;">
 <div id="legacy_dash_evac_panel" style="display:none;margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed #ccc;">
 <h5 style="margin:0 0 5px 0;color:#d35400;font-size:0.85rem;"><i class="fas fa-person-booth"></i> จุดอพยพ (Evacuation Points)</h5>
 <div style="display:flex;flex-direction:column;gap:4px;">
@@ -1002,7 +1009,7 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
 <div style="display:flex;align-items:center;gap:6px;">
 <div style="width:8px;height:8px;border-radius:50%;background:#e74c3c;box-shadow:0 0 6px #e74c3c;animation:pulse-danger 1.5s infinite;"></div>
-<span style="font-size:0.82rem;font-weight:bold;color:white;letter-spacing:0.5px;">🪖 สถานะการรายงานตัว</span>
+<span class="dash-staff-heading" style="font-size:0.82rem;font-weight:bold;color:white;letter-spacing:0.5px;">🪖 สถานะการรายงานตัว</span>
 </div>
 <button onclick="showStaffList('all')" style="background:rgba(255,255,255,0.12);color:#aee;border:1px solid rgba(174,238,238,0.3);padding:2px 8px;border-radius:10px;cursor:pointer;font-size:0.65rem;font-family:'Prompt',sans-serif;">ดูทั้งหมด</button>
 </div>
@@ -2693,6 +2700,7 @@ container: 'map',
 style: maptilersdk.MapStyle.HYBRID || 'https://api.maptiler.com/maps/hybrid/style.json?key=' + encodeURIComponent(MAPTILER_API_KEY),
 center: [startPos.lon, startPos.lat],
 zoom: 16,
+navigationControl: false,
 geolocate: false
 });
 map.addControl(new maptilersdk.NavigationControl(), 'top-right');
@@ -7052,8 +7060,8 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }
 </script>
 
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261002_flood_depth1" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261002_flood_depth1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261002_layout1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261002_layout1" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {
