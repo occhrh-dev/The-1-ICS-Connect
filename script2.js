@@ -3551,7 +3551,7 @@ Swal.fire({ icon:'success', title:'เพิ่มพื้นที่น้ำ
 refreshFloodAreasAfterAdminChange(true);
 }).withFailureHandler(function(err) { Swal.fire('บันทึกไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
 .saveZoneMarker('FloodArea', area.name, center.lat, center.lng, encodeFloodAreaNote(area), getFloodAdminReporter(), window.currentUserPhone || '', (typeof APP_AGENCY_ID !== 'undefined' ? APP_AGENCY_ID : ''));
-}, [], { titleHtml:'<i class="fas fa-draw-polygon"></i> วาดขอบเขต: ' + roleSafeText(area.name), searchPlaceholder:'ค้นหาบริเวณน้ำท่วม...', coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังพื้นที่', selectedText:'แตะรอบขอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด', severity:area.severity });
+}, [], { titleHtml:'<i class="fas fa-draw-polygon"></i> วาดขอบเขต: ' + roleSafeText(area.name), searchPlaceholder:'ค้นหาบริเวณน้ำท่วม...', coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังพื้นที่', selectedText:'แตะรอบขอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด', severity:area.severity, referenceMarkers:window._adminFloodAreas || window._icZoneMarkers || [] });
 });
 }
 function editAdminFloodArea(index) {
@@ -3605,7 +3605,7 @@ Swal.fire({ title:'กำลังบันทึกขอบเขต...', allo
 google.script.run.withSuccessHandler(function() { Swal.fire({ icon:'success', title:redrawAll ? 'วาดขอบเขตใหม่แล้ว' : 'ปรับขอบเขตแล้ว', timer:1000, showConfirmButton:false }); refreshFloodAreasAfterAdminChange(true); })
 .withFailureHandler(function(err) { Swal.fire('บันทึกไม่สำเร็จ', err && err.message ? err.message : String(err), 'error'); })
 .updateZoneMarker(getFloodMarkerId(marker), 'FloodArea', area.name, center.lat, center.lng, encodeFloodAreaNote(area), getFloodAdminReporter(), APP_ACCESS_ROLE);
-}, redrawAll ? [] : originalPoints, { titleHtml:'<i class="fas ' + (redrawAll ? 'fa-draw-polygon' : 'fa-up-down-left-right') + '"></i> ' + (redrawAll ? 'วาดใหม่ทั้งหมด: ' : 'ปรับขอบเขตเดิม: ') + roleSafeText(area.name), searchPlaceholder:'ค้นหาบริเวณน้ำท่วม...', coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังพื้นที่', selectedText:redrawAll ? 'แตะรอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด' : 'ลากจุดตัวเลขเพื่อปรับ หรือแตะบนแผนที่เพื่อเพิ่มจุดขอบเขต', severity:area.severity, editVertices:!redrawAll, startCenter:startCenter });
+}, redrawAll ? [] : originalPoints, { titleHtml:'<i class="fas ' + (redrawAll ? 'fa-draw-polygon' : 'fa-up-down-left-right') + '"></i> ' + (redrawAll ? 'วาดใหม่ทั้งหมด: ' : 'ปรับขอบเขตเดิม: ') + roleSafeText(area.name), searchPlaceholder:'ค้นหาบริเวณน้ำท่วม...', coordPlaceholder:'วางพิกัดเพื่อเลื่อนไปยังพื้นที่', selectedText:redrawAll ? 'แตะรอบพื้นที่น้ำท่วมอย่างน้อย 3 จุด' : 'ลากจุดตัวเลขเพื่อปรับ หรือแตะบนแผนที่เพื่อเพิ่มจุดขอบเขต', severity:area.severity, editVertices:!redrawAll, startCenter:startCenter, focusPoints:originalPoints, referenceMarkers:window._adminFloodAreas || window._icZoneMarkers || [], excludeAreaId:redrawAll ? '' : getFloodMarkerId(marker) });
 }
 function deleteAdminFloodArea(index) {
 if (!requireFloodPointAdmin()) return;
@@ -4888,7 +4888,8 @@ coordPlaceholder:'วางพิกัดเพื่อเลื่อนไ�
 selectedText:'แผนที่มาที่ ' + roleSafeText(referenceLabel) + ' แล้ว — หมุดแดงคือจุดอ้างอิง ให้แตะรอบขอบพื้นที่อย่างน้อย 3 จุด',
 startCenter:{ lat:Number(reference.lat), lng:Number(reference.lng) },
 referenceLabel:referenceLabel,
-severity:severity
+severity:severity,
+referenceAreas:window._pendingDeclareFloodAreas || []
 });
 }
 function removePendingDeclareFloodArea(index) {

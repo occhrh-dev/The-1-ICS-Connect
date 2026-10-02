@@ -1812,6 +1812,11 @@ var pickerFloodVertices = [];
 var pickerFloodDraftOverlay = null;
 var pickerRoadStartMarker = null;
 var pickerFloodVertexMarkers = [];
+var pickerFloodReferenceAreas = [];
+var pickerFloodReferenceSignature = '';
+var pickerFloodReferenceRendering = false;
+var pickerViewInitialized = false;
+var pickerOpenSequence = 0;
 var tempLat = "", tempLng = "";
 var dashMap, dashMarker, hatchedOverlay, zoneLabelMarker, radarCircle;
 var otherMarkers = [];
@@ -2735,13 +2740,15 @@ if (window._placeSearchResults && window._placeSearchResults.length) {
 drawPickerSearchMarkers(window._placeSearchResults);
 }
 renderPickerMapContext(true);
-if (mapPickerMode === 'flood-area') focusFloodAreaReferenceOnPicker();
+if (map.resize) map.resize();
+initializePickerMapView();
 });
 map.on('styledata', function() {
 renderPickerMapContext(true);
 });
 map.on('idle', function() {
 renderPickerMapContext(false);
+initializePickerMapView();
 });
 }
 function setPickerMapStyle(mode) {
@@ -2764,7 +2771,7 @@ var style = window._pickerMapStyle === 'satellite'
 : maptilersdk.MapStyle.STREETS;
 map.setStyle(style);
 // 🔧 ป้ายชื่อสถานที่สำคัญ (รพ./วัด/โรงเรียน) ใน MapTiler จะเริ่มแสดงเมื่อซูมลึกพอ (~16+) จึงซูมเข้าให้อัตโนมัติเมื่อสลับเป็นโหมดดาวเทียม
-if (window._pickerMapStyle === 'satellite' && map.getZoom() < 16) {
+if (window._pickerMapStyle === 'satellite' && mapPickerMode !== 'flood-area' && mapPickerMode !== 'road-closure' && map.getZoom() < 16) {
 map.easeTo({ zoom: 16 });
 }
 map.once('styledata', function() {
@@ -2778,7 +2785,6 @@ showExistingZoneMarkersOnPickerMap();
 }
 if (mapPickerMode === 'flood-area' || mapPickerMode === 'road-closure') {
 renderPickerFloodDraft();
-if (mapPickerMode === 'flood-area') focusFloodAreaReferenceOnPicker();
 }
 });
 }
@@ -2789,6 +2795,65 @@ if (severity === 'monitor') return { fill:'#f59e0b', line:'#b45309' };
 if (severity === 'severe') return { fill:'#ef4444', line:'#b91c1c' };
 return { fill:'#0ea5e9', line:'#0369a1' };
 }
+function setPickerFloodReferenceAreas(context) {
+context = context || {};
+var areas;
+if (Array.isArray(context.referenceAreas)) {
+areas = context.referenceAreas;
+} else {
+var markers = context.referenceMarkers || window._icZoneMarkers || [];
+areas = markers.filter(function(item) {
+return typeof getZoneMarkerType === 'function' && getZoneMarkerType(item) === 'FloodArea' &&
+(!context.excludeAreaId || String(getFloodMarkerId(item)) !== String(context.excludeAreaId));
+}).map(function(item) { return parseFloodAreaMarker(item); });
+}
+pickerFloodReferenceAreas = areas.filter(function(area) { return area && Array.isArray(area.points); }).map(function(area) {
+return { name:String(area.name || 'พื้นที่น้ำท่วม'), severity:area.severity || 'moderate',
+points:area.points.filter(function(point) { return point && isFinite(Number(point[0])) && isFinite(Number(point[1])); }).map(function(point) { return [Number(point[0]), Number(point[1])]; }) };
+}).filter(function(area) { return area.points.length >= 3; });
+pickerFloodReferenceSignature = '';
+}
+function clearPickerFloodReferenceAreas() {
+var rawMap = map && (map._maptiler || map);
+pickerFloodReferenceRendering = true;
+try {
+if (rawMap && rawMap.getLayer) {
+['picker-flood-reference-label','picker-flood-reference-line','picker-flood-reference-fill'].forEach(function(id) {
+if (rawMap.getLayer(id)) rawMap.removeLayer(id);
+});
+if (rawMap.getSource('picker-flood-reference')) rawMap.removeSource('picker-flood-reference');
+}
+pickerFloodReferenceSignature = '';
+} finally { pickerFloodReferenceRendering = false; }
+}
+function renderPickerFloodReferenceAreas() {
+if (!map || mapPickerMode !== 'flood-area' || pickerFloodReferenceRendering) return;
+var rawMap = map._maptiler || map;
+if (!rawMap.addSource || (rawMap.isStyleLoaded && !rawMap.isStyleLoaded())) return;
+pickerFloodReferenceRendering = true;
+try {
+var features = [];
+pickerFloodReferenceAreas.forEach(function(area) {
+var ring = area.points.map(function(point) { return point.slice(); });
+ring.push(ring[0].slice());
+var style = area.severity === 'severe' ? {fill:'#ef4444',line:'#b91c1c'} : area.severity === 'monitor' ? {fill:'#f59e0b',line:'#b45309'} : {fill:'#0ea5e9',line:'#0369a1'};
+var properties = { name:area.name + ' (เดิม)', fill:style.fill, line:style.line };
+features.push({ type:'Feature', properties:properties, geometry:{ type:'Polygon', coordinates:[ring] } });
+var center = getPickerFloodCentroid(area.points);
+features.push({ type:'Feature', properties:properties, geometry:{ type:'Point', coordinates:[center.lng,center.lat] } });
+});
+var data = { type:'FeatureCollection', features:features };
+var signature = JSON.stringify(data);
+var source = rawMap.getSource('picker-flood-reference');
+if (!source) rawMap.addSource('picker-flood-reference', { type:'geojson', data:data });
+else if (signature !== pickerFloodReferenceSignature) source.setData(data);
+pickerFloodReferenceSignature = signature;
+var before = pickerFloodDraftOverlay && (pickerFloodDraftOverlay._layerIds || []).filter(function(id) { return rawMap.getLayer(id); })[0];
+if (!rawMap.getLayer('picker-flood-reference-fill')) rawMap.addLayer({ id:'picker-flood-reference-fill', type:'fill', source:'picker-flood-reference', filter:['==',['geometry-type'],'Polygon'], paint:{ 'fill-color':['get','fill'], 'fill-opacity':0.20 } }, before);
+if (!rawMap.getLayer('picker-flood-reference-line')) rawMap.addLayer({ id:'picker-flood-reference-line', type:'line', source:'picker-flood-reference', filter:['==',['geometry-type'],'Polygon'], paint:{ 'line-color':['get','line'], 'line-width':2.5, 'line-opacity':0.95 } }, before);
+if (!rawMap.getLayer('picker-flood-reference-label')) rawMap.addLayer({ id:'picker-flood-reference-label', type:'symbol', source:'picker-flood-reference', filter:['==',['geometry-type'],'Point'], layout:{ 'text-field':['get','name'], 'text-size':11, 'text-max-width':12 }, paint:{ 'text-color':['get','line'], 'text-halo-color':'#ffffff', 'text-halo-width':2 } }, before);
+} finally { pickerFloodReferenceRendering = false; }
+}
 function makePickerFloodPolygonOverlay(points) {
 var id = 'picker-flood-' + Date.now() + '-' + Math.random().toString(36).slice(2);
 var coords = (points || []).map(function(p) { return [Number(p[0]), Number(p[1])]; });
@@ -2798,10 +2863,16 @@ if (!isRoadClosure && coords.length >= 3) coords.push(coords[0].slice());
 return {
 _addToMap: function(targetMap) {
 var mapObj = targetMap && (targetMap._maptiler || targetMap);
-if (!mapObj || !mapObj.addSource || coords.length < 2) return;
+if (this._removed || !mapObj || !mapObj.addSource || coords.length < 2) return;
 if (typeof mapObj.isStyleLoaded === 'function' && !mapObj.isStyleLoaded()) {
+if (this._waitingForMap) return;
+this._waitingForMap = true;
 var self = this;
-mapObj.once('styledata', function() { self._addToMap(mapObj); });
+// Adding reference sources can make styledata fire before the map is ready.
+mapObj.once('idle', function() {
+self._waitingForMap = false;
+if (!self._removed) self._addToMap(mapObj);
+});
 return;
 }
 var sourceId = id + '-source';
@@ -2815,6 +2886,7 @@ this._sourceId = sourceId;
 this._layerIds = isPolygon ? [id + '-fill', id + '-line'] : [id + '-line'];
 },
 _removeFromMap: function() {
+this._removed = true;
 var mapObj = this._map;
 if (!mapObj) return;
 (this._layerIds || []).forEach(function(layerId) { try { if (mapObj.getLayer(layerId)) mapObj.removeLayer(layerId); } catch(e) {} });
@@ -2855,7 +2927,8 @@ var el = document.createElement('div');
 el.title = 'ลากเพื่อย้ายจุดที่ ' + (index + 1);
 el.style.cssText = 'width:25px;height:25px;border-radius:50%;background:#ffffff;color:#0369a1;border:3px solid #0284c7;box-shadow:0 2px 7px rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font:900 10px Prompt,sans-serif;cursor:grab;user-select:none;';
 el.textContent = String(index + 1);
-['pointerdown','mousedown','click','dblclick'].forEach(function(eventName) { el.addEventListener(eventName, function(event) { event.stopPropagation(); }); });
+// Let the map SDK receive pointer-down events so draggable vertices can move.
+['click','dblclick'].forEach(function(eventName) { el.addEventListener(eventName, function(event) { event.stopPropagation(); }); });
 var vertexMarker = new maptilersdk.Marker({ element:el, anchor:'center', draggable:true }).setLngLat([point[0], point[1]]);
 vertexMarker.on('dragstart', function() { el.style.cursor = 'grabbing'; });
 vertexMarker.on('dragend', function() {
@@ -3299,6 +3372,7 @@ map.Overlays.add(pickerIncidentMarker);
 }
 function renderPickerMapContext(includeHeavyContext) {
 if (!map) return;
+if (mapPickerMode === 'flood-area') renderPickerFloodReferenceAreas();
 if (mapPickerMode === 'zone' || mapPickerMode === 'eoc') {
 showIncidentOnPickerMap();
 }
@@ -3306,6 +3380,34 @@ if (includeHeavyContext && mapPickerMode === 'zone') {
 showERGOnPickerMap();
 renderExistingZoneMarkersOnPickerMap((window._lastOCState && window._lastOCState.zoneMarkers) || window._icZoneMarkers || []);
 fetchPickerERGStateIfNeeded();
+}
+}
+function initializePickerMapView() {
+var modal = document.getElementById('modal_MapPicker');
+if (!map || !modal || modal.style.display !== 'flex' || pickerViewInitialized) return;
+var rawMap = map._maptiler || map;
+if (rawMap.isStyleLoaded && !rawMap.isStyleLoaded()) return;
+// Position the camera once per opening; idle/data refresh must never undo user zoom.
+pickerViewInitialized = true;
+if (mapPickerMode === 'flood-area' || mapPickerMode === 'road-closure') {
+var points = pickerFloodVertices.length ? pickerFloodVertices : (window._mapPickerContext || {}).focusPoints;
+if ((!Array.isArray(points) || !points.length) && mapPickerMode === 'flood-area' && !window._floodAreaPickerStartCenter && pickerFloodReferenceAreas.length) {
+points = [].concat.apply([], pickerFloodReferenceAreas.map(function(area) { return area.points; }));
+}
+if (Array.isArray(points) && points.length >= 2 && rawMap.fitBounds) {
+var valid = points.filter(function(point) { return point && isFinite(Number(point[0])) && isFinite(Number(point[1])); });
+if (valid.length >= 2) {
+var lngs = valid.map(function(point) { return Number(point[0]); });
+var lats = valid.map(function(point) { return Number(point[1]); });
+rawMap.fitBounds([[Math.min.apply(null,lngs),Math.min.apply(null,lats)],[Math.max.apply(null,lngs),Math.max.apply(null,lats)]], { padding:60, maxZoom:16, duration:0 });
+return;
+}
+}
+if (mapPickerMode === 'flood-area' && window._floodAreaPickerStartCenter) { focusFloodAreaReferenceOnPicker(); return; }
+if (mapPickerMode === 'road-closure' && window._roadClosurePickerStartCenter) { focusRoadClosureStartOnPicker(); return; }
+var incident = getIncidentLngLat() || getDeclareIncidentFormLngLat();
+if (incident) rawMap.flyTo({ center:[incident.lon,incident.lat], zoom:16, essential:true });
+return;
 }
 if (!tempLat && !tempLng) {
 var initial = mapPickerMode === 'eoc' ? getEOCFormLngLat() : getDeclareIncidentFormLngLat();
@@ -3892,17 +3994,12 @@ window._floodAreaPickerStartCenter = context && context.startCenter ? context.st
 window._floodAreaPickerReferenceLabel = context && context.referenceLabel ? context.referenceLabel : '';
 window._floodAreaPickerSeverity = context && context.severity ? context.severity : 'moderate';
 window._floodAreaVertexEditMode = !!(context && context.editVertices);
+setPickerFloodReferenceAreas(context);
 pickerFloodVertices = Array.isArray(initialPoints) ? initialPoints.map(function(p) { return [Number(p[0]), Number(p[1])]; }).filter(function(p) { return isFinite(p[0]) && isFinite(p[1]); }) : [];
 tempLat = '';
 tempLng = '';
 mapPickLockToCurrent = false;
 openMap();
-if (pickerFloodVertices.length && map) {
-var center = getPickerFloodCentroid(pickerFloodVertices);
-map.location({ lon:center.lng, lat:center.lat }, true);
-} else if (window._floodAreaPickerStartCenter && map) {
-focusFloodAreaReferenceOnPicker();
-}
 }
 function openRoadClosureMapPicker(callback, initialPoints, context) {
 mapPickerMode = 'road-closure';
@@ -3921,15 +4018,12 @@ tempLat = '';
 tempLng = '';
 mapPickLockToCurrent = false;
 openMap();
-if (pickerFloodVertices.length && map) {
-var center = getPickerFloodCentroid(pickerFloodVertices);
-map.location({ lon:center.lng, lat:center.lat }, true);
-} else if (window._roadClosurePickerStartCenter && map) {
-focusRoadClosureStartOnPicker();
-}
 }
 function openMap() {
 var mapModal = document.getElementById('modal_MapPicker');
+pickerViewInitialized = false;
+var sequence = ++pickerOpenSequence;
+clearPickerFloodReferenceAreas();
 if (mapPickerMode !== 'flood-area' && mapPickerMode !== 'road-closure' && mapPickerMode !== 'declare-multipoint') {
 mapPickerMode = (typeof window._zonePickerCallback === 'function') ? 'zone' : ((window._eocFormPickerMode || window._eocPickerMode) ? 'eoc' : 'declare');
 }
@@ -3951,24 +4045,32 @@ if (!map) {
 _loadLongdoScript_(function() { initLongdoMap(); });
 }
 setTimeout(function() {
+if (sequence !== pickerOpenSequence || mapModal.style.display !== 'flex') return;
 if (map && map.resize) map.resize();
 var rawMap = map && (map._maptiler || map);
 if (rawMap && rawMap.loaded && !rawMap.loaded()) {
-rawMap.once('idle', function() { renderPickerMapContext(true); });
+rawMap.once('idle', function() {
+if (sequence !== pickerOpenSequence || mapModal.style.display !== 'flex') return;
+renderPickerMapContext(true);
+initializePickerMapView();
+});
 } else {
 renderPickerMapContext(true);
 }
 if (mapPickerMode === 'flood-area' || mapPickerMode === 'road-closure') {
 renderPickerFloodDraft();
-if (mapPickerMode === 'flood-area') focusFloodAreaReferenceOnPicker();
-if (mapPickerMode === 'road-closure') focusRoadClosureStartOnPicker();
 }
+initializePickerMapView();
 }, 300);
 }
 function closeMap() {
 var mapModal = document.getElementById('modal_MapPicker');
 toggleMapFullscreen(false);
 mapModal.style.display = 'none';
+pickerOpenSequence++;
+pickerViewInitialized = false;
+clearPickerFloodReferenceAreas();
+pickerFloodReferenceAreas = [];
 window._zonePickerCallback = null;
 window._mapPickerConfirmCallback = null;
 mapPickLockToCurrent = false;
@@ -6950,8 +7052,8 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }
 </script>
 
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260929_flood_roads5" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260929_flood_roads5" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261002_flood_picker1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261002_flood_picker1" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {

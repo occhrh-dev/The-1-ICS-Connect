@@ -1,9 +1,9 @@
 // Service Worker for EOC Rayong War Room
-const CACHE_NAME = 'eoc-warroom-v20260929_flood_roads5';
+const CACHE_NAME = 'eoc-warroom-v20261002_flood_picker1';
 
 const STATIC_ASSETS = [
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20260929_flood_roads5',
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20260929_flood_roads5',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261002_flood_picker1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261002_flood_picker1',
   'https://occhrh-dev.github.io/HazMat-Mapper/the1ICS.png'
 ];
 
