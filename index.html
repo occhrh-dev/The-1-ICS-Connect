@@ -2808,7 +2808,7 @@ return typeof getZoneMarkerType === 'function' && getZoneMarkerType(item) === 'F
 }).map(function(item) { return parseFloodAreaMarker(item); });
 }
 pickerFloodReferenceAreas = areas.filter(function(area) { return area && Array.isArray(area.points); }).map(function(area) {
-return { name:String(area.name || 'พื้นที่น้ำท่วม'), severity:area.severity || 'moderate',
+return { name:String(area.name || 'พื้นที่น้ำท่วม'), severity:area.severity || 'moderate', depthCm:area.depthCm,
 points:area.points.filter(function(point) { return point && isFinite(Number(point[0])) && isFinite(Number(point[1])); }).map(function(point) { return [Number(point[0]), Number(point[1])]; }) };
 }).filter(function(area) { return area.points.length >= 3; });
 pickerFloodReferenceSignature = '';
@@ -2837,7 +2837,7 @@ pickerFloodReferenceAreas.forEach(function(area) {
 var ring = area.points.map(function(point) { return point.slice(); });
 ring.push(ring[0].slice());
 var style = area.severity === 'severe' ? {fill:'#ef4444',line:'#b91c1c'} : area.severity === 'monitor' ? {fill:'#f59e0b',line:'#b45309'} : {fill:'#0ea5e9',line:'#0369a1'};
-var properties = { name:area.name + ' (เดิม)', fill:style.fill, line:style.line };
+var properties = { name:area.name + ' (เดิม)\n' + getFloodAreaDepthText(area), fill:style.fill, line:style.line };
 features.push({ type:'Feature', properties:properties, geometry:{ type:'Polygon', coordinates:[ring] } });
 var center = getPickerFloodCentroid(area.points);
 features.push({ type:'Feature', properties:properties, geometry:{ type:'Point', coordinates:[center.lng,center.lat] } });
@@ -7052,8 +7052,8 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }
 </script>
 
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261002_flood_picker1" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261002_flood_picker1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261002_flood_depth1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261002_flood_depth1" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {

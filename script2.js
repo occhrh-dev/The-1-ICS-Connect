@@ -2898,6 +2898,12 @@ points: points
 function encodeFloodAreaNote(area) {
 return JSON.stringify({ kind:'floodArea', version:1, name:area.name || 'พื้นที่น้ำท่วม', depthCm:area.depthCm === '' ? '' : Number(area.depthCm), severity:area.severity || 'moderate', points:area.points || [] });
 }
+function getFloodAreaDepthText(area) {
+var depth = area && area.depthCm;
+var missing = depth == null || (typeof depth === 'string' && depth.trim() === '') || typeof depth === 'boolean';
+var value = missing ? NaN : Number(depth);
+return !isFinite(value) || value < 0 ? 'ระดับน้ำ: ไม่มีข้อมูล' : 'ระดับน้ำ: ' + value + ' ซม.';
+}
 function parseRoadClosureMarker(marker) {
 marker = marker || {};
 var note = marker.note || marker.Note || '';
@@ -3032,9 +3038,9 @@ var created = [];
 var polygon = makeMapTilerPolygonOverlay(area.points, { fillColor:style.fill, fillOpacity:0.34, lineColor:style.line, lineWidth:3 });
 if (polygon) { dashMap.Overlays.add(polygon); created.push(polygon); }
 var center = getFloodAreaCentroid(area.points);
-var depthText = area.depthCm === '' || !isFinite(area.depthCm) ? '' : ' · ' + area.depthCm + ' ซม.';
-var labelHtml = '<div style="background:' + style.line + 'e6;color:white;border:1px solid white;border-radius:5px;padding:2px 5px;box-shadow:0 1px 5px rgba(0,0,0,.32);font:800 8px Prompt,sans-serif;white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis;"><i class="fas fa-water" style="font-size:7px;"></i> ' + roleSafeText(area.name) + '</div>';
-var labelMarker = makeLongdoHtmlMarker({lon:center.lng,lat:center.lat}, labelHtml, { offset:{x:0,y:0}, scaleMode:'none', title:'พื้นที่น้ำท่วม', markerOptions:{detail:'<b>' + roleSafeText(area.name) + '</b>' + (depthText ? '<br>ระดับน้ำประมาณ ' + roleSafeText(area.depthCm) + ' ซม.' : '')} });
+var depthText = getFloodAreaDepthText(area);
+var labelHtml = '<div class="flood-area-map-label" title="' + roleSafeText(area.name + ' — ' + depthText) + '" style="background:' + style.line + 'e6;color:white;border:1px solid white;border-radius:5px;padding:2px 5px;box-shadow:0 1px 5px rgba(0,0,0,.32);font:800 8px Prompt,sans-serif;line-height:1.35;max-width:120px;text-align:center;"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><i class="fas fa-water" style="font-size:7px;"></i> ' + roleSafeText(area.name) + '</div><div style="font-size:8px;font-weight:600;white-space:nowrap;">' + roleSafeText(depthText) + '</div></div>';
+var labelMarker = makeLongdoHtmlMarker({lon:center.lng,lat:center.lat}, labelHtml, { offset:{x:0,y:0}, scaleMode:'none', title:'พื้นที่น้ำท่วม', markerOptions:{detail:'<b>' + roleSafeText(area.name) + '</b><br>' + roleSafeText(depthText)} });
 dashMap.Overlays.add(labelMarker);
 created.push(labelMarker);
 return created;
@@ -3082,7 +3088,7 @@ var area = parseFloodAreaMarker(marker);
 if (area) {
 label = area.name;
 points = area.points;
-if (area.depthCm !== '' && isFinite(area.depthCm)) detail = 'ระดับน้ำ ' + area.depthCm + ' ซม.';
+detail = getFloodAreaDepthText(area);
 }
 } else if (type === 'RoadClosed') {
 var closure = parseRoadClosureMarker(marker);
@@ -3499,7 +3505,7 @@ var id = getFloodMarkerId(marker);
 var disabled = id ? '' : ' disabled';
 return '<div style="display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:9px;align-items:center;border:1px solid #bae6fd;border-left:5px solid ' + (area.severity === 'severe' ? '#dc2626' : area.severity === 'monitor' ? '#d97706' : '#0284c7') + ';border-radius:9px;padding:9px 10px;background:white;">' +
 '<div style="width:34px;height:34px;border-radius:7px;background:#0284c7;color:white;display:flex;align-items:center;justify-content:center;"><i class="fas fa-draw-polygon"></i></div>' +
-'<div style="min-width:0;text-align:left;"><div style="font-size:13px;font-weight:900;color:#075985;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(area.name) + '</div><div style="font-size:11px;color:#64748b;">' + area.points.length + ' จุดขอบเขต · ' + (severityLabel[area.severity] || 'น้ำท่วม') + (area.depthCm !== '' ? ' · น้ำ ' + area.depthCm + ' ซม.' : '') + '</div></div>' +
+'<div style="min-width:0;text-align:left;"><div style="font-size:13px;font-weight:900;color:#075985;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(area.name) + '</div><div style="font-size:11px;color:#64748b;">' + area.points.length + ' จุดขอบเขต · ' + (severityLabel[area.severity] || 'น้ำท่วม') + ' · ' + roleSafeText(getFloodAreaDepthText(area)) + '</div></div>' +
 '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">' +
 '<button type="button" onclick="editAdminFloodArea(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#2563eb;color:white;padding:7px 10px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-pen"></i> แก้ไข</button>' +
 '<button type="button" onclick="deleteAdminFloodArea(' + index + ')"' + disabled + ' style="border:0;border-radius:6px;background:#dc2626;color:white;padding:7px 10px;font:700 11px Prompt,sans-serif;cursor:pointer;"><i class="fas fa-trash"></i> ลบ</button></div></div>';
@@ -4856,7 +4862,7 @@ box.innerHTML = list.map(function(area, index) {
 var meta = getDeclareFloodSeverityMeta(area.severity);
 return '<div style="display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:7px;align-items:center;background:' + meta.fill + ';border:1px solid ' + meta.border + ';border-radius:7px;padding:6px 8px;">' +
 '<span style="width:26px;height:26px;border-radius:6px;background:' + meta.border + ';color:white;display:flex;align-items:center;justify-content:center;"><i class="fas fa-draw-polygon"></i></span>' +
-'<div style="min-width:0;"><div style="font-size:12px;font-weight:900;color:' + meta.color + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(area.name || ('พื้นที่น้ำท่วม ' + (index + 1))) + '</div><div style="font-size:10px;color:#475569;">' + meta.icon + ' ' + meta.label + ' · ' + (area.points || []).length + ' จุดขอบเขต' + (area.depthCm !== '' ? ' · น้ำ ' + area.depthCm + ' ซม.' : '') + (area.referenceLabel ? ' · อ้างอิง ' + roleSafeText(area.referenceLabel) : '') + '</div></div>' +
+'<div style="min-width:0;"><div style="font-size:12px;font-weight:900;color:' + meta.color + ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(area.name || ('พื้นที่น้ำท่วม ' + (index + 1))) + '</div><div style="font-size:10px;color:#475569;">' + meta.icon + ' ' + meta.label + ' · ' + (area.points || []).length + ' จุดขอบเขต · ' + roleSafeText(getFloodAreaDepthText(area)) + (area.referenceLabel ? ' · อ้างอิง ' + roleSafeText(area.referenceLabel) : '') + '</div></div>' +
 '<button type="button" onclick="removePendingDeclareFloodArea(' + index + ')" style="border:0;background:#fee2e2;color:#b91c1c;border-radius:5px;padding:5px 7px;cursor:pointer;"><i class="fas fa-trash"></i></button></div>';
 }).join('');
 }

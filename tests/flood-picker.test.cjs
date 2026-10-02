@@ -12,7 +12,7 @@ function extract(source, name) {
   return source.slice(start, next < 0 ? source.length : next);
 }
 const pickerNames = ['initLongdoMap','setPickerMapStyle','getPickerFloodStyle','setPickerFloodReferenceAreas','clearPickerFloodReferenceAreas','renderPickerFloodReferenceAreas','makePickerFloodPolygonOverlay','updatePickerFloodTools','clearPickerFloodVertexMarkers','renderPickerFloodVertexMarkers','renderPickerFloodDraft','addPickerFloodVertex','undoPickerFloodVertex','clearPickerFloodDraft','getPickerFloodCentroid','focusFloodAreaReferenceOnPicker','focusRoadClosureStartOnPicker','makePickerHtmlMarker','renderPickerMapContext','initializePickerMapView','configureMapPickerUI','openFloodAreaMapPicker','openRoadClosureMapPicker','openMap','closeMap','confirmMap'];
-const markerNames = ['parseFloodAreaMarker','getZoneMarkerType','getFloodMarkerId'];
+const markerNames = ['parseFloodAreaMarker','getZoneMarkerType','getFloodMarkerId','getFloodAreaDepthText'];
 const code = pickerNames.map(name => extract(html,name)).concat(markerNames.map(name=>extract(script2,name))).join('\n');
 module.exports = { html, code };
 
@@ -50,12 +50,13 @@ if (require.main === module) {
   });
   vm.runInContext(code,context);
   context.initLongdoMap();
-  const a = {name:'พื้นที่เดิม',severity:'severe',points:[[101.24,12.69],[101.26,12.69],[101.26,12.71]]};
+  const a = {name:'พื้นที่เดิม',depthCm:20,severity:'severe',points:[[101.24,12.69],[101.26,12.69],[101.26,12.71]]};
   const original = JSON.stringify(a);
   context.setPickerFloodReferenceAreas({referenceAreas:[a]});
   context.renderPickerMapContext(true);
   assert.equal(sources['picker-flood-reference'].data.features.length,2);
   assert.equal(sources['picker-flood-reference'].data.features[0].properties.fill,'#ef4444');
+  assert.equal(sources['picker-flood-reference'].data.features[0].properties.name,'พื้นที่เดิม (เดิม)\nระดับน้ำ: 20 ซม.');
   assert.deepEqual(sources['picker-flood-reference'].data.features[0].geometry.coordinates[0][0],sources['picker-flood-reference'].data.features[0].geometry.coordinates[0].at(-1));
   assert.equal(JSON.stringify(a),original);
   a.points[0][0] = 100;
@@ -75,6 +76,8 @@ if (require.main === module) {
   const saved = [{id:'a',type:'FloodArea',note:{kind:'floodArea',...a}},{id:'b',type:'FloodArea',note:{kind:'floodArea',name:'พื้นที่สอง',severity:'moderate',points:[[101.27,12.7],[101.28,12.7],[101.28,12.71]]}}];
   context.setPickerFloodReferenceAreas({referenceMarkers:saved,excludeAreaId:'a'});
   assert.equal(context.pickerFloodReferenceAreas.length,1,'Exclude only the adjusted area');
+  context.renderPickerFloodReferenceAreas();
+  assert.equal(sources['picker-flood-reference'].data.features[0].properties.name,'พื้นที่สอง (เดิม)\nระดับน้ำ: ไม่มีข้อมูล');
   context.pickerFloodVertices=[[101.24,12.69],[101.26,12.69],[101.26,12.71]];
   context.pickerViewInitialized=false;
   context.initializePickerMapView();
