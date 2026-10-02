@@ -16,7 +16,7 @@ assert.match(html, /class="dash-header-context"/);
 assert.match(html, /class="dash-status-strip"/);
 assert.match(css, /grid-template-rows: minmax\(0, 1fr\) !important/);
 assert.match(css, /#scene_Dashboard\.dashboard-join-mobile \.dash-map-wrap/);
-assert.match(sw, /dashboard-layout\.css\?v=20261002_compact1/);
+assert.match(sw, /dashboard-layout\.css\?v=20261002_interaction1/);
 assert.match(css, /#scene_Dashboard #wind_panel \{ position:static !important/,'Mobile legacy wind positions must not override toolbar placement');
 assert.match(css, /\.dash-map-title \{ flex:0 0 auto/,'The heading must not reserve a full row');
 assert.match(html, /navigationControl:\s*false/);

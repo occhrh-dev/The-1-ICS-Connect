@@ -168,7 +168,7 @@ offset: options.offset ? [options.offset.x || 0, options.offset.y || 0] : [18, 3
 }).setLngLat([parseFloat(loc.lon), parseFloat(loc.lat)]);
 var detail = options.markerOptions && options.markerOptions.detail;
 if (detail) {
-var popup = new maptilersdk.Popup({ offset: 18 }).setHTML(detail);
+var popup = new maptilersdk.Popup(Object.assign({ offset:18 }, options.popupOptions || {})).setHTML(detail);
 marker.setPopup(popup);
 marker._dashboardPopup = popup;
 }

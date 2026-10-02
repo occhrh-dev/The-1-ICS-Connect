@@ -12,6 +12,8 @@
 - **แถบเครื่องมือกระชับ:** หัวข้อ ปุ่ม และกล่องลมอยู่แถบเดียวบนจอกว้าง สถานะแหล่งข้อมูลอยู่ภายในเมนูชั้นข้อมูล ไม่กินแถวเหนือแผนที่เพิ่ม จอเล็กห่อแถวเมื่อพื้นที่ไม่พอ
 - **ทิศทางลม:** อยู่ท้ายแถบเครื่องมือ แสดงทิศที่ลมพัดไป ความเร็ว และแหล่งข้อมูล ไม่บังแผนที่
 - สีขอบเขตน้ำเป็นสถานะที่ผู้รายงานกำหนด ไม่ใช่ระดับความลึกที่คำนวณจากสี ความลึกใช้ค่าที่บันทึกจริง และแสดง “ไม่มีข้อมูล” หากไม่มี
+- **กล่องสถานการณ์น้ำท่วม:** ลากจากหัวกล่องได้โดยขนาดคงเดิม ยุบ/ขยายจากปุ่มลูกศร ขณะลากปล่อย bottom/right anchors และคงความกว้างเดิม ไม่ยืดกล่องระหว่างย้าย
+- **รายละเอียดพื้นที่:** กดบนสีหรือเส้นขอบจริงของ polygon ได้ ไม่ต้องเล็งป้ายชื่อ แสดงชื่อ สถานการณ์ และระดับน้ำเดียวกับป้ายชื่อ ไม่มีข้อมูลให้ระบุ “ไม่มีข้อมูล” หากซ้อนกันเลือกพื้นที่ที่วาดทับอยู่บนสุด ไม่ใช้กรอบสี่เหลี่ยมแทนขอบเขตจริง และไม่เปลี่ยนข้อมูล/กล้อง การคลิกหมุดหรือ popup เดิมไม่ถูกพื้นที่ด้านใต้แย่งการคลิก
 - ตัวเลือกชั้นข้อมูลเป็นการดูในเบราว์เซอร์เท่านั้น ไม่แก้ฐานข้อมูลหรือสิทธิ์ Admin ผู้ดูอย่างเดียวใช้ได้เฉพาะส่วนดูแผนที่นี้
 
 ## แหล่งข้อมูลและข้อจำกัด
@@ -49,6 +51,7 @@
 - สำรองในเครื่อง: `backups/The-1-ICS-Connect-pre-layer-menu-20261002.zip` และ `.bundle` (นอก repo, bundle verify ผ่าน)
 - สำรองโค้ดและประวัติ Git ไม่ใช่ export ฐานข้อมูล
 - ก่อนยุบแถบเครื่องมือเพิ่มเติม สำรองจาก `19e34a4` ที่ local/GitHub branch `backup/pre-compact-map-toolbar-20261002` และ `backups/The-1-ICS-Connect-pre-compact-map-toolbar-20261002.zip` / `.bundle` (verify ผ่าน)
+- ก่อนแก้การลาก/คลิกพื้นที่ สำรองจาก `0afa660` ที่ local/GitHub branch `backup/pre-flood-interaction-20261002` และ `backups/The-1-ICS-Connect-pre-flood-interaction-20261002.zip` / `.bundle` (verify ผ่าน)
 - ไม่แก้โค้ด GAS, schema Supabase หรือ Cloudflare Worker ไม่เขียน/ลบข้อมูลเหตุเดิมระหว่างทดสอบ; flow ACTIVE ครั้งถัดไปจะบันทึก metadata ใหม่ผ่าน API เดิมตามที่กล่าวข้างต้น
 - หากต้องย้อน ให้หา commit ของรอบโหมดแผนที่แล้วใช้ `git revert <commit>` หลังตรวจสถานะงานล่าสุด ห้ามใช้ reset --hard ทับงานใหม่
 
@@ -62,6 +65,7 @@ node tests/dashboard-layout.test.cjs
 node tests/flood-picker.test.cjs
 node tests/flood-depth.test.cjs
 node tests/flood-incident-settings.test.cjs
+node tests/flood-interaction.test.cjs
 ```
 
 ทดสอบ no camera reset, marker retention, overlay restoration, async cancellation, delayed overlay cancellation, provider failure/origin validation, water-off retaining road closures, independent checkboxes, boundary restoration, viewer-only controls และการไม่ cache traffic

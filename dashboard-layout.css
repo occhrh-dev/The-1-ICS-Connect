@@ -134,7 +134,7 @@
 #scene_Dashboard .dash-info-panel .dash-staff-heading { font-size: 12px !important; letter-spacing: 0 !important; }
 #scene_Dashboard .dash-info-panel .hr-title { font-size: 12px; }
 #scene_Dashboard #dash_map_canvas { height: 100% !important; min-height: 0 !important; border-radius: 0; }
-#scene_Dashboard #dash_flood_legend { bottom: 30px !important; max-width: min(240px, calc(100% - 24px)); box-sizing: border-box; }
+#scene_Dashboard #dash_flood_legend { max-width: min(240px, calc(100% - 24px)); box-sizing: border-box; }
 #scene_Dashboard.dashboard-join-mobile .dash-map-wrap { height: clamp(280px, 52dvh, 460px) !important; flex: 0 0 auto !important; }
 
 /* Desktop: one grid row, map stretches to all remaining viewport height. */

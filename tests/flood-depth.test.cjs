@@ -21,7 +21,7 @@ const context = vm.createContext({
   roleSafeText:value => String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'),
   getOCZoneTypeConfig:() => ({})
 });
-vm.runInContext(['getFloodAreaDepthText','parseFloodAreaMarker','getFloodAreaCentroid','drawIncidentSpecialMapLayers','getFloodLegendTarget'].map(extract).join('\n'),context);
+vm.runInContext(['getFloodAreaDepthText','parseFloodAreaMarker','getFloodAreaCentroid','getFloodAreaDetailHtml','ensureDashboardFloodAreaInteraction','drawIncidentSpecialMapLayers','getFloodLegendTarget'].map(extract).join('\n'),context);
 for (const missing of ['', ' ', null, undefined, NaN, Infinity, -1, 'bad', true, false]) {
   assert.equal(context.getFloodAreaDepthText({depthCm:missing}), 'ระดับน้ำ: ไม่มีข้อมูล');
 }

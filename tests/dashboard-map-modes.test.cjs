@@ -137,7 +137,7 @@ const successfulFetch = async(url, options) => {
     makeMapTilerLineOverlay:()=>{roadDraws++;return {_map:true};},
     makeLongdoHtmlMarker:()=>({}),removeLongdoOverlay(){},
     getFloodAreaCentroid:()=>({lat:12.7,lng:101.2}),roleSafeText:String});
-  vm.runInContext(extract(zoneCode,'drawIncidentSpecialMapLayers'),roads);
+  vm.runInContext(extract(zoneCode,'ensureDashboardFloodAreaInteraction')+'\n'+extract(zoneCode,'drawIncidentSpecialMapLayers'),roads);
   roads.drawIncidentSpecialMapLayers([{id:'road',type:'RoadClosed'}]);
   assert.equal(roadDraws,1,'Closure must not be inside the water-visibility block');
   assert.match(zoneCode,/window\._floodLayerVisible === false && type === 'FloodDepth'/);

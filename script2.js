@@ -2963,6 +2963,50 @@ var list = points || [];
 var total = list.reduce(function(sum, point) { sum.lat += Number(point[1]) || 0; sum.lng += Number(point[0]) || 0; return sum; }, {lat:0,lng:0});
 return { lat:list.length ? total.lat / list.length : 0, lng:list.length ? total.lng / list.length : 0 };
 }
+function getFloodAreaDetailHtml(area) {
+var severityText = area.severity === 'severe' ? 'รุนแรง/อันตราย' : area.severity === 'monitor' ? 'เฝ้าระวัง' : 'น้ำท่วม';
+return '<b>' + roleSafeText(area.name) + '</b><br>สถานการณ์: ' + severityText + '<br>' + roleSafeText(getFloodAreaDepthText(area));
+}
+function ensureDashboardFloodAreaInteraction() {
+var mapObj = dashMap && dashMap._maptiler;
+if (!mapObj || !mapObj.on || !mapObj.queryRenderedFeatures || mapObj._icsFloodAreaClickReady) return;
+mapObj._icsFloodAreaClickReady = true;
+// A single map listener reads the current registry after refresh/style changes.
+// Only rendered flood fill/outline layers participate, never bounding boxes.
+mapObj.on('click', function(event) {
+var records = window._incidentSpecialMapRecords || {};
+var areas = Object.keys(records).filter(function(key) { return key.indexOf('flood:') === 0; }).map(function(key) {
+var overlays = records[key].overlays || [];
+var label = overlays.filter(function(overlay) { return !!overlay._dashboardPopup; })[0];
+var layerIds = [];
+overlays.forEach(function(overlay) {
+(overlay._layerIds || []).forEach(function(layerId) { if (mapObj.getLayer(layerId)) layerIds.push(layerId); });
+});
+return { label:label, layerIds:layerIds };
+});
+var originalTarget = event.originalEvent && event.originalEvent.target;
+// Marker clicks already toggle their own popup; do not toggle it a second time.
+var labelArea = areas.filter(function(area) {
+return area.label && area.label._dashboardHtmlElement && originalTarget && area.label._dashboardHtmlElement.contains(originalTarget);
+})[0];
+if (originalTarget && originalTarget.closest && originalTarget.closest('.maplibregl-popup, .mapboxgl-popup')) return;
+var markerClick = originalTarget && originalTarget.closest && originalTarget.closest('.maplibregl-marker, .mapboxgl-marker');
+var layers = areas.reduce(function(list, area) { return list.concat(area.layerIds); }, []);
+var selected = labelArea;
+if (!selected && !markerClick && event.point && layers.length && (!mapObj.isStyleLoaded || mapObj.isStyleLoaded())) {
+var hits = mapObj.queryRenderedFeatures(event.point, { layers:layers });
+// MapLibre returns the top rendered feature first when areas overlap.
+var topLayerId = hits.length && hits[0].layer && hits[0].layer.id;
+selected = areas.filter(function(area) { return area.layerIds.indexOf(topLayerId) >= 0; })[0];
+}
+areas.forEach(function(area) {
+if (area !== selected && area.label) area.label._dashboardPopup.remove();
+});
+if (selected && !labelArea && selected.label && event.lngLat) {
+selected.label._dashboardPopup.setLngLat(event.lngLat).addTo(mapObj);
+}
+});
+}
 function isFloodMapLayerType(type) {
 return type === 'FloodArea' || isFloodZoneType(type);
 }
@@ -3042,7 +3086,7 @@ if (polygon) { dashMap.Overlays.add(polygon); created.push(polygon); }
 var center = getFloodAreaCentroid(area.points);
 var depthText = getFloodAreaDepthText(area);
 var labelHtml = '<div class="flood-area-map-label" title="' + roleSafeText(area.name + ' — ' + depthText) + '" style="background:' + style.line + 'e6;color:white;border:1px solid white;border-radius:5px;padding:2px 5px;box-shadow:0 1px 5px rgba(0,0,0,.32);font:800 8px Prompt,sans-serif;line-height:1.35;max-width:120px;text-align:center;"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><i class="fas fa-water" style="font-size:7px;"></i> ' + roleSafeText(area.name) + '</div><div style="font-size:8px;font-weight:600;white-space:nowrap;">' + roleSafeText(depthText) + '</div></div>';
-var labelMarker = makeLongdoHtmlMarker({lon:center.lng,lat:center.lat}, labelHtml, { offset:{x:0,y:0}, scaleMode:'none', title:'พื้นที่น้ำท่วม', markerOptions:{detail:'<b>' + roleSafeText(area.name) + '</b><br>' + roleSafeText(depthText)} });
+var labelMarker = makeLongdoHtmlMarker({lon:center.lng,lat:center.lat}, labelHtml, { offset:{x:0,y:0}, scaleMode:'none', title:'พื้นที่น้ำท่วม', popupOptions:{closeOnClick:false}, markerOptions:{detail:getFloodAreaDetailHtml(area)} });
 dashMap.Overlays.add(labelMarker);
 created.push(labelMarker);
 return created;
@@ -3079,6 +3123,7 @@ if (nextRecords[key]) return;
 });
 window._incidentSpecialMapRecords = nextRecords;
 window._incidentSpecialMapOverlays = overlays;
+ensureDashboardFloodAreaInteraction();
 }
 function getFloodLegendTarget(marker) {
 var type = getZoneMarkerType(marker);
@@ -3217,6 +3262,8 @@ var legend = document.getElementById('dash_flood_legend');
 if (!legend || legend.dataset.dragReady === '1') return;
 legend.dataset.dragReady = '1';
 legend.addEventListener('pointerdown', function(event) {
+if (event.button !== undefined && event.button !== 0) return;
+if (legend._floodDragStop) legend._floodDragStop();
 var handle = event.target && event.target.closest ? event.target.closest('.flood-legend-drag-handle') : null;
 if (!handle || (event.target.closest && event.target.closest('button'))) return;
 var parent = legend.offsetParent || legend.parentElement;
@@ -3227,12 +3274,15 @@ var startX = event.clientX;
 var startY = event.clientY;
 var startLeft = legendRect.left - parentRect.left;
 var startTop = legendRect.top - parentRect.top;
+// Preserve the measured width: absolute positioning must move, not resize.
+legend.style.width = legendRect.width + 'px';
 legend.style.right = 'auto';
 legend.style.bottom = 'auto';
 legend.style.left = startLeft + 'px';
 legend.style.top = startTop + 'px';
 if (legend.setPointerCapture) { try { legend.setPointerCapture(event.pointerId); } catch(e) {} }
 function move(moveEvent) {
+if (moveEvent.pointerId !== event.pointerId) return;
 var maxLeft = Math.max(0, parent.clientWidth - legend.offsetWidth);
 var maxTop = Math.max(0, parent.clientHeight - legend.offsetHeight);
 var left = Math.min(maxLeft, Math.max(0, startLeft + moveEvent.clientX - startX));
@@ -3240,15 +3290,20 @@ var top = Math.min(maxTop, Math.max(0, startTop + moveEvent.clientY - startY));
 legend.style.left = left + 'px';
 legend.style.top = top + 'px';
 }
-function stop() {
+function stop(stopEvent) {
+if (stopEvent && stopEvent.pointerId !== event.pointerId) return;
 document.removeEventListener('pointermove', move);
 document.removeEventListener('pointerup', stop);
 document.removeEventListener('pointercancel', stop);
+if (legend.releasePointerCapture) { try { legend.releasePointerCapture(event.pointerId); } catch(e) {} }
+legend._floodDragStop = null;
 }
+legend._floodDragStop = stop;
 document.addEventListener('pointermove', move);
 document.addEventListener('pointerup', stop);
 document.addEventListener('pointercancel', stop);
 event.preventDefault();
+event.stopPropagation();
 });
 }
 function toggleFloodMapLayer() {
