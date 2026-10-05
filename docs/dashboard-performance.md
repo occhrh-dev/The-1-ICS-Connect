@@ -12,3 +12,5 @@
 ทดสอบใหม่ tests/dashboard-performance.test.cjs ทั้ง helper และ inline bridge จริง: overlapping read 2 callers -> 1 fetch, callbacks แยก, agency/token ไม่รวม, completed read ใหม่ยิงใหม่, failure แจ้งทุกคน/เรียกใหม่ได้, write 2 ครั้งยัง 2 fetch; weather cache/expiry/flood/manual/stale/abort/cooldown. Regression ทั้งหมด 12 ชุดต้องผ่านก่อนเผยแพร่
 
 ตัวเลขข้างบนเป็นผลจำลองจำนวนคำขอ ไม่ใช่การวัด latency บนอินเทอร์เน็ตจริง และไม่ใช่ load test หลายผู้ใช้. ปัญหา Longdo quota ไม่ได้แก้ในรอบนี้
+
+ก่อนตรวจ Chrome: รุ่นแก้ 2c2f16e; regression 12 ชุดผ่านแล้ว มีการยกเลิกการแชร์คำขออ่านเมื่อบันทึกข้อมูลที่เกี่ยวข้อง เพื่อไม่ให้การอ่านหลังบันทึกใช้คำขอก่อนบันทึก ยังไม่รับรองเวลาโหลดจริงหรือหลายผู้ใช้
