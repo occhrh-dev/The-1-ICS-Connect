@@ -37,7 +37,7 @@ if (tambonCheck) tambonCheck.checked = typeof tambonBoundaryVisible !== 'undefin
 var labels = [satelliteVisible ? (streetsVisible ? 'พื้นดาวเทียม + ถนน' : 'พื้นดาวเทียม') : (streetsVisible ? 'พื้นถนน' : 'ปิดแผนที่พื้นหลัง')];
 if (trafficVisible) labels.push('จราจร Longdo');
 if (tambonCheck && tambonCheck.checked) labels.push('เขตตำบล');
-labels.push('น้ำท่วมภายนอกยังไม่เชื่อม');
+labels.push(window.dashboardExternalFloodLabel || 'ปิดน้ำท่วม GISTDA');
 setText('dashMapModeStatus', labels.join(' · '));
 setText('dashTrafficSourceStatus', trafficStatus);
 };
@@ -144,7 +144,7 @@ bounds:definition.bounds,
 attribution:'<a href="https://traffic.longdo.com/" target="_blank" rel="noopener noreferrer">Longdo Traffic</a>'
 });
 // Keep field-water polygons and solid red closure lines above traffic.
-var beforeLayer = (mapObj.getStyle().layers || []).find(function(layer) { return /^(mt-(polygon|line|circle)-|tambon-(fill|line)-)/.test(layer.id); });
+var beforeLayer = (mapObj.getStyle().layers || []).find(function(layer) { return /^(ics-gistda-flood-|mt-(polygon|line|circle)-|tambon-(fill|line)-)/.test(layer.id); });
 definition.layers.forEach(function(layer, index) {
 var copy = JSON.parse(JSON.stringify(layer));
 copy.id = LAYERS[index];
@@ -207,6 +207,7 @@ overlay._addToMap(mapObj);
 window.attachDashboardMapModes = function(mapObj) {
 if (!mapObj || mapRef === mapObj) return;
 mapRef = mapObj;
+if (window.attachDashboardExternalFlood) window.attachDashboardExternalFlood(mapObj);
 generation++;
 clearRefresh();
 var initialStyle = window._dashboardMapStyle || 'satellite';

@@ -1,12 +1,13 @@
 // Service Worker for EOC Rayong War Room
-const CACHE_NAME = 'eoc-warroom-v20261005_points1';
+const CACHE_NAME = 'eoc-warroom-v20261005_gistda1';
 
 const STATIC_ASSETS = [
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261005_points1',
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261005_points1',
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-layout.css?v=20261005_points1',
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261005_points1',
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/flood-incident-settings.js?v=20261005_points1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261005_gistda1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261005_gistda1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-layout.css?v=20261005_gistda1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261005_gistda1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-gistda-flood.js?v=20261005_gistda1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/flood-incident-settings.js?v=20261005_gistda1',
   'https://occhrh-dev.github.io/The-1-ICS-Connect/stylesheet.css?v=20261002_layout1',
   'https://occhrh-dev.github.io/HazMat-Mapper/the1ICS.png'
 ];
@@ -38,6 +39,7 @@ self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
   // Live/provider requests must never be frozen in the app's cache-first store.
   if (new URL(event.request.url).hostname === 'msv.longdo.com') return;
+  if (new URL(event.request.url).hostname === 'the-1-ics-gistda-flood.occ-hrh.workers.dev') return;
 
   event.respondWith(
     caches.match(event.request).then(function(cached) {

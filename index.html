@@ -34,7 +34,7 @@ body.ic-login-mode #staffLeadBox,
 body.ic-login-mode #staffCoordBox { display:none !important; }
 body.ic-login-mode #staffRoleInput { list-style:none; }
 </style>
-<link rel="stylesheet" href="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-layout.css?v=20261005_points1">
+<link rel="stylesheet" href="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-layout.css?v=20261005_gistda1">
 <!-- ERG database loaded on demand -->
 <script>
 // Inline bridge — ทำงานทันทีก่อน external scripts โหลด
@@ -956,14 +956,16 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 <details id="dashMapLayerMenu" class="dash-map-layers">
 <summary title="เลือกชั้นข้อมูลได้มากกว่าหนึ่งอย่าง"><i class="fas fa-layer-group"></i> ชั้นข้อมูล <i class="fas fa-chevron-down dash-layer-chevron" aria-hidden="true"></i></summary>
 <div class="dash-map-layer-panel">
-<div id="dashMapModeStatus" class="dash-map-mode-status" role="status">พื้นดาวเทียม · น้ำท่วมภายนอกยังไม่เชื่อม</div>
+<div id="dashMapModeStatus" class="dash-map-mode-status" role="status">พื้นดาวเทียม · ปิดน้ำท่วม GISTDA</div>
 <div class="dash-layer-section-title">แผนที่พื้นหลัง</div>
 <label><input id="dashStreetLayerCheck" type="checkbox" onchange="setDashboardBaseLayer('streets',this.checked)"><i class="fas fa-road" aria-hidden="true"></i> ถนน</label>
 <label><input id="dashSatelliteLayerCheck" type="checkbox" checked onchange="setDashboardBaseLayer('satellite',this.checked)"><i class="fas fa-satellite" aria-hidden="true"></i> ดาวเทียม</label>
 <div class="dash-layer-note">เลือกทั้งสองอย่าง: ถนนและชื่อสถานที่ซ้อนบนภาพดาวเทียม อยู่ใต้ชั้นข้อมูลอื่น</div>
 <div class="dash-layer-section-title">ชั้นข้อมูลซ้อนทับ</div>
-<label class="dash-layer-unavailable"><input id="dashExternalFloodLayerCheck" type="checkbox" disabled><i class="fas fa-water" aria-hidden="true"></i> น้ำท่วม <span class="dash-layer-pending">ยังไม่เชื่อม</span></label>
-<div class="dash-layer-note">ข้อมูลภายนอกจาก Longdo / GISTDA ที่กำลังเตรียมเชื่อม ไม่ใช่พื้นที่ที่แอดมินวาด พื้นที่ไม่มีสีไม่ได้แปลว่าไม่ท่วม</div>
+<label><input id="dashExternalFloodLayerCheck" type="checkbox" onchange="setDashboardExternalFloodLayer(this.checked)"><i class="fas fa-water" aria-hidden="true"></i> น้ำท่วม <span id="dashExternalFloodBadge" class="dash-layer-pending">GISTDA</span></label>
+<div class="dash-gistda-controls"><select id="dashExternalFloodPeriod" aria-label="ช่วงข้อมูลน้ำท่วม GISTDA" disabled onchange="setDashboardExternalFloodPeriod(this.value)"><option value="1">ย้อนหลัง 1 วัน</option><option value="7">ย้อนหลัง 7 วัน</option><option value="30">ย้อนหลัง 30 วัน</option></select><button id="dashExternalFloodRefresh" type="button" disabled onclick="refreshDashboardExternalFlood()">ตรวจข้อมูล</button></div>
+<div id="dashExternalFloodSourceStatus" class="dash-layer-note" role="status">ยังไม่เปิดน้ำท่วม GISTDA · เฉพาะจังหวัดระยอง</div>
+<div class="dash-layer-note"><span style="color:#0284c7">■</span> ขอบเขตอ้างอิงจาก GISTDA ไม่ใช่พื้นที่ที่แอดมินวาดหรือระดับความรุนแรง เลือกครั้งละช่วง · ข้อมูลย้อนหลังไม่ยืนยันว่าตอนนี้ยังท่วม พื้นที่ไม่มีสีไม่ได้แปลว่าไม่ท่วม</div>
 <label><input id="dashTrafficLayerCheck" type="checkbox" onchange="setDashboardTrafficLayer(this.checked)"><i class="fas fa-traffic-light" aria-hidden="true"></i> การจราจร</label>
 <div id="dashTrafficSourceStatus" class="dash-layer-note" role="status">ยังไม่เปิดชั้นจราจร</div>
 <div class="dash-layer-colors"><span style="--layer-color:#22c55e">คล่องตัว</span><span style="--layer-color:#f59e0b">ชะลอตัว</span><span style="--layer-color:#ef4444">ติดขัด</span></div>
@@ -986,6 +988,7 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 </div>
 <div class="dash-map-wrap" style="position:relative;flex:1;width:100%;min-height:0;">
 <div id="dash_map_canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
+<div id="dashExternalFloodMapNotice" style="display:none;position:absolute;left:10px;bottom:28px;z-index:8;max-width:60%;padding:4px 7px;background:rgba(240,249,255,.95);color:#075985;border:1px solid #7dd3fc;border-radius:5px;font:10px Prompt,sans-serif;pointer-events:none;"></div>
 <div id="dash_building_cards_layer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:8;"></div>
 <div id="dash_flood_legend" style="display:none;position:absolute;right:10px;bottom:30px;z-index:9;background:rgba(255,255,255,.96);border:1px solid #bae6fd;border-radius:8px;padding:8px 10px;box-shadow:0 2px 8px rgba(15,23,42,.2);font-family:'Prompt',sans-serif;font-size:10px;color:#334155;max-width:240px;"></div>
 <div id="dash_indoor_floors" style="display:none;position:absolute;bottom:10px;left:10px;max-width:240px;max-height:75%;overflow-y:auto;background:rgba(255,255,255,0.97);border-radius:8px;box-shadow:0 2px 8px rgba(15,23,42,0.2);z-index:9;font-family:'Prompt',sans-serif;">
@@ -7083,10 +7086,11 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 }
 </script>
 
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/flood-incident-settings.js?v=20261005_points1" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261005_points1" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261005_points1" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261005_points1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/flood-incident-settings.js?v=20261005_gistda1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261005_gistda1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261005_gistda1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261005_gistda1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-gistda-flood.js?v=20261005_gistda1" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {

@@ -158,7 +158,8 @@ const successfulFetch = async(url, options) => {
   const checkboxNames=[...viewControls.matchAll(/id="(dash\w+LayerCheck)"/g)].map(m=>m[1]);
   assert.deepEqual(checkboxNames,['dashStreetLayerCheck','dashSatelliteLayerCheck','dashExternalFloodLayerCheck','dashTrafficLayerCheck','dashTambonLayerCheck']);
   assert.doesNotMatch(viewControls,/dashFieldFloodLayerCheck|selectDashboardMapMode/,'External water is never the manual water toggle');
-  assert.match(viewControls,/id="dashExternalFloodLayerCheck" type="checkbox" disabled/,'Not connected must not appear to work');
+  assert.match(viewControls,/id="dashExternalFloodLayerCheck" type="checkbox" onchange="setDashboardExternalFloodLayer/,'External layer has its own view-only toggle');
+  assert.match(viewControls,/id="dashExternalFloodPeriod"/,'External layer supports explicit periods');
   assert.doesNotMatch(html,/id="dashTambonToggleBtn"/,'No duplicate boundary button');
   assert.equal((html.match(/id="wind_panel"/g)||[]).length,1);
   const toolbar = html.slice(html.indexOf('<div class="dash-map-toolbar">'), html.indexOf('<div class="dash-map-wrap"'));
