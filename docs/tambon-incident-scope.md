@@ -19,4 +19,9 @@ These are code/history backups, not database exports.
 ## Verification
 
 Scope tests cover one/multiple provinces, stable cached coordinates, removal/listener cleanup, legacy incidents, unresolved/stale responses, disabled layers and style rebuild.
-Production Chrome visual QA pending deployment. No operational data will be written during QA.
+All 12 regression suites passed. GitHub Pages run `37277887169` successfully deployed `aa5ab2c`.
+
+Production Chrome QA: enabled tambon layer for the existing two-point Rayong incident, zoomed out eight levels to a country-scale view, and saw only Rayong boundaries. The layer status remained “เขตตำบลเฉพาะจังหวัดที่เกิดเหตุ: ระยอง”. Switched from satellite to street base: boundaries remained scoped and rendered. Existing two incident markers, two flood areas/depth labels and the red road closure were present before zooming out. No warnings/errors were captured during this check. No operational records were created, changed or deleted.
+
+Proof screenshot in workspace: `../../outputs/tambon-incident-scope-live-20261005.png`.
+This reduces boundary-rendering scope; no quantitative response-time or multi-user load benchmark was performed.
