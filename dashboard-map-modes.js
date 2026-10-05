@@ -30,10 +30,15 @@ var streetCheck = document.getElementById('dashStreetLayerCheck');
 var satelliteCheck = document.getElementById('dashSatelliteLayerCheck');
 var trafficCheck = document.getElementById('dashTrafficLayerCheck');
 var tambonCheck = document.getElementById('dashTambonLayerCheck');
+var tambonLabelCheck = document.getElementById('dashTambonLabelCheck');
 if (streetCheck) streetCheck.checked = streetsVisible;
 if (satelliteCheck) satelliteCheck.checked = satelliteVisible;
 if (trafficCheck) trafficCheck.checked = trafficVisible;
 if (tambonCheck) tambonCheck.checked = typeof tambonBoundaryVisible !== 'undefined' && tambonBoundaryVisible;
+if (tambonLabelCheck) {
+tambonLabelCheck.checked = typeof tambonLabelsVisible !== 'undefined' && tambonLabelsVisible;
+tambonLabelCheck.disabled = !(typeof tambonBoundaryVisible !== 'undefined' && tambonBoundaryVisible);
+}
 var labels = [satelliteVisible ? (streetsVisible ? 'พื้นดาวเทียม + ถนน' : 'พื้นดาวเทียม') : (streetsVisible ? 'พื้นถนน' : 'ปิดแผนที่พื้นหลัง')];
 if (trafficVisible) labels.push('จราจร Longdo');
 if (tambonCheck && tambonCheck.checked) labels.push('เขตตำบล');
@@ -164,7 +169,7 @@ scheduleRefresh();
 
 window.captureDashboardBoundaryLayers = function(mapObj) {
 var style = mapObj.getStyle();
-(style.layers || []).filter(function(layer) { return /^tambon-(fill|line)-/.test(layer.id); }).forEach(function(layer) {
+(style.layers || []).filter(function(layer) { return /^tambon-(fill|line|label)-/.test(layer.id); }).forEach(function(layer) {
 if (!style.sources[layer.source]) return;
 boundarySources[layer.source] = JSON.parse(JSON.stringify(style.sources[layer.source]));
 boundaryLayers[layer.id] = JSON.parse(JSON.stringify(layer));
@@ -178,13 +183,16 @@ if (mapRef === mapObj) window.restoreDashboardViewOverlays(mapObj);
 return;
 }
 Object.keys(boundarySources).forEach(function(id) {
+if (typeof tambonScopeSlugs !== 'undefined' && !tambonScopeSlugs[id.replace('tambon-src-', '')]) return;
 if (!mapObj.getSource(id)) mapObj.addSource(id, boundarySources[id]);
 });
 Object.keys(boundaryLayers).forEach(function(id) {
+if (typeof tambonScopeSlugs !== 'undefined' && !tambonScopeSlugs[id.replace(/^tambon-(fill|line|label)-/, '')]) return;
 if (mapObj.getLayer(id)) return;
 var layer = JSON.parse(JSON.stringify(boundaryLayers[id]));
 layer.layout = layer.layout || {};
 layer.layout.visibility = typeof tambonBoundaryVisible !== 'undefined' && tambonBoundaryVisible ? 'visible' : 'none';
+if (/^tambon-label-/.test(id) && !(typeof tambonLabelsVisible !== 'undefined' && tambonLabelsVisible)) layer.layout.visibility = 'none';
 mapObj.addLayer(layer);
 });
 // Restore existing objects only; do not recreate markers, refetch backend,

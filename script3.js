@@ -2548,6 +2548,7 @@ btn.classList.add('active');
 var TAMBON_DATA_BASE_URL = 'https://occhrh-dev.github.io/The-1-ICS-Connect/tambon_by_province/';
 var TAMBON_AUTO_SHOW_ZOOM = 12; // ซูมถึงระดับนี้ขึ้นไป จะ auto-show เขตแดนถ้ายังไม่ได้ปิดไว้เอง
 var tambonBoundaryVisible = false; // สถานะปุ่ม toggle (ผู้ใช้กดเปิด/ปิดเอง)
+var tambonLabelsVisible = false; // Optional labels share existing province sources; no extra fetch.
 var tambonBoundaryAutoShown = false; // กำลังโชว์อยู่เพราะ auto-show ไม่ใช่ผู้ใช้กดเอง (กันสับสนตอนคำนวณว่าควรซ่อนไหม)
 var tambonIndexData = null; // cache ของ _index.json (โหลดครั้งเดียว)
 var tambonLoadedProvinces = {}; // กันโหลดไฟล์จังหวัดเดิมซ้ำ
@@ -2591,7 +2592,7 @@ if (tambonScopeSlugs[slug]) return;
 var handlers = tambonLayerHandlers[slug];
 if (handlers && mapObj.off) Object.keys(handlers).forEach(function(event) { mapObj.off(event, 'tambon-fill-' + slug, handlers[event]); });
 delete tambonLayerHandlers[slug];
-['tambon-line-', 'tambon-fill-'].forEach(function(prefix) { if (mapObj.getLayer(prefix + slug)) mapObj.removeLayer(prefix + slug); });
+['tambon-label-', 'tambon-line-', 'tambon-fill-'].forEach(function(prefix) { if (mapObj.getLayer(prefix + slug)) mapObj.removeLayer(prefix + slug); });
 if (mapObj.getSource('tambon-src-' + slug)) mapObj.removeSource('tambon-src-' + slug);
 delete tambonLoadedProvinces[slug];
 });
@@ -2670,6 +2671,16 @@ source: sourceId,
 paint: { 'line-color': '#f59e0b', 'line-width': 1.4, 'line-opacity': 0.85 },
 layout: { visibility: tambonBoundaryVisible ? 'visible' : 'none' }
 });
+mapObj.addLayer({
+id: 'tambon-label-' + slug, type: 'symbol', source: sourceId, minzoom: 10,
+layout: {
+visibility: tambonBoundaryVisible && tambonLabelsVisible ? 'visible' : 'none',
+'text-field': ['coalesce', ['get', 'NAME_TH_3'], ['get', 'NAME_3'], ''],
+'text-font': ['Noto Sans Regular'], 'text-size': ['interpolate', ['linear'], ['zoom'], 10, 11, 14, 14],
+'text-padding': 8, 'text-max-width': 10, 'text-allow-overlap': false, 'text-ignore-placement': false
+},
+paint: { 'text-color': '#713f12', 'text-halo-color': '#ffffff', 'text-halo-width': 1.5 }
+});
 // คลิกที่ขอบเขต — โชว์ชื่อตำบล/อำเภอ/จังหวัด (อังกฤษไปก่อน รอแปลไทยทีละจังหวัด)
 var handlers = { click: function(e) {
 if (!e.features || !e.features[0]) return;
@@ -2747,7 +2758,14 @@ var lineLayerId = 'tambon-line-' + slug;
 var fillLayerId = 'tambon-fill-' + slug;
 if (mapObj.getLayer(lineLayerId)) mapObj.setLayoutProperty(lineLayerId, 'visibility', visible ? 'visible' : 'none');
 if (mapObj.getLayer(fillLayerId)) mapObj.setLayoutProperty(fillLayerId, 'visibility', visible ? 'visible' : 'none');
+if (mapObj.getLayer('tambon-label-' + slug)) mapObj.setLayoutProperty('tambon-label-' + slug, 'visibility', visible && tambonLabelsVisible ? 'visible' : 'none');
 });
+}
+
+function setTambonLabelVisibility(visible) {
+tambonLabelsVisible = !!visible;
+setTambonLayersVisibility(tambonBoundaryVisible);
+if (typeof syncDashboardMapModeUI === 'function') syncDashboardMapModeUI();
 }
 
 function toggleTambonBoundary() {

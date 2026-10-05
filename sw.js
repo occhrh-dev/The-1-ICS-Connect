@@ -1,11 +1,11 @@
 // Service Worker for EOC Rayong War Room
-const CACHE_NAME = 'eoc-warroom-v20261005_scope1';
+const CACHE_NAME = 'eoc-warroom-v20261005_labels1';
 
 const STATIC_ASSETS = [
   'https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261005_scope1',
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261005_scope1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261005_labels1',
   'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-layout.css?v=20261005_gistda1',
-  'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261005_gistda1',
+  'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261005_labels1',
   'https://occhrh-dev.github.io/The-1-ICS-Connect/gistda-provinces.js?v=20261005_gistda2',
   'https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-gistda-flood.js?v=20261005_gistda2',
   'https://occhrh-dev.github.io/The-1-ICS-Connect/flood-incident-settings.js?v=20261005_gistda1',

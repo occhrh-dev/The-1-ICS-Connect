@@ -30,7 +30,13 @@ async function settled(){while(ctx.tambonRefreshRunning)await new Promise(resolv
  assert.equal(events.moveend.length,1);assert.equal(events.zoomend.length,1);
  ctx.syncTambonIncidentScope([point(101),point(101,12.8),{type:'Food',lng:99,lat:18}]);
  ctx.setTambonBoundaryVisibility(true);await settled();
- assert.deepEqual(Object.keys(sources),['tambon-src-rayong']);assert.equal(fetched,1);
+assert.deepEqual(Object.keys(sources),['tambon-src-rayong']);assert.equal(fetched,1);
+ const label=layers['tambon-label-rayong'];assert.equal(label.type,'symbol');assert.equal(label.minzoom,10);
+ assert.equal(label.layout.visibility,'none');assert.equal(label.layout['text-allow-overlap'],false);
+ assert.match(JSON.stringify(label.layout['text-field']),/NAME_TH_3.*NAME_3/);
+ ctx.setTambonLabelVisibility(true);assert.equal(label.layout.visibility,'visible');assert.equal(fetched,1);
+ ctx.setTambonLabelVisibility(false);assert.equal(label.layout.visibility,'none');
+ ctx.setTambonLabelVisibility(true);
  const before=lookups;
  ctx.syncTambonIncidentScope([point(101,12.8),point(101)]);
  events.moveend.forEach(fn=>fn());events.zoomend.forEach(fn=>fn());await settled();
@@ -40,7 +46,7 @@ async function settled(){while(ctx.tambonRefreshRunning)await new Promise(resolv
  ctx.syncTambonIncidentScope([point(99,18)]);await settled();
  assert.deepEqual(Object.keys(sources),['tambon-src-chiang_mai']);assert.equal(events.click.length,1);
  ctx.syncTambonIncidentScope([]);await settled();assert.deepEqual(Object.keys(sources),['tambon-src-rayong']);
- ctx.setTambonBoundaryVisibility(false);
+ctx.setTambonBoundaryVisibility(false);
  events.moveend.forEach(fn=>fn());await settled();assert.ok(Object.values(layers).every(l=>l.layout.visibility==='none'));
  ctx.syncTambonIncidentScope([point(150)]);ctx.setTambonBoundaryVisibility(true);await settled();
  assert.equal(Object.keys(sources).length,0);
@@ -50,6 +56,7 @@ async function settled(){while(ctx.tambonRefreshRunning)await new Promise(resolv
  assert.deepEqual(Object.keys(sources),['tambon-src-chiang_mai']);
  Object.keys(sources).forEach(k=>delete sources[k]);Object.keys(layers).forEach(k=>delete layers[k]);
  await ctx.refreshTambonLayersForViewport();await settled();assert.deepEqual(Object.keys(sources),['tambon-src-chiang_mai']);
- assert.equal(events.click.length,1);
+assert.equal(events.click.length,1);
+ assert.equal(layers['tambon-label-chiang_mai'].layout.visibility,'visible');
  console.log('PASS: incident-only provinces, multiple provinces, cached scope, cleanup, legacy fallback, unknown/stale lookup and style rebuild');
 })().catch(e=>{console.error(e);process.exitCode=1;});
