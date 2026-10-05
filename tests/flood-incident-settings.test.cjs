@@ -12,7 +12,7 @@ function harness(markers=[point],options={}) {
   markers=JSON.parse(JSON.stringify(markers));
   const button={style:{display:'none'}};
   const writes=[],reads=[];
-  const ctx=vm.createContext({window:{},APP_ACCESS_ROLE:'admin',document:{getElementById:()=>button},Error});
+  const ctx=vm.createContext({window:{},APP_ACCESS_ROLE:'admin',document:{getElementById:id=>id==='dashFloodAreaManageBtn'?button:null},Error});
   function runner() {
     let success,failure;
     const r={withSuccessHandler(fn){success=fn;return r;},withFailureHandler(fn){failure=fn;return r;},

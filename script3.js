@@ -817,6 +817,23 @@ function getDashboardIncidentLoc() {
 if (!incidentCenter || !incidentCenter.lat || !incidentCenter.lng) return null;
 return { lon: parseFloat(incidentCenter.lng), lat: parseFloat(incidentCenter.lat) };
 }
+function fitDashboardIncidentPoints(markers) {
+if (!dashMap || window._userInteractingMap || typeof dashMap.fitBounds !== 'function') return false;
+var points = (markers || window._icZoneMarkers || []).filter(function(marker) {
+return typeof getZoneMarkerType === 'function' && getZoneMarkerType(marker) === 'IncidentPoint';
+}).map(function(marker) {
+return [Number(marker.lng !== undefined ? marker.lng : marker.Lng), Number(marker.lat !== undefined ? marker.lat : marker.Lat)];
+}).filter(function(point) { return isFinite(point[0]) && isFinite(point[1]); });
+if (points.length < 2) { window._dashboardIncidentPointsFitKey = ''; return false; }
+var key = (typeof getCurrentIncidentKey === 'function' ? getCurrentIncidentKey() : '') + '|' + points.map(function(point) { return point.join(','); }).sort().join(';');
+if (window._dashboardIncidentPointsFitMap === dashMap && window._dashboardIncidentPointsFitKey === key) return true;
+var lngs = points.map(function(point) { return point[0]; });
+var lats = points.map(function(point) { return point[1]; });
+dashMap.fitBounds([[Math.min.apply(null, lngs), Math.min.apply(null, lats)], [Math.max.apply(null, lngs), Math.max.apply(null, lats)]], {padding:80, maxZoom:16, duration:650});
+window._dashboardIncidentPointsFitMap = dashMap;
+window._dashboardIncidentPointsFitKey = key;
+return true;
+}
 function ensureDashboardMarkerSeparationZoom() {
 var mapObj = dashMap && dashMap._maptiler;
 if (!mapObj || !mapObj.getZoom || !mapObj.project) return;
@@ -969,7 +986,8 @@ watchDashboardMapSize();
 mapObj.on('load', function() {
 if (dashMap && dashMap.resize) dashMap.resize();
 updateDashboardMarkerScale();
-if (incidentCenter.lat && incidentCenter.lng) {
+if (typeof fitDashboardIncidentPoints === 'function') window._dashboardIncidentPointsFitKey = '';
+if (!fitDashboardIncidentPoints() && incidentCenter.lat && incidentCenter.lng) {
 mapObj.flyTo({ center: [incidentCenter.lng, incidentCenter.lat], zoom: 16, duration: 1000 });
 }
 });
@@ -996,7 +1014,7 @@ scaleMode: 'none'
 });
 if (dashMarker) dashMap.Overlays.add(dashMarker);
 renderDashboardEOCMarker(window._lastEmergState && window._lastEmergState.evtEOCCoords);
-if (!window._userInteractingMap) { dashMap.location(pos, true); }
+if (!window._userInteractingMap && !fitDashboardIncidentPoints()) { dashMap.location(pos, true); }
 setTimeout(ensureDashboardMarkerSeparationZoom, 350);
 if (window._lastEmergState && window._lastEmergState.wind && window._lastEmergState.wind.directionDeg != null) {
 drawWindArrowOnDashMap(window._lastEmergState.wind.directionDeg, window._lastEmergState.wind.speed || 0);

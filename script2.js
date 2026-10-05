@@ -2325,6 +2325,10 @@ try { dashMap.Overlays.remove(o); } catch(e) {}
 window._dashWindOverlays = [];
 }
 function drawWindArrowOnDashMap(destDeg, speed) {
+if (typeof isDashboardFloodIncident === 'function' && isDashboardFloodIncident(window._dashboardFloodIncidentMarkers || window._icZoneMarkers || [])) {
+clearDashWindOverlay();
+return;
+}
 if (!dashMap || !incidentCenter || incidentCenter.lat == null || incidentCenter.lng == null || typeof makeLongdoHtmlMarker !== 'function') return;
 clearDashWindOverlay();
 var loc = { lon: parseFloat(incidentCenter.lng), lat: parseFloat(incidentCenter.lat) };
@@ -2341,6 +2345,7 @@ dashMap.Overlays.add(marker);
 window._dashWindOverlays = [marker];
 }
 function applyWindWaitingDisplay() {
+window._dashboardDisplayedWind = null;
 var info = document.getElementById('weather_info');
 var arrow = document.getElementById('wind_arrow');
 if (info) info.innerText = 'รอข้อมูลลมจาก OC/ICP';
@@ -2351,6 +2356,7 @@ arrow.style.transform = 'rotate(0deg)';
 clearDashWindOverlay();
 }
 function applyWindDisplay(destDeg, speed, source, updatedBy) {
+window._dashboardDisplayedWind = { directionDeg:destDeg, speed:speed };
 var info = document.getElementById('weather_info');
 var arrow = document.getElementById('wind_arrow');
 if (info) {
@@ -3040,6 +3046,7 @@ var aKey = String(getFloodMarkerId(a) || a.label || a.Label || '') + '|' + Strin
 var bKey = String(getFloodMarkerId(b) || b.label || b.Label || '') + '|' + String(b.lat || b.Lat || '') + '|' + String(b.lng || b.Lng || '');
 return aKey.localeCompare(bKey);
 });
+if (typeof fitDashboardIncidentPoints === 'function') fitDashboardIncidentPoints(incidentPoints);
 if (incidentPoints.length > 1 && typeof dashMarker !== 'undefined' && dashMarker) {
 removeLongdoOverlay(dashMap, dashMarker);
 dashMarker = null;
@@ -3827,7 +3834,7 @@ window._icOCZoneOverlayRecords = nextRecords;
 window._icOCZoneOverlays = nextOverlays;
 window._icOCZoneCircles = nextCircles;
 var icp = points.find(function(p) { return p.type === 'ICP'; });
-if (icp && points.length > 1 && window._lastICPIcMapFitKey !== icp.lat + ',' + icp.lng) {
+if (icp && points.length > 1 && (zones || []).filter(function(zone) { return getZoneMarkerType(zone) === 'IncidentPoint'; }).length < 2 && window._lastICPIcMapFitKey !== icp.lat + ',' + icp.lng) {
 window._lastICPIcMapFitKey = icp.lat + ',' + icp.lng;
 var minLat = Math.min.apply(null, points.map(function(p) { return p.lat; }));
 var maxLat = Math.max.apply(null, points.map(function(p) { return p.lat; }));
@@ -4833,7 +4840,7 @@ var lngEl = document.getElementById('hidden-lng');
 if (latEl) latEl.value = list.length ? list[0].lat : '';
 if (lngEl) lngEl.value = list.length ? list[0].lng : '';
 if (show) {
-show.textContent = list.length ? 'พิกัดหลัก: ' + list[0].lat + ', ' + list[0].lng + ' (จุดแรก)' : 'จุดแรกจะเป็นพิกัดหลักสำหรับสภาพอากาศและการนำทาง';
+show.textContent = list.length ? 'จุดเกิดเหตุ ' + list.length + ' จุด' : 'เลือกจุดเกิดเหตุบนแผนที่ (เพิ่มได้หลายจุด)';
 show.style.color = list.length ? '#16a34a' : '#64748b';
 }
 if (!box) return;
@@ -4844,8 +4851,8 @@ return;
 }
 box.innerHTML = list.map(function(p, index) {
 return '<div style="display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:7px;align-items:center;background:white;border:1px solid #fed7aa;border-radius:7px;padding:6px 8px;">' +
-'<span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:' + (index === 0 ? '#dc2626' : '#f97316') + ';color:white;font-size:11px;font-weight:900;">' + (index + 1) + '</span>' +
-'<div style="min-width:0;"><div style="font-size:12px;font-weight:900;color:#7c2d12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(p.label || ('จุดเกิดเหตุ ' + (index + 1))) + (index === 0 ? ' <span style="color:#dc2626;">(จุดหลัก)</span>' : '') + '</div><div style="font-size:10px;color:#64748b;">' + Number(p.lat).toFixed(6) + ', ' + Number(p.lng).toFixed(6) + '</div></div>' +
+'<span style="width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#dc2626;color:white;font-size:11px;font-weight:900;">' + (list.length === 1 ? '<i class="fas fa-fire"></i>' : (index + 1)) + '</span>' +
+'<div style="min-width:0;"><div style="font-size:12px;font-weight:900;color:#7c2d12;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(p.label || ('จุดเกิดเหตุ ' + (index + 1))) + '</div><div style="font-size:10px;color:#64748b;">' + Number(p.lat).toFixed(6) + ', ' + Number(p.lng).toFixed(6) + '</div></div>' +
 '<button type="button" onclick="removePendingDeclareIncidentPoint(' + index + ')" style="border:0;background:#fee2e2;color:#b91c1c;border-radius:5px;padding:5px 7px;cursor:pointer;"><i class="fas fa-trash"></i></button></div>';
 }).join('');
 renderPendingDeclareFloodReferenceChoices();
@@ -4908,7 +4915,7 @@ return;
 box.innerHTML = list.map(function(point, index) {
 var label = point.label || ('จุดเกิดเหตุ ' + (index + 1));
 return '<button type="button" onclick="openPendingDeclareFloodAreaPicker(' + index + ')" style="width:100%;display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;background:white;border:1px solid #93c5fd;border-radius:8px;padding:8px;cursor:pointer;">' +
-'<span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:' + (index === 0 ? '#dc2626' : '#f97316') + ';color:white;font-size:12px;font-weight:900;">' + (index + 1) + '</span>' +
+'<span style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#dc2626;color:white;font-size:12px;font-weight:900;">' + (list.length === 1 ? '<i class="fas fa-fire"></i>' : (index + 1)) + '</span>' +
 '<span style="min-width:0;"><span style="display:block;font-size:12px;font-weight:900;color:#1e3a8a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + roleSafeText(label) + '</span><span style="display:block;font-size:10px;color:#64748b;">' + Number(point.lat).toFixed(6) + ', ' + Number(point.lng).toFixed(6) + '</span></span>' +
 '<span style="background:#0284c7;color:white;border-radius:6px;padding:6px 8px;font-size:11px;font-weight:900;white-space:nowrap;"><i class="fas fa-draw-polygon"></i> วาดรอบจุดนี้</span></button>';
 }).join('');
@@ -4992,7 +4999,7 @@ var html = [
 '<button type="button" onclick="openDeclareMapPicker(\'incident-point\')" style="background:#ea4335;color:white;border:none;border-radius:8px;padding:0 12px;cursor:pointer;font-weight:900;white-space:nowrap;"><i class="fas fa-plus"></i> เลือกบนแผนที่</button>',
 '</div>',
 '<div id="declare-incident-point-list" style="display:grid;gap:5px;margin-top:7px;"><div class="declare-note">ยังไม่มีจุดเกิดเหตุ</div></div>',
-'<div id="show-coords" class="declare-note">จุดแรกจะเป็นพิกัดหลักสำหรับสภาพอากาศและการนำทาง</div>',
+'<div id="show-coords" class="declare-note">เลือกจุดเกิดเหตุบนแผนที่ (เพิ่มได้หลายจุด)</div>',
 '</div>',
 '<input type="hidden" id="hidden-lat"><input type="hidden" id="hidden-lng">',
 '<label style="display:flex;align-items:center;gap:9px;margin-top:10px;background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:10px;cursor:pointer;font-weight:900;color:#1e3a8a;font-size:13px;"><input id="swal-has-flood" type="checkbox" onchange="toggleDeclareFloodAreaSection()" style="width:18px;height:18px;accent-color:#0284c7;"> เหตุการณ์นี้มีพื้นที่น้ำท่วม — ต้องการวาดขอบเขต</label>',

@@ -25,6 +25,13 @@ if (Array.isArray(markers)) window._dashboardFloodIncidentMarkers = markers;
 var enabled = window.isDashboardFloodIncident(window._dashboardFloodIncidentMarkers || window._icZoneMarkers || []);
 var button = document.getElementById('dashFloodAreaManageBtn');
 if (button) button.style.display = typeof APP_ACCESS_ROLE !== 'undefined' && APP_ACCESS_ROLE === 'admin' && enabled ? 'inline-block' : 'none';
+var windPanel = document.getElementById('wind_panel');
+if (windPanel) windPanel.style.display = enabled ? 'none' : '';
+if (enabled && typeof clearDashWindOverlay === 'function') clearDashWindOverlay();
+if (!enabled && window._dashboardWindHiddenForFlood && window._dashboardDisplayedWind && typeof drawWindArrowOnDashMap === 'function') {
+drawWindArrowOnDashMap(window._dashboardDisplayedWind.directionDeg, window._dashboardDisplayedWind.speed);
+}
+window._dashboardWindHiddenForFlood = enabled;
 return enabled;
 };
 window.persistDeclaredFloodSetting = function(enabled, primaryPoint, reporter, accessRole, done) {

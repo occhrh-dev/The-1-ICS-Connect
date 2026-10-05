@@ -71,3 +71,11 @@ node tests/flood-interaction.test.cjs
 ทดสอบ no camera reset, marker retention, overlay restoration, async cancellation, delayed overlay cancellation, provider failure/origin validation, water-off retaining road closures, independent checkboxes, boundary restoration, viewer-only controls และการไม่ cache traffic
 
 หน้าทดสอบในเครื่อง `outputs/dashboard-map-modes-preview.cjs` อยู่ **นอก repo** ไม่มี backend bridge ใช้จุดจำลองและพื้น Longdo เพราะ MapTiler key เดิมจำกัด origin ระบบจริง ตรวจการเปลี่ยนพื้นถนน/ภาพดาวเทียมจริงเพิ่มเติมบน production หลังเผยแพร่
+# Incident points and flood wind display (2026-10-05)
+
+- Declaration shows a fire icon for one incident point, and equal red numbered references for multiple points. No main-point label; the summary shows the number of points.
+- Dashboard fits all valid incident points once when the incident/point set changes. Polling/order changes do not reset the camera, and active user interaction is respected. Single-point incidents retain the original marker and camera behavior.
+- Flood checkbox metadata hides both the toolbar wind panel and wind overlay; background wind updates cannot put the overlay back. Non-flood incidents retain wind functionality. Existing flood polygons provide the same legacy fallback as the flood-management menu.
+- The first coordinate and primary metadata remain internal compatibility references for the unchanged GAS backend, not a ranking of operational importance. No GAS schema or historical data changes.
+- Backup: `backup/pre-equal-incident-points-20261005`, plus local ZIP and verified Git bundle. These back up code/history, not Supabase or GAS records.
+- Seven regression suites pass, including `tests/equal-incident-points.test.cjs`. No production incident activation, polygon edits, or data writes are performed for testing.
