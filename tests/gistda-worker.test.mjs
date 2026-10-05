@@ -11,11 +11,12 @@ const feature = {type:'Feature', geometry: shape, properties:{pv_idn:'21',pv_tn:
   file_name:'S1D_20260910_0551, rd2_20260926_0613',_createdBy:'PRIVATE', links:'TEST_SECRET_DO_NOT_EXPOSE'}};
 let calls = 0;
 globalThis.fetch = async(url, options) => {
+  url = new URL(url);
   calls++;
   assert.equal(url.hostname, 'api-gateway.gistda.or.th');
   assert.equal(url.searchParams.get('pv_idn'),'21');
   assert.equal(options.headers['API-Key'],env.GISTDA_API_KEY);
-  assert.equal(options.redirect,'error');
+  assert.equal(options.redirect,'manual');
   assert.ok(!url.toString().includes(env.GISTDA_API_KEY));
   const offset = Number(url.searchParams.get('offset'));
   const features = Array.from({length:offset ? 1 : 100},()=>feature);
@@ -46,7 +47,7 @@ globalThis.fetch = async()=>new Response(JSON.stringify({type:'FeatureCollection
 assert.equal((await (await worker.fetch(req('1'),env)).json()).meta.numberMatched,0);
 store.clear();
 globalThis.fetch = async()=>new Response('Secret upstream URL '+env.GISTDA_API_KEY,{status:401});
-assert.deepEqual(await (await worker.fetch(req('7'),env)).json(),{error:'KEY_REJECTED'});
+assert.deepEqual(await (await worker.fetch(req('7'),env)).json(),{error:'KEY_REJECTED',upstreamStatus:401});
 store.clear();
 globalThis.fetch = async()=>new Response(JSON.stringify({type:'FeatureCollection',features:[feature],numberMatched:101,numberReturned:1}));
 assert.equal((await worker.fetch(req(),env)).status,503,'Never display incomplete pages as a complete dataset');

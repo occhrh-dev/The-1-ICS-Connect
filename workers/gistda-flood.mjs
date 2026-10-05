@@ -43,6 +43,8 @@ function safeGeometry(geometry) {
   return {type: geometry.type, coordinates: geometry.type === 'Polygon' ? clean[0] : clean};
 }
 async function loadFlood(days, apiKey) {
+  apiKey = String(apiKey).trim();
+  if (!apiKey || /[\u0000-\u0020\u007f]/.test(apiKey)) fail('KEY_FORMAT');
   const features = [], deadline = Date.now() + 25000;
   let total = null, bytes = 0, upstreamResponseTime = null;
   for (let offset = 0; offset < MAX_FEATURES; offset += 100) {
@@ -55,14 +57,22 @@ async function loadFlood(days, apiKey) {
     const timer = setTimeout(() => controller.abort(), Math.min(8000, deadline - Date.now()));
     let data;
     try {
-      const response = await fetch(url, {headers: {'API-Key': apiKey, Accept: 'application/json'},
-        redirect: 'error', signal: controller.signal});
-      if (!response.ok) fail(response.status === 401 || response.status === 403 ? 'KEY_REJECTED' : 'UPSTREAM_UNAVAILABLE');
+      let response;
+      try {
+        response = await fetch(url.toString(), {headers: {'API-Key': apiKey, Accept: 'application/json'},
+          redirect: 'manual', signal: controller.signal});
+      } catch (error) { fail(error.name === 'AbortError' ? 'UPSTREAM_TIMEOUT' : 'UPSTREAM_NETWORK'); }
+      if (response.status >= 300 && response.status < 400) fail('UPSTREAM_REDIRECT');
+      if (!response.ok) {
+        const error = new Error(response.status === 401 || response.status === 403 ? 'KEY_REJECTED' : 'UPSTREAM_UNAVAILABLE');
+        error.upstreamStatus = response.status;
+        throw error;
+      }
       if (Number(response.headers.get('Content-Length')) > MAX_BYTES) fail('DATA_TOO_LARGE');
       const text = await response.text();
       bytes += new TextEncoder().encode(text).length;
       if (bytes > MAX_BYTES) fail('DATA_TOO_LARGE');
-      data = JSON.parse(text);
+      try { data = JSON.parse(text); } catch (_) { fail('UPSTREAM_FORMAT'); }
     } finally { clearTimeout(timer); }
     if (data.type !== 'FeatureCollection' || !Array.isArray(data.features) || data.features.length > 100 ||
       !Number.isInteger(data.numberMatched) || data.numberMatched < 0 || data.numberReturned !== data.features.length) fail('INVALID_DATA');
@@ -92,7 +102,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === '/health' && request.method === 'GET') return reply({service: 'ics-gistda-flood',
-      version: 1, configured: !!env.GISTDA_API_KEY, provinceId: '21', periods: [1, 7, 30]});
+      version: 2, configured: !!env.GISTDA_API_KEY, provinceId: '21', periods: [1, 7, 30]});
     // CORS is not authentication: this intentionally exposes only fixed public
     // Rayong datasets, never a generic upstream proxy or a secret-bearing link.
     if (request.headers.get('Origin') !== ORIGIN) return reply({error: 'ORIGIN_NOT_ALLOWED'}, 403);
@@ -106,7 +116,7 @@ export default {
     if (!['1', '7', '30'].includes(days) || [...url.searchParams.keys()].some(k => k !== 'days') ||
       url.searchParams.getAll('days').length !== 1) return reply({error: 'INVALID_PERIOD'}, 400);
     if (!env.GISTDA_API_KEY) return reply({error: 'NOT_CONFIGURED'}, 503);
-    const key = new Request(`${url.origin}/cache-v1/flood?days=${days}`);
+    const key = new Request(`${url.origin}/cache-v3/flood?days=${days}`);
     const cache = caches.default;
     const cached = await cache.match(key);
     if (cached) return cached;
@@ -116,9 +126,11 @@ export default {
         const data = await loadFlood(days, env.GISTDA_API_KEY);
         response = reply(data, 200, data.features.length ? 3600 : 900);
       } catch (error) {
-        const allowed = ['KEY_REJECTED', 'DATA_TOO_LARGE', 'INVALID_DATA', 'DATA_CHANGED'];
+        const allowed = ['KEY_REJECTED', 'KEY_FORMAT', 'DATA_TOO_LARGE', 'INVALID_DATA', 'DATA_CHANGED', 'UPSTREAM_FORMAT', 'UPSTREAM_NETWORK', 'UPSTREAM_TIMEOUT', 'UPSTREAM_REDIRECT'];
         // Never log/return upstream messages, URLs, links or credentials.
-        response = reply({error: allowed.includes(error.message) ? error.message : 'UPSTREAM_UNAVAILABLE'}, 503, 60);
+        const details = {error: allowed.includes(error.message) ? error.message : 'UPSTREAM_UNAVAILABLE'};
+        if (Number.isInteger(error.upstreamStatus)) details.upstreamStatus = error.upstreamStatus;
+        response = reply(details, 503, 60);
       }
       // A cache outage must not turn a valid data response into an app failure.
       try { await cache.put(key, response.clone()); } catch (_) {}

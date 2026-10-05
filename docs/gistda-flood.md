@@ -2,11 +2,13 @@
 
 ## สถานะ 5 ตุลาคม 2026
 
-- เตรียม frontend ในเครื่องแล้ว ยังไม่ push/เผยแพร่ จนกว่าจะตั้ง Secret และทดสอบการเชื่อมต่อจริงผ่าน
-- สร้าง Worker แยก `the-1-ics-gistda-flood` บนบัญชีเดิมแล้ว รุ่นโค้ด `36e7443b` (รุ่นเริ่มต้น Hello World `15983053` ไม่ใช่รุ่นใช้งาน)
-- ผู้ใช้ใส่ `GISTDA_API_KEY` แล้ว แต่ตรวจพบชนิด `Variable` (ไม่ใช่ Secret) จึงหยุดให้ผู้ใช้เปลี่ยนเป็น Secret เองก่อนทดสอบ ไม่อ่าน/เก็บ/พิมพ์ค่าคีย์
+- เตรียม frontend ในเครื่องแล้ว ยังไม่ push/เผยแพร่; ตัวเชื่อมทดสอบจริงผ่านแล้ว แต่ยังต้องตรวจการแสดงผล Chrome ก่อนเผยแพร่ frontend
+- Worker แยก `the-1-ics-gistda-flood` รุ่น Active `dc20a166`, health version 2; ผู้ใช้เปลี่ยน `GISTDA_API_KEY` เป็น Secret แล้ว ตรวจเฉพาะชนิด ไม่อ่าน/เก็บ/พิมพ์ค่าคีย์
+- ผู้ใช้อนุญาตสำรองและ Deploy เฉพาะ Worker ใหม่นี้ รุ่นก่อนแก้ `76c9428f` มี Secret และโค้ดตรงกับสำเนา Git; รุ่น diagnostic แรก `6f2d2100`
+- ตรวจจริง 5 ตุลาคม 2026 เวลา 03:23–03:24 UTC: 1 วัน = 0, 7 วัน = 0, 30 วัน = 420 features; ทุกชุด complete=true และ provinceId=21 ข้อมูลว่างไม่ใช่ยืนยันว่าไม่มีน้ำท่วม
+- ปรับการเรียกต้นทางเป็น URL string, trim คีย์ และ redirect manual ที่ไม่ตาม redirect พร้อมรหัสผิดพลาดปลอดภัย; หลังปรับเชื่อมสำเร็จ ยังไม่แยกพิสูจน์ว่าการปรับใดเป็นสาเหตุหลัก
 - ไม่ได้แก้ Worker `the-1-ics-connect` / `citizen-checkin-worker`, GAS, Supabase หรือข้อมูลเหตุ
-- Chrome เปิด `/health` ของบริการใหม่รายงาน `net::ERR_BLOCKED_BY_CLIENT`; PowerShell ตรวจ HTTPS ไม่ผ่าน authentication/TLS ต้องตรวจหลังผู้ใช้ตั้งคีย์ ไม่ปิดการตรวจ certificate หรือข้ามการป้องกันเบราว์เซอร์
+- Chrome เคยเปิด `/health` รายงาน `net::ERR_BLOCKED_BY_CLIENT` ยังไม่ได้ยืนยัน browser end-to-end; การตรวจ HTTPS ผ่าน curl นอก sandbox สำเร็จโดยตรวจ certificate ตามปกติ ไม่มีการข้ามการป้องกัน
 
 ## ใช้งานเมื่อเชื่อมสำเร็จ
 
@@ -39,6 +41,12 @@
 - local branch `backup/pre-gistda-live-20261005`
 - `backups/The-1-ICS-Connect-pre-gistda-live-20261005.zip`
 - `backups/The-1-ICS-Connect-pre-gistda-live-20261005.bundle` verify ผ่าน
+
+ก่อนแก้ diagnostic สำรอง commit `629186c3536e636f4b6d7590b631560f5852d5e2` อีกครั้ง:
+
+- local branch `backup/pre-gistda-diagnostics-20261005`
+- `backups/The-1-ICS-Connect-pre-gistda-diagnostics-20261005.zip` และ `.bundle` verify ผ่าน
+- ย้อน Worker ใหม่ได้ที่ Cloudflare version `76c9428f`; ไม่ต้องย้อน Worker เหตุเดิม
 
 สำรองโค้ด/ประวัติ ไม่ใช่ export ฐานข้อมูล รอบนี้ไม่เปลี่ยนฐานข้อมูล หากเผยแพร่แล้วให้ revert commit frontend นี้ตามสถานะ Git ล่าสุด ไม่ใช้ reset --hard; ไม่ต้องย้อน Worker เดิมเพราะไม่ได้แก้
 หากไม่ต้องการใช้ตัวเชื่อมใหม่ให้ปิด checkbox และถอน frontend integration ก่อน จากนั้นผู้ใช้จึงเลือกปิด/ลบบริการใหม่ตามปกติ (ไม่ลบอัตโนมัติ)
