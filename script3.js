@@ -981,6 +981,7 @@ language: 'th'
 });
 mapObj.addControl(new maptilersdk.NavigationControl(), 'top-right');
 dashMap = makeDashboardMapAdapter(mapObj);
+initTambonBoundaryControls();
 if (typeof attachDashboardMapModes === 'function') attachDashboardMapModes(mapObj);
 watchDashboardMapSize();
 mapObj.on('load', function() {
@@ -2509,6 +2510,9 @@ var tambonBoundaryVisible = false; // สถานะปุ่ม toggle (ผู
 var tambonBoundaryAutoShown = false; // กำลังโชว์อยู่เพราะ auto-show ไม่ใช่ผู้ใช้กดเอง (กันสับสนตอนคำนวณว่าควรซ่อนไหม)
 var tambonIndexData = null; // cache ของ _index.json (โหลดครั้งเดียว)
 var tambonLoadedProvinces = {}; // กันโหลดไฟล์จังหวัดเดิมซ้ำ
+var tambonControlsMap = null;
+var tambonRefreshRunning = false;
+var tambonRefreshRequested = false;
 
 async function loadTambonIndex() {
 if (tambonIndexData) return tambonIndexData;
@@ -2591,13 +2595,30 @@ delete tambonLoadedProvinces[slug];
 }
 
 async function refreshTambonLayersForViewport() {
+if (!tambonBoundaryVisible) return;
+if (tambonRefreshRunning) { tambonRefreshRequested = true; return; }
 var mapObj = dashMap && dashMap._maptiler;
 if (!mapObj) return;
+tambonRefreshRunning = true;
+try {
 if (!tambonIndexData) await loadTambonIndex();
-if (!tambonIndexData) return;
-var slugs = getProvincesInViewport(mapObj);
-// จำกัดจำนวนจังหวัดที่โหลดพร้อมกันไม่ให้เกินไป (เผื่อ zoom out กว้างมากจนทับหลายสิบจังหวัด)
-slugs.slice(0, 12).forEach(function(slug) { loadTambonProvince(slug); });
+if (!tambonIndexData || !tambonBoundaryVisible) return;
+// Load every visible province, four at a time; no permanently omitted provinces.
+var slugs = getProvincesInViewport(mapObj).filter(function(slug) { return !tambonLoadedProvinces[slug]; });
+var next = 0;
+async function worker() {
+while (next < slugs.length && tambonBoundaryVisible && !tambonRefreshRequested && dashMap && dashMap._maptiler === mapObj) {
+await loadTambonProvince(slugs[next++]);
+}
+}
+await Promise.all([worker(), worker(), worker(), worker()]);
+} finally {
+tambonRefreshRunning = false;
+if (tambonRefreshRequested) {
+tambonRefreshRequested = false;
+if (tambonBoundaryVisible) refreshTambonLayersForViewport();
+}
+}
 }
 
 function setTambonLayersVisibility(visible) {
@@ -2615,6 +2636,7 @@ function toggleTambonBoundary() {
 setTambonBoundaryVisibility(!tambonBoundaryVisible);
 }
 function setTambonBoundaryVisibility(visible) {
+initTambonBoundaryControls();
 tambonBoundaryVisible = !!visible;
 tambonBoundaryAutoShown = false; // ผู้ใช้กดเองแล้ว ไม่ใช่ auto-show อีกต่อไป
 setTambonLayersVisibility(tambonBoundaryVisible);
@@ -2631,7 +2653,8 @@ if (tambonBoundaryVisible) refreshTambonLayersForViewport();
 
 function initTambonBoundaryControls() {
 var mapObj = dashMap && dashMap._maptiler;
-if (!mapObj) return;
+if (!mapObj || tambonControlsMap === mapObj) return;
+tambonControlsMap = mapObj;
 loadTambonIndex();
 mapObj.on('zoomend', handleTambonAutoShowOnZoom);
 mapObj.on('moveend', function() {
