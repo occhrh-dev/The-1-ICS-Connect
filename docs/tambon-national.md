@@ -9,3 +9,5 @@
 รุ่นแก้ `63494f7849dcfd552594e6858eda46ff2e446c7f`; cache `20261005_tambon1`. ย้อนด้วย revert commit รุ่นแก้ ไม่ใช้ reset --hard และไม่ต้องย้อน backend
 
 ทดสอบ `node tests/tambon-national.test.cjs`: 77 จังหวัด, concurrency <=4, cache ไม่โหลดซ้ำ, event handlers ไม่ซ้ำ, move/zoom ไปเชียงใหม่, เปลี่ยน viewport ระหว่างโหลด และปิดชั้นไม่โหลดเพิ่ม ชุด regression อื่นอีก 10 ชุดผ่าน
+
+สถานะก่อนตรวจ Chrome: โค้ดและชุดทดสอบผ่านแล้ว กำลังตรวจเผยแพร่รุ่นใหม่บน GitHub Pages; ไม่ได้เปิดหรือบันทึกเหตุทดสอบเพิ่ม
