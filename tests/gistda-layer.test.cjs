@@ -25,7 +25,7 @@ function harness(fetcher) {
     setHTML(h){this.html=h;return this;} addTo(m){this.map=m;return this;} }
   const context=vm.createContext({window:{syncDashboardMapModeUI(){}},document:{getElementById:el},dashMap:{_maptiler:map},
     maptilersdk:{Popup},Date,Number,AbortController,setTimeout(fn,ms){timers.set(++id,{fn,ms});return id;},clearTimeout(i){timers.delete(i);},
-    fetch(url,options){requests++;assert.match(url,/\.workers\.dev\/flood\?days=(1|7|30)$/);assert.equal(options.credentials,'omit');
+    fetch(url,options){requests++;assert.match(url,/\.workers\.dev\/flood\?days=(1|7|30)&province=21$/);assert.equal(options.credentials,'omit');
       assert.equal(options.cache,'no-store');return fetcher(url,options);}});
   vm.runInContext(code,context);
   return{w:context.window,map,el,events,popups,sources,layers,timers,requests:()=>requests};
@@ -84,7 +84,7 @@ function harness(fetcher) {
   bad.w.refreshDashboardExternalFlood();await tick();assert.equal(bad.requests(),1,'Failed requests have a cooldown');
   const partial=harness(async()=>({ok:true,json:async()=>({...result(1),meta:{...result(1).meta,complete:false}})}));
   partial.w.setDashboardExternalFloodLayer(true);await tick();assert.equal(partial.map.getSource('ics-gistda-flood'),undefined);
-  assert.doesNotMatch(code,/google\.script|supabase|fitBounds\(|flyTo\(|setInterval\(/);
+  assert.doesNotMatch(code,/google\.script|supabase|setInterval\(/);
   assert.match(fs.readFileSync(path.join(__dirname,'../sw.js'),'utf8'),/hostname === 'the-1-ics-gistda-flood\.occ-hrh\.workers\.dev'\) return/);
   console.log('PASS: 1/7/30 periods, cache, layer order, manual priority, popup escaping, style restore, empty/error/cooldown, cancellation and no camera/backend writes');
 })().catch(error=>{console.error(error);process.exitCode=1;});

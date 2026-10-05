@@ -963,8 +963,10 @@ onkeyup="if(event.key==='Enter') submitEntryCode()">
 <div class="dash-layer-note">เลือกทั้งสองอย่าง: ถนนและชื่อสถานที่ซ้อนบนภาพดาวเทียม อยู่ใต้ชั้นข้อมูลอื่น</div>
 <div class="dash-layer-section-title">ชั้นข้อมูลซ้อนทับ</div>
 <label><input id="dashExternalFloodLayerCheck" type="checkbox" onchange="setDashboardExternalFloodLayer(this.checked)"><i class="fas fa-water" aria-hidden="true"></i> น้ำท่วม <span id="dashExternalFloodBadge" class="dash-layer-pending">GISTDA</span></label>
+<div class="dash-gistda-controls"><select id="dashExternalFloodProvince" aria-label="จังหวัดน้ำท่วม GISTDA" disabled onchange="setDashboardExternalFloodProvince(this.value)"><option value="all">ทั่วประเทศ (ภาพรวม)</option></select><button id="dashExternalFloodNearMe" type="button" onclick="showDashboardFloodNearMe()">📍 ใกล้ฉัน</button></div>
+<div id="dashExternalFloodLocationStatus" class="dash-layer-note" role="status">เริ่มที่จังหวัดของเหตุถ้าระบุได้ · ขอพิกัดเฉพาะเมื่อกดใกล้ฉัน ไม่บันทึกตำแหน่งลงข้อมูลเหตุ</div>
 <div class="dash-gistda-controls"><select id="dashExternalFloodPeriod" aria-label="ช่วงข้อมูลน้ำท่วม GISTDA" disabled onchange="setDashboardExternalFloodPeriod(this.value)"><option value="1">ย้อนหลัง 1 วัน</option><option value="7">ย้อนหลัง 7 วัน</option><option value="30">ย้อนหลัง 30 วัน</option></select><button id="dashExternalFloodRefresh" type="button" disabled onclick="refreshDashboardExternalFlood()">ตรวจข้อมูล</button></div>
-<div id="dashExternalFloodSourceStatus" class="dash-layer-note" role="status">ยังไม่เปิดน้ำท่วม GISTDA · เฉพาะจังหวัดระยอง</div>
+<div id="dashExternalFloodSourceStatus" class="dash-layer-note" role="status">ยังไม่เปิดน้ำท่วม GISTDA · เลือกจังหวัดหรือทั่วประเทศได้</div>
 <div class="dash-layer-note"><span style="color:#0284c7">■</span> ขอบเขตอ้างอิงจาก GISTDA ไม่ใช่พื้นที่ที่แอดมินวาดหรือระดับความรุนแรง เลือกครั้งละช่วง · ข้อมูลย้อนหลังไม่ยืนยันว่าตอนนี้ยังท่วม พื้นที่ไม่มีสีไม่ได้แปลว่าไม่ท่วม</div>
 <label><input id="dashTrafficLayerCheck" type="checkbox" onchange="setDashboardTrafficLayer(this.checked)"><i class="fas fa-traffic-light" aria-hidden="true"></i> การจราจร</label>
 <div id="dashTrafficSourceStatus" class="dash-layer-note" role="status">ยังไม่เปิดชั้นจราจร</div>
@@ -7090,7 +7092,8 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 <script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261005_gistda1" charset="UTF-8" defer></script>
 <script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261005_gistda1" charset="UTF-8" defer></script>
 <script src="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261005_gistda1" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-gistda-flood.js?v=20261005_gistda1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/gistda-provinces.js?v=20261005_gistda2" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-gistda-flood.js?v=20261005_gistda2" charset="UTF-8" defer></script>
 <script defer>
 // รอให้ทุก defer script โหลดเสร็จก่อนค่อยรัน onload
 window.addEventListener('load', function() {
