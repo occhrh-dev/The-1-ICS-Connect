@@ -958,12 +958,7 @@ const [lat, lng] = coords.split(',').map(c => parseFloat(c.trim()));
 const pos = { lon: lng, lat: lat };
 incidentCenter.lat = lat;
 incidentCenter.lng = lng;
-let now = Date.now();
-if (coords !== lastWeatherCoords || now - lastWeatherTime > 10 * 60 * 1000) {
 updateWeather(lat, lng);
-lastWeatherCoords = coords;
-lastWeatherTime = now;
-}
 if (!dashMap) {
 if (typeof maptilersdk === 'undefined') {
 return;
@@ -1341,29 +1336,75 @@ checkInBtn.style.display = 'inline-block';
 }
 var lastWeatherCoords = "";
 var lastWeatherTime = 0;
+var dashboardWeatherCache = null;
+var dashboardWeatherPending = null;
+var dashboardWeatherController = null;
+var dashboardWeatherVersion = 0;
+var dashboardWeatherRetryAt = 0;
+function dashboardWeatherIsFlood() {
+return typeof isDashboardFloodIncident === 'function' && isDashboardFloodIncident(window._dashboardFloodIncidentMarkers || window._icZoneMarkers || []);
+}
 async function updateWeather(lat, lng) {
 if (!lat || !lng) return;
+if (dashboardWeatherIsFlood()) {
+if (dashboardWeatherController) dashboardWeatherController.abort();
+dashboardWeatherVersion++;
+return;
+}
 var stateWind = (window._lastEmergState && window._lastEmergState.wind) ? window._lastEmergState.wind : null;
 if (stateWind && stateWind.directionDeg !== null && stateWind.directionDeg !== '' && !isNaN(Number(stateWind.directionDeg))) {
 var windSpeed = Number(stateWind.speedMs || stateWind.speed || stateWind.SpeedMs) || 0;
 applyWindDisplay(Number(stateWind.directionDeg), windSpeed, stateWind.source || 'OC', stateWind.updatedBy || stateWind.UpdatedBy || '');
 return;
 }
+var key = Number(lat).toFixed(6) + ',' + Number(lng).toFixed(6);
+if (key !== lastWeatherCoords) {
+lastWeatherCoords = key;
+dashboardWeatherRetryAt = 0;
+dashboardWeatherVersion++;
+if (dashboardWeatherController) dashboardWeatherController.abort();
+dashboardWeatherPending = null;
+}
+if (dashboardWeatherCache && dashboardWeatherCache.key === key && Date.now() - lastWeatherTime < 10 * 60 * 1000) {
+applyWindDisplay(dashboardWeatherCache.direction, dashboardWeatherCache.speed, 'auto', '');
+return;
+}
+if (dashboardWeatherPending || Date.now() < dashboardWeatherRetryAt) return;
+var ownVersion = dashboardWeatherVersion;
+var ownController = new AbortController();
+dashboardWeatherController = ownController;
+var ownPending = {};
+dashboardWeatherPending = ownPending;
+var timeout = setTimeout(function(){ownController.abort();},12000);
 try {
 const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lng + '&current=wind_speed_10m,wind_direction_10m&wind_speed_unit=ms';
-const response = await fetch(url);
+const response = await fetch(url,{signal:ownController.signal});
+if (!response.ok) throw new Error('Weather HTTP '+response.status);
 const data = await response.json();
-if (data && data.current) {
+if (ownVersion !== dashboardWeatherVersion || dashboardWeatherIsFlood()) return;
+var latestWind = window._lastEmergState && window._lastEmergState.wind;
+if (latestWind && latestWind.directionDeg !== null && latestWind.directionDeg !== '' && Number.isFinite(Number(latestWind.directionDeg))) return;
+if (data && data.current && Number.isFinite(data.current.wind_speed_10m) && Number.isFinite(data.current.wind_direction_10m)) {
 const speed = data.current.wind_speed_10m.toFixed(1);
 const meteoDeg = data.current.wind_direction_10m;
 const destDeg = (meteoDeg + 180) % 360;
 const directions = ['เหนือ', 'ตะวันออกเฉียงเหนือ', 'ตะวันออก', 'ตะวันออกเฉียงใต้', 'ใต้', 'ตะวันตกเฉียงใต้', 'ตะวันตก', 'ตะวันตกเฉียงเหนือ'];
 const dirIndex = Math.round(destDeg / 45) % 8;
 const dirName = directions[dirIndex];
+dashboardWeatherCache = {key:key,direction:destDeg,speed:speed};
+lastWeatherTime = Date.now();
 applyWindDisplay(destDeg, speed, 'auto', '');
-}
+} else { throw new Error('Invalid weather data'); }
 } catch (error) {
+if (ownVersion !== dashboardWeatherVersion || dashboardWeatherIsFlood()) return;
+var reportedWind = window._lastEmergState && window._lastEmergState.wind;
+if (reportedWind && reportedWind.directionDeg !== null && reportedWind.directionDeg !== '' && Number.isFinite(Number(reportedWind.directionDeg))) return;
+dashboardWeatherRetryAt = Date.now() + 60000;
 applyWindWaitingDisplay();
+} finally {
+clearTimeout(timeout);
+if (dashboardWeatherPending === ownPending) dashboardWeatherPending = null;
+if (dashboardWeatherController === ownController) dashboardWeatherController = null;
 }
 }
 var eocStartTime = null;

@@ -193,6 +193,33 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
     }
     return body;
   }
+  // Only identical, simultaneous reads share a network call. Never cache writes
+  // or completed results; preserve agency/token/request-body isolation.
+  var bridgePendingReads = new Map();
+  var bridgeSharedReadActions = {getOCState:1,getAllLiveLocations:1,getEvacuationPoints:1};
+  var bridgeReadInvalidatingWrites = {activateEmergency:1,deactivateEmergency:1,saveZoneMarker:1,updateZoneMarker:1,deleteZoneMarker:1,checkInLocation:1,saveEvacuationPoint:1,saveWindReport:1,saveERGSelection:1,submitSitReport:1,submitSupportRequest:1,updateSupportRequestStatus:1};
+  function bridgeFetchData(action, body) {
+    if (bridgeReadInvalidatingWrites[action]) bridgePendingReads.clear();
+    var serialized = JSON.stringify(body);
+    var key = action + ':' + serialized;
+    var shared = bridgeSharedReadActions[action] === 1;
+    if (shared && bridgePendingReads.has(key)) return bridgePendingReads.get(key);
+    var controller = shared ? new AbortController() : null;
+    var timer = controller ? setTimeout(function(){controller.abort();},20000) : null;
+    var promise = (async function(){
+      var options = {method:'POST',headers:{'Content-Type':'application/json'},body:serialized};
+      if (controller) options.signal = controller.signal;
+      var response = await fetch(WORKER_URL+'/?action='+action,options);
+      if (shared && !response.ok) throw new Error('HTTP '+response.status);
+      return response.json();
+    })().finally(function(){
+      if (bridgeReadInvalidatingWrites[action]) bridgePendingReads.clear();
+      if (timer) clearTimeout(timer);
+      if (shared && bridgePendingReads.get(key) === promise) bridgePendingReads.delete(key);
+    });
+    if (shared) bridgePendingReads.set(key,promise);
+    return promise;
+  }
   async function callWorker(fn, args, successCb, failureCb) {
     var action = ACTION_MAP[fn];
     if (!action) { console.warn('[Bridge] Unknown:', fn); if(failureCb) failureCb({message:'Unknown: '+fn}); return; }
@@ -230,8 +257,9 @@ body.ic-login-mode #staffRoleInput { list-style:none; }
       }
       // เติม agencyId จาก session ปัจจุบันให้ทุก request เสมอ (Worker ใช้กรองข้อมูลแยกหน่วยงาน)
       body.agencyId = effectiveAgencyId;
-      var res = await fetch(WORKER_URL+'/?action='+action, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      var data = await res.json();
+      var sharedData = await bridgeFetchData(action,body);
+      // Callbacks may mutate results. Each caller must receive its own object.
+      var data = bridgeSharedReadActions[action] && sharedData != null ? JSON.parse(JSON.stringify(sharedData)) : sharedData;
       if (data && data.error) { if(failureCb) failureCb({message:data.error}); }
       else { if(successCb) successCb(data); }
     } catch(e) { if(failureCb) failureCb({message:e.message}); }
@@ -7089,7 +7117,7 @@ Swal.fire('⚠️ Popup ถูก Block', 'กรุณาอนุญาต Pop
 </script>
 
 <script src="https://occhrh-dev.github.io/The-1-ICS-Connect/flood-incident-settings.js?v=20261005_gistda1" charset="UTF-8" defer></script>
-<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261005_tambon1" charset="UTF-8" defer></script>
+<script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script3.js?v=20261005_perf1" charset="UTF-8" defer></script>
 <script src="https://occhrh-dev.github.io/The-1-ICS-Connect/script2.js?v=20261005_gistda1" charset="UTF-8" defer></script>
 <script src="https://occhrh-dev.github.io/The-1-ICS-Connect/dashboard-map-modes.js?v=20261005_gistda1" charset="UTF-8" defer></script>
 <script src="https://occhrh-dev.github.io/The-1-ICS-Connect/gistda-provinces.js?v=20261005_gistda2" charset="UTF-8" defer></script>
