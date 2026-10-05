@@ -6,4 +6,10 @@ Labels use the same province GeoJSON source. `NAME_TH_3` is preferred; `NAME_3` 
 
 Backup before changes: branch `backup/pre-tambon-labels-20261005`, commit `e7ee3a4`; workspace ZIP and complete-history bundle in `../../backups/The-1-ICS-Connect-pre-tambon-labels-20261005.*`. These back up code, not production databases.
 
-Regression tests and Chrome visual QA are recorded after verification.
+All 12 regression suites passed, including label defaults, visibility without new fetches, boundary-off hiding, fallback properties and style rebuild. Pages run `37278790243` successfully deployed `f429068`.
+
+Chrome QA on the existing incident: Thai names visibly rendered (ทับมา, มาบตาพุด, บ้านค่าย); unchecking labels removed names while boundaries stayed visible. Switching base styles preserved the checked preference. Disabling boundaries disabled the label control, and re-enabling restored it. No operational records were changed. Satellite view was left with labels enabled for the user to inspect.
+
+One MapTiler street-style warning about missing image `transportation:road_` appeared during the street-base switch; no JavaScript errors were captured. This warning is not a tambon-label glyph error.
+
+Workspace proof: `../../outputs/tambon-labels-live-20261005.png`.
