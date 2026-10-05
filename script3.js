@@ -2543,7 +2543,7 @@ btn.classList.add('active');
 
 // ==========================================
 // เส้นแบ่งเขตตำบล (Tambon Boundaries) — โหลดจาก GitHub Pages static files
-// ออกแบบให้โหลดเฉพาะจังหวัดที่อยู่ในมุมมองปัจจุบัน (viewport-based) ไม่กิน Supabase storage
+// โหลดเฉพาะจังหวัดของจุดเกิดเหตุ ไม่เพิ่มจังหวัดเมื่อเลื่อนหรือซูมแผนที่
 // ==========================================
 var TAMBON_DATA_BASE_URL = 'https://occhrh-dev.github.io/The-1-ICS-Connect/tambon_by_province/';
 var TAMBON_AUTO_SHOW_ZOOM = 12; // ซูมถึงระดับนี้ขึ้นไป จะ auto-show เขตแดนถ้ายังไม่ได้ปิดไว้เอง
@@ -2554,6 +2554,55 @@ var tambonLoadedProvinces = {}; // กันโหลดไฟล์จังห
 var tambonControlsMap = null;
 var tambonRefreshRunning = false;
 var tambonRefreshRequested = false;
+var tambonIncidentZones = null;
+var tambonScopeKey = null;
+var tambonScopeResolvedKey = null;
+var tambonScopeSlugs = {};
+var tambonLayerHandlers = {};
+var tambonScopeRetryAt = 0;
+
+function getTambonIncidentCoordinates() {
+var zones = tambonIncidentZones || window._icZoneMarkers || [];
+var incidentZones = zones.filter(function(z) { return (z.type || z.ZoneType || z.zone_type) === 'IncidentPoint'; });
+var points = incidentZones.map(function(z) { return [Number(z.lng || z.Lng || z.lon), Number(z.lat || z.Lat)]; });
+// Older incidents have a single coordinate but no IncidentPoint records.
+if (!incidentZones.length && typeof incidentCenter !== 'undefined' && incidentCenter) points = [[Number(incidentCenter.lng), Number(incidentCenter.lat)]];
+return points.filter(function(p) { return Number.isFinite(p[0]) && Number.isFinite(p[1]) && p[0] >= -180 && p[0] <= 180 && p[1] >= -90 && p[1] <= 90 && (p[0] !== 0 || p[1] !== 0); })
+.map(function(p) { return p.join(','); }).filter(function(p, i, all) { return all.indexOf(p) === i; }).sort();
+}
+
+function syncTambonIncidentScope(zones) {
+if (Array.isArray(zones)) tambonIncidentZones = zones;
+var key = getTambonIncidentCoordinates().join('|');
+if (key === tambonScopeKey) return;
+tambonScopeKey = key;
+tambonScopeResolvedKey = null;
+tambonScopeRetryAt = 0;
+tambonScopeSlugs = {};
+pruneTambonLayers();
+if (tambonBoundaryVisible) refreshTambonLayersForViewport();
+}
+
+function pruneTambonLayers() {
+var mapObj = dashMap && dashMap._maptiler;
+if (!mapObj) return;
+Object.keys(tambonLoadedProvinces).forEach(function(slug) {
+if (tambonScopeSlugs[slug]) return;
+var handlers = tambonLayerHandlers[slug];
+if (handlers && mapObj.off) Object.keys(handlers).forEach(function(event) { mapObj.off(event, 'tambon-fill-' + slug, handlers[event]); });
+delete tambonLayerHandlers[slug];
+['tambon-line-', 'tambon-fill-'].forEach(function(prefix) { if (mapObj.getLayer(prefix + slug)) mapObj.removeLayer(prefix + slug); });
+if (mapObj.getSource('tambon-src-' + slug)) mapObj.removeSource('tambon-src-' + slug);
+delete tambonLoadedProvinces[slug];
+});
+}
+
+function updateTambonScopeStatus(text) {
+var check = typeof document !== 'undefined' && document.getElementById('dashTambonLayerCheck');
+if (check) check.title = text;
+var status = typeof document !== 'undefined' && document.getElementById('dashTambonScopeStatus');
+if (status) status.textContent = text;
+}
 
 async function loadTambonIndex() {
 if (tambonIndexData) return tambonIndexData;
@@ -2585,6 +2634,7 @@ return result;
 }
 
 async function loadTambonProvince(slug) {
+if (!tambonBoundaryVisible || !tambonScopeSlugs[slug]) return;
 if (tambonLoadedProvinces[slug]) return; // โหลดไปแล้ว ไม่โหลดซ้ำ
 tambonLoadedProvinces[slug] = true; // mark ไว้ก่อนยิง fetch กัน race condition ตอนเรียกซ้อนกัน
 var mapObj = dashMap && dashMap._maptiler;
@@ -2593,12 +2643,14 @@ try {
 var res = await fetch(TAMBON_DATA_BASE_URL + slug + '.json');
 if (!res.ok) { delete tambonLoadedProvinces[slug]; return; }
 var geojson = await res.json();
+// A late response must not resurrect boundaries from the previous incident.
+if (!tambonBoundaryVisible || !tambonScopeSlugs[slug] || !dashMap || dashMap._maptiler !== mapObj) { delete tambonLoadedProvinces[slug]; return; }
 var sourceId = 'tambon-src-' + slug;
 var lineLayerId = 'tambon-line-' + slug;
 var fillLayerId = 'tambon-fill-' + slug;
 if (mapObj.isStyleLoaded && !mapObj.isStyleLoaded()) {
 delete tambonLoadedProvinces[slug];
-mapObj.once('idle', function() { if (tambonBoundaryVisible) loadTambonProvince(slug); });
+mapObj.once('idle', function() { if (tambonBoundaryVisible && tambonScopeSlugs[slug]) loadTambonProvince(slug); });
 return;
 }
 if (mapObj.getSource(sourceId)) return; // กันเพิ่มซ้ำ (เผื่อ race condition หลุดมา)
@@ -2619,16 +2671,17 @@ paint: { 'line-color': '#f59e0b', 'line-width': 1.4, 'line-opacity': 0.85 },
 layout: { visibility: tambonBoundaryVisible ? 'visible' : 'none' }
 });
 // คลิกที่ขอบเขต — โชว์ชื่อตำบล/อำเภอ/จังหวัด (อังกฤษไปก่อน รอแปลไทยทีละจังหวัด)
-mapObj.on('click', fillLayerId, function(e) {
+var handlers = { click: function(e) {
 if (!e.features || !e.features[0]) return;
 var p = e.features[0].properties;
 new maptilersdk.Popup({ offset: 4 })
 .setLngLat(e.lngLat)
 .setHTML('<div style="font-size:0.8rem;"><b>ตำบล ' + (p.NAME_TH_3 || p.NAME_3 || '-') + '</b><br>อำเภอ ' + (p.NAME_TH_2 || p.NAME_2 || '-') + '<br>จังหวัด ' + (p.NAME_TH_1 || p.NAME_1 || '-') + '</div>')
 .addTo(mapObj);
-});
-mapObj.on('mouseenter', fillLayerId, function() { mapObj.getCanvas().style.cursor = 'pointer'; });
-mapObj.on('mouseleave', fillLayerId, function() { mapObj.getCanvas().style.cursor = ''; });
+}, mouseenter: function() { mapObj.getCanvas().style.cursor = 'pointer'; }, mouseleave: function() { mapObj.getCanvas().style.cursor = ''; } };
+if (tambonLayerHandlers[slug] && mapObj.off) Object.keys(tambonLayerHandlers[slug]).forEach(function(event) { mapObj.off(event, fillLayerId, tambonLayerHandlers[slug][event]); });
+tambonLayerHandlers[slug] = handlers;
+Object.keys(handlers).forEach(function(event) { mapObj.on(event, fillLayerId, handlers[event]); });
 } catch (e) {
 console.warn('[Tambon] โหลดจังหวัด ' + slug + ' ไม่สำเร็จ', e);
 delete tambonLoadedProvinces[slug];
@@ -2642,10 +2695,34 @@ var mapObj = dashMap && dashMap._maptiler;
 if (!mapObj) return;
 tambonRefreshRunning = true;
 try {
-if (!tambonIndexData) await loadTambonIndex();
-if (!tambonIndexData || !tambonBoundaryVisible) return;
-// Load every visible province, four at a time; no permanently omitted provinces.
-var slugs = getProvincesInViewport(mapObj).filter(function(slug) { return !tambonLoadedProvinces[slug]; });
+syncTambonIncidentScope();
+var key = tambonScopeKey;
+if (tambonScopeResolvedKey !== key) {
+if (Date.now() < tambonScopeRetryAt) return;
+if (typeof window.gistdaProvinceAt !== 'function') return;
+updateTambonScopeStatus('กำลังระบุจังหวัดของจุดเกิดเหตุ');
+var scope = {}, names = [], unresolved = false;
+try {
+// Sequential lookup shares the province geometry cache for nearby points.
+for (var coordinate of getTambonIncidentCoordinates()) {
+var point = coordinate.split(',').map(Number);
+var province = await window.gistdaProvinceAt(point[0], point[1]);
+if (key !== tambonScopeKey || dashMap._maptiler !== mapObj) return;
+if (province) { scope[province.slug] = true; if (names.indexOf(province.name) < 0) names.push(province.name); }
+else unresolved = true;
+}
+} catch (e) { unresolved = true; console.warn('[Tambon] ระบุจังหวัดไม่สำเร็จ', e); }
+if (key !== tambonScopeKey) return;
+tambonScopeSlugs = scope;
+// Retry unresolved locations on a later user action, never query all provinces.
+tambonScopeResolvedKey = unresolved ? null : key;
+tambonScopeRetryAt = unresolved ? Date.now() + 60000 : 0;
+updateTambonScopeStatus('เขตตำบลเฉพาะจังหวัดที่เกิดเหตุ: ' + (names.join(', ') || 'ยังระบุจังหวัดไม่ได้') + (unresolved ? ' (บางจุดยังระบุไม่ได้)' : ''));
+}
+pruneTambonLayers();
+if (!tambonBoundaryVisible) return;
+var slugs = Object.keys(tambonScopeSlugs).filter(function(slug) { return !tambonLoadedProvinces[slug] || !mapObj.getSource('tambon-src-' + slug); });
+slugs.forEach(function(slug) { if (!mapObj.getSource('tambon-src-' + slug)) delete tambonLoadedProvinces[slug]; });
 var next = 0;
 async function worker() {
 while (next < slugs.length && tambonBoundaryVisible && !tambonRefreshRequested && dashMap && dashMap._maptiler === mapObj) {
@@ -2696,7 +2773,8 @@ function initTambonBoundaryControls() {
 var mapObj = dashMap && dashMap._maptiler;
 if (!mapObj || tambonControlsMap === mapObj) return;
 tambonControlsMap = mapObj;
-loadTambonIndex();
+tambonLoadedProvinces = {};
+tambonLayerHandlers = {};
 mapObj.on('zoomend', handleTambonAutoShowOnZoom);
 mapObj.on('moveend', function() {
 if (tambonBoundaryVisible) refreshTambonLayersForViewport();

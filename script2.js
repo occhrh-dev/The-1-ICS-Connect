@@ -3699,6 +3699,7 @@ function drawOCZoneMarkersOnICMap(zones, supportReqs) {
 var allZones = (zones || []).filter(function(z) { return (z.locationKind || z.location_kind || 'outdoor') !== 'indoor'; });
 allZones = normalizeICOCState({ zoneMarkers: allZones }).zoneMarkers;
 updateFloodMapLayerUI(allZones);
+if (typeof syncTambonIncidentScope === 'function') syncTambonIncidentScope(allZones);
 var specialZones = allZones.filter(function(z) { var type = getZoneMarkerType(z); return type === 'IncidentPoint' || type === 'FloodArea' || (type === 'RoadClosed' && !!parseRoadClosureMarker(z)); });
 zones = allZones.filter(function(z) {
 var type = getZoneMarkerType(z);
